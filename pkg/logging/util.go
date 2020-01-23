@@ -99,3 +99,20 @@ func StringToInt(l string) Level {
 	}
 	return ErrorLevel
 }
+
+func setLevel(cfg zp.Config, level Level) {
+	switch level {
+	case DebugLevel:
+		cfg.Level.SetLevel(zc.DebugLevel)
+	case InfoLevel:
+		cfg.Level.SetLevel(zc.InfoLevel)
+	case WarnLevel:
+		cfg.Level.SetLevel(zc.WarnLevel)
+	case ErrorLevel:
+		cfg.Level.SetLevel(zc.ErrorLevel)
+	case FatalLevel:
+		cfg.Level.SetLevel(zc.FatalLevel)
+	default:
+		cfg.Level.SetLevel(zc.ErrorLevel)
+	}
+}

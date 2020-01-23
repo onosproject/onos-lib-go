@@ -25,30 +25,30 @@ import (
 )
 
 func getDefaultConfig(outputType string, level Level, defaultFields Fields) zp.Config {
-	return zp.Config{
-		Level:            intToAtomicLevel(level),
-		Encoding:         outputType,
-		Development:      true,
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stderr"},
-		InitialFields:    defaultFields,
-		EncoderConfig: zc.EncoderConfig{
-			LevelKey:       "level",
-			MessageKey:     "msg",
-			TimeKey:        "ts",
-			StacktraceKey:  "stacktrace",
-			LineEnding:     zc.DefaultLineEnding,
-			EncodeLevel:    zc.LowercaseLevelEncoder,
-			EncodeTime:     zc.ISO8601TimeEncoder,
-			EncodeDuration: zc.SecondsDurationEncoder,
-			EncodeCaller:   zc.ShortCallerEncoder,
-		},
-	}
+
+	logConfig := Configuration{}
+	logConfig.SetLevel(level).
+		SetEncoding(outputType).
+		SetDevelopment(true).
+		SetOutputPaths([]string{"stdout"}).
+		SetErrorOutputPaths([]string{"stderr"}).
+		SetInitialFields(defaultFields).
+		SetECLevelKey("level").
+		SetECMsgKey("msg").
+		SetECTimeKey("ts").
+		SetECStackTraceKey("stacktrace").
+		SetECLineEnding(zc.DefaultLineEnding).
+		SetECEncodeLevel(zc.LowercaseLevelEncoder).
+		SetECTimeEncoder(zc.ISO8601TimeEncoder).
+		SetECEncodeDuration(zc.StringDurationEncoder).
+		SetECEncoderCaller(zc.ShortCallerEncoder)
+
+	return logConfig.Build().zapConfig
 }
 
-// SetLogger needs to be invoked before the logger API can be invoked.  This function
+// GetDefaultLogger needs to be invoked before the logger API can be invoked.  This function
 // initialize the default logger (zap's sugaredlogger)
-func SetDefaultLogger(outputType string, level Level, defaultFields Fields) (Logger, error) {
+func GetDefaultLogger(outputType string, level Level, defaultFields Fields) (Logger, error) {
 	// Build a custom config using zap
 	cfg = getDefaultConfig(outputType, level, defaultFields)
 
@@ -178,23 +178,6 @@ func UpdateLogger(defaultFields Fields) (Logger, error) {
 		packageName: pkgName,
 	}
 	return loggers[pkgName], nil
-}
-
-func setLevel(cfg zp.Config, level Level) {
-	switch level {
-	case DebugLevel:
-		cfg.Level.SetLevel(zc.DebugLevel)
-	case InfoLevel:
-		cfg.Level.SetLevel(zc.InfoLevel)
-	case WarnLevel:
-		cfg.Level.SetLevel(zc.WarnLevel)
-	case ErrorLevel:
-		cfg.Level.SetLevel(zc.ErrorLevel)
-	case FatalLevel:
-		cfg.Level.SetLevel(zc.FatalLevel)
-	default:
-		cfg.Level.SetLevel(zc.ErrorLevel)
-	}
 }
 
 //SetPackageLogLevel dynamically sets the log level of a given package to level.  This is typically invoked at an
