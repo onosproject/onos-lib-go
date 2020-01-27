@@ -37,10 +37,12 @@ const (
 	PanicLevel
 	// DPanicLevel logs at PanicLevel; otherwise, it logs at ErrorLevel
 	DPanicLevel
+
+	EmptyLevel
 )
 
 func (l Level) String() string {
-	return [...]string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL", "PANIC", "DPANIC"}[l]
+	return [...]string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL", "PANIC", "DPANIC", ""}[l]
 }
 
 // Logger represents an abstract logging interface.

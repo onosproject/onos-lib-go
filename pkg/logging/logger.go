@@ -22,20 +22,42 @@ import (
 
 	"go.uber.org/zap"
 	zp "go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	zc "go.uber.org/zap/zapcore"
 )
 
+func getDefaultConfig(name string, level Level) Configuration {
+	cfg := Configuration{}
+	cfg.SetEncoding("json").
+		SetLevel(level).
+		SetOutputPaths([]string{"stdout"}).
+		SetErrorOutputPaths([]string{"stderr"}).
+		SetECMsgKey("msg").
+		SetECLevelKey("level").
+		SetECTimeKey("time").
+		SetECTimeEncoder(zc.ISO8601TimeEncoder).
+		SetECEncodeLevel(zc.CapitalLevelEncoder).
+		SetECNameKey(name).
+		Build()
+	return cfg
+}
+
 // init initialize logger package data structures
 func init() {
+
+	cfg := getDefaultConfig("root", levelToInt(zc.InfoLevel))
+	rootLogger, _ := cfg.GetZapConfig().Build()
+	defaultAtomLevel := zap.NewAtomicLevelAt(zc.InfoLevel)
+	defaultEncoder := zc.NewJSONEncoder(cfg.GetZapConfig().EncoderConfig)
+	defaultWriter := zc.Lock(os.Stdout)
+	newLogger := rootLogger.WithOptions(
+		zap.WrapCore(
+			func(zc.Core) zc.Core {
+				return zc.NewCore(defaultEncoder, defaultWriter, &defaultAtomLevel)
+			}))
+
+	rootLogger = newLogger.Named("root")
 	loggers = art.New()
-	encoderConfig := zap.NewProductionEncoderConfig()
-	defaultAtomLevel := zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	defaultEncoder := zapcore.NewJSONEncoder(encoderConfig)
-	defaultWriter := zapcore.Lock(os.Stdout)
-	core := zapcore.NewCore(defaultEncoder, defaultWriter, &defaultAtomLevel)
-	zapLogger := zap.New(core).Named("root")
-	root = Log{zapLogger, defaultEncoder, defaultWriter}
+	root = Log{rootLogger, defaultEncoder, defaultWriter}
 }
 
 // SetLevel defines a new logger level
@@ -144,28 +166,41 @@ func AddLogger(level string, names ...string) {
 		return
 	}
 
-	encoderConfig := zap.NewProductionEncoderConfig()
 	atomLevel := zap.AtomicLevel{}
+	var internalLevel Level
 	switch level {
-	case zapcore.InfoLevel.String():
-		atomLevel = zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	case zapcore.DebugLevel.String():
-		atomLevel = zap.NewAtomicLevelAt(zapcore.DebugLevel)
-	case zapcore.ErrorLevel.String():
-		atomLevel = zap.NewAtomicLevelAt(zapcore.ErrorLevel)
-	case zapcore.PanicLevel.String():
-		atomLevel = zap.NewAtomicLevelAt(zapcore.PanicLevel)
-	case zapcore.FatalLevel.String():
-		atomLevel = zap.NewAtomicLevelAt(zapcore.FatalLevel)
-	case zapcore.WarnLevel.String():
-		atomLevel = zap.NewAtomicLevelAt(zapcore.WarnLevel)
+	case zc.InfoLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.InfoLevel)
+		internalLevel = InfoLevel
+	case zc.DebugLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.DebugLevel)
+		internalLevel = DebugLevel
+	case zc.ErrorLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.ErrorLevel)
+		internalLevel = ErrorLevel
+	case zc.PanicLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.PanicLevel)
+		internalLevel = PanicLevel
+	case zc.FatalLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.FatalLevel)
+		internalLevel = FatalLevel
+	case zc.WarnLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.WarnLevel)
+		internalLevel = WarnLevel
 	}
 
-	encoder := zapcore.NewJSONEncoder(encoderConfig)
-	writer := zapcore.Lock(os.Stdout)
-	core := zapcore.NewCore(encoder, writer, &atomLevel)
-	zapLogger := zap.New(core).Named(name)
-	logger := Log{zapLogger, encoder, writer}
+	cfg := getDefaultConfig(name, internalLevel)
+	configLogger, _ := cfg.GetZapConfig().Build()
+	defaultEncoder := zc.NewJSONEncoder(cfg.GetZapConfig().EncoderConfig)
+	defaultWriter := zc.Lock(os.Stdout)
+	newLogger := configLogger.WithOptions(
+		zap.WrapCore(
+			func(zc.Core) zc.Core {
+				return zc.NewCore(defaultEncoder, defaultWriter, &atomLevel)
+			}))
+
+	configLogger = newLogger.Named(name)
+	logger := Log{configLogger, defaultEncoder, defaultWriter}
 	loggers.Insert(art.Key(name), logger)
 }
 
