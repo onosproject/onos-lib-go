@@ -15,7 +15,9 @@
 package logging
 
 import (
-	zp "go.uber.org/zap"
+	art "github.com/plar/go-adaptive-radix-tree"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Level int
@@ -33,7 +35,7 @@ const (
 	FatalLevel
 	// PanicLevel logs a message, then panics.
 	PanicLevel
-	// DPanicLevel
+	// DPanicLevel logs at PanicLevel; otherwise, it logs at ErrorLevel
 	DPanicLevel
 )
 
@@ -41,76 +43,22 @@ func (l Level) String() string {
 	return [...]string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL", "PANIC", "DPANIC"}[l]
 }
 
-// CONSOLE formats the log for the console, mostly used during development
-const CONSOLE = "console"
-
-// JSON formats the log using json format, mostly used by an automated logging system consumption
-const JSON = "json"
-
-// Logger represents an abstract logging interface.  Any logging implementation used
-// will need to abide by this interface
+// Logger represents an abstract logging interface.
 type Logger interface {
 	Debug(...interface{})
-	Debugln(...interface{})
-	Debugf(string, ...interface{})
-	Debugw(string, Fields)
-
 	Info(...interface{})
-	Infoln(...interface{})
-	Infof(string, ...interface{})
-	Infow(string, Fields)
-
-	Warn(...interface{})
-	Warnln(...interface{})
-	Warnf(string, ...interface{})
-	Warnw(string, Fields)
-
 	Error(...interface{})
-	Errorln(...interface{})
-	Errorf(string, ...interface{})
-	Errorw(string, Fields)
-
 	Fatal(...interface{})
-	Fatalln(...interface{})
-	Fatalf(string, ...interface{})
-	Fatalw(string, Fields)
-
 	Panic(...interface{})
-	Panicln(...interface{})
-	Panicf(string, ...interface{})
-	Panicw(string, Fields)
-
 	DPanic(...interface{})
-	DPanicln(...interface{})
-	DPanicf(string, ...interface{})
-	DPanicw(string, Fields)
-
-	With(Fields) Logger
-
-	// The following are added to be able to use this logger as a gRPC LoggerV2 if needed
-	//
-	Warning(...interface{})
-	Warningln(...interface{})
-	Warningf(string, ...interface{})
-
-	// V reports whether verbosity level l is at least the requested verbose level.
-	V(l Level) bool
-
-	//Returns the log level of this specific logger
-	GetLogLevel() Level
+	Warn(...interface{})
 }
 
-// Fields is used as key-value pairs for structured logging
-type Fields map[string]interface{}
-
-var defaultLogger *logger
-var cfg zp.Config
-
-var loggers map[string]*logger
-var cfgs map[string]zp.Config
-
-type logger struct {
-	log         *zp.SugaredLogger
-	parent      *zp.Logger
-	packageName string
+type Log struct {
+	stdLogger *zap.Logger
+	encoder   zapcore.Encoder
+	writer    zapcore.WriteSyncer
 }
+
+var loggers art.Tree
+var root Log

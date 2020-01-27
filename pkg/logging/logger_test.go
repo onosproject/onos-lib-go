@@ -20,12 +20,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testLogger Logger
+func TestHierarchicalLogger(t *testing.T) {
+	AddLogger("warn", "foo")
+	AddLogger("", "foo", "bar")
+	AddLogger("error", "foo", "bar", "baz")
 
-func TestInit(t *testing.T) {
-	var err error
-	testLogger, err = AddPackage(JSON, InfoLevel, nil)
-	testLogger.Info("test")
-	assert.NotNil(t, testLogger)
-	assert.Nil(t, err)
+	fooLogger, found := GetLogger("foo")
+	assert.Equal(t, found, true)
+	assert.NotNil(t, fooLogger.stdLogger)
+
+	// Inherits from foo logger (i.e. warn level)
+	fooBarLogger, found := GetLogger("foo", "bar")
+	assert.Equal(t, found, true)
+	assert.NotNil(t, fooBarLogger.stdLogger)
+
+	fooBarBazLogger, found := GetLogger("foo", "bar", "baz")
+	assert.Equal(t, found, true)
+	assert.NotNil(t, fooBarBazLogger.stdLogger)
+
+	fooBarBadLogger, found := GetLogger("foo", "bar", "bad")
+	assert.Equal(t, found, false)
+	assert.Nil(t, fooBarBadLogger.stdLogger)
 }
