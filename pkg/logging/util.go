@@ -39,26 +39,6 @@ func intToAtomicLevel(l Level) zp.AtomicLevel {
 	return zp.NewAtomicLevelAt(zc.ErrorLevel)
 }
 
-/*func intToLevel(l Level) zc.Level {
-	switch l {
-	case DebugLevel:
-		return zc.DebugLevel
-	case InfoLevel:
-		return zc.InfoLevel
-	case WarnLevel:
-		return zc.WarnLevel
-	case ErrorLevel:
-		return zc.ErrorLevel
-	case FatalLevel:
-		return zc.FatalLevel
-	case PanicLevel:
-		return zc.PanicLevel
-	case DPanicLevel:
-		return zc.DPanicLevel
-	}
-	return zc.ErrorLevel
-}*/
-
 func levelToInt(l zc.Level) Level {
 	switch l {
 	case zc.DebugLevel:
@@ -99,20 +79,3 @@ func StringToInt(l string) Level {
 	}
 	return ErrorLevel
 }
-
-/*func setLevel(cfg zp.Config, level Level) {
-	switch level {
-	case DebugLevel:
-		cfg.Level.SetLevel(zc.DebugLevel)
-	case InfoLevel:
-		cfg.Level.SetLevel(zc.InfoLevel)
-	case WarnLevel:
-		cfg.Level.SetLevel(zc.WarnLevel)
-	case ErrorLevel:
-		cfg.Level.SetLevel(zc.ErrorLevel)
-	case FatalLevel:
-		cfg.Level.SetLevel(zc.FatalLevel)
-	default:
-		cfg.Level.SetLevel(zc.ErrorLevel)
-	}
-}*/

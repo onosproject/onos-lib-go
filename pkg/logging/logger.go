@@ -33,10 +33,10 @@ func getDefaultConfig(name string, level Level) Configuration {
 		SetErrorOutputPaths([]string{"stderr"}).
 		SetECMsgKey("msg").
 		SetECLevelKey("level").
-		SetECTimeKey("time").
+		SetECTimeKey("ts").
 		SetECTimeEncoder(zc.ISO8601TimeEncoder).
 		SetECEncodeLevel(zc.CapitalLevelEncoder).
-		SetECNameKey(name).
+		SetName(name).
 		Build()
 	return cfg
 }
@@ -156,6 +156,46 @@ func GetLogger(names ...string) (Log, bool) {
 	} else {
 		return Log{}, found
 	}
+}
+
+func (c *Configuration) AddLogger() {
+	level := c.zapConfig.Level.Level().String()
+	name := c.zapConfig.EncoderConfig.NameKey
+	if level == "" {
+		assignParentLevelLogger(name)
+		return
+	}
+
+	atomLevel := zap.AtomicLevel{}
+	switch level {
+	case zc.InfoLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.InfoLevel)
+	case zc.DebugLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.DebugLevel)
+	case zc.ErrorLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.ErrorLevel)
+	case zc.PanicLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.PanicLevel)
+	case zc.FatalLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.FatalLevel)
+	case zc.WarnLevel.String():
+		atomLevel = zap.NewAtomicLevelAt(zc.WarnLevel)
+	}
+
+	cfg := c.zapConfig
+	configLogger, _ := cfg.Build()
+	encoder := zc.NewJSONEncoder(cfg.EncoderConfig)
+	writer := zc.Lock(os.Stdout)
+	newLogger := configLogger.WithOptions(
+		zap.WrapCore(
+			func(zc.Core) zc.Core {
+				return zc.NewCore(encoder, writer, &atomLevel)
+			}))
+
+	configLogger = newLogger.Named(name)
+	logger := Log{configLogger, encoder, writer}
+	loggers.Insert(art.Key(name), logger)
+
 }
 
 // AddLogger adds a logger based on a given level and a hierarchy of names

@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	zc "go.uber.org/zap/zapcore"
 )
 
 func TestHierarchicalLogger(t *testing.T) {
@@ -41,4 +42,23 @@ func TestHierarchicalLogger(t *testing.T) {
 	fooBarBadLogger, found := GetLogger("foo", "bar", "bad")
 	assert.Equal(t, found, false)
 	assert.Nil(t, fooBarBadLogger.stdLogger)
+
+	cfg := Configuration{}
+
+	cfg.SetEncoding("json").
+		SetLevel(WarnLevel).
+		SetOutputPaths([]string{"stdout"}).
+		SetName("config", "foo", "bar").
+		SetErrorOutputPaths([]string{"stderr"}).
+		SetECMsgKey("Msg").
+		SetECLevelKey("Level").
+		SetECTimeKey("Ts").
+		SetECTimeEncoder(zc.ISO8601TimeEncoder).
+		SetECEncodeLevel(zc.CapitalLevelEncoder).
+		Build()
+	cfg.AddLogger()
+	loggerWithCustomConfig, found := GetLogger("config", "foo", "bar")
+	assert.Equal(t, found, true)
+	assert.NotNil(t, loggerWithCustomConfig.stdLogger)
+
 }

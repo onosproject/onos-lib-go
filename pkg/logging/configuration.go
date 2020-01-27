@@ -39,7 +39,7 @@ type ConfigurationBuilder interface {
 	SetECLineEnding(string) ConfigurationBuilder
 	SetECEncodeLevel(zc.LevelEncoder) ConfigurationBuilder
 	SetECTimeEncoder(zc.TimeEncoder) ConfigurationBuilder
-	SetECNameKey(string) ConfigurationBuilder
+	SetName(...string) ConfigurationBuilder
 	SetECEncodeDuration(zc.DurationEncoder) ConfigurationBuilder
 	SetECEncoderCaller(encoder zc.CallerEncoder) ConfigurationBuilder
 	Build() Configuration
@@ -93,7 +93,8 @@ func (c *Configuration) SetECLevelKey(levelKey string) ConfigurationBuilder {
 }
 
 // SetECNameKey sets encoder config name key
-func (c *Configuration) SetECNameKey(nameKey string) ConfigurationBuilder {
+func (c *Configuration) SetName(names ...string) ConfigurationBuilder {
+	nameKey := buildTreeName(names...)
 	c.zapConfig.EncoderConfig.NameKey = nameKey
 	return c
 }
