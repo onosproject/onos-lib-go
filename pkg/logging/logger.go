@@ -110,16 +110,17 @@ func buildTreeName(names ...string) string {
 	var treeName string
 	var values []string
 	values = append(values, names...)
-	treeName = strings.Join(values, ".")
+	treeName = strings.Join(values, "/")
 	return treeName
 }
 
 func findParentsNames(name string) []string {
-	names := strings.Split(name, ".")
-	if len(names) > 0 {
-		names = names[:len(names)-1]
+	var results []string
+	names := strings.Split(name, "/")
+	for i := 1; i < len(names); i++ {
+		results = append(results, strings.Join(names[:len(names)-i], "/"))
 	}
-	return names
+	return results
 }
 
 // GetKey returns a key object of radix tree
