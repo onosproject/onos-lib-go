@@ -48,18 +48,41 @@ func (l Level) String() string {
 // Logger represents an abstract logging interface.
 type Logger interface {
 	Debug(...interface{})
+	Debugf(template string, args ...interface{})
+	Debugw(msg string, keysAndValues ...interface{})
+
 	Info(...interface{})
+	Infof(template string, args ...interface{})
+	Infow(msg string, keysAndValues ...interface{})
+
 	Error(...interface{})
+	Errorf(template string, args ...interface{})
+	Errorw(msg string, keysAndValues ...interface{})
+
 	Fatal(...interface{})
+	Fatalf(template string, args ...interface{})
+	Fatalw(msg string, keysAndValues ...interface{})
+
 	Panic(...interface{})
+	Panicf(template string, args ...interface{})
+	Panicw(msg string, keysAndValues ...interface{})
+
 	DPanic(...interface{})
+	DPanicf(template string, args ...interface{})
+	DPanicw(msg string, keysAndValues ...interface{})
+
 	Warn(...interface{})
+	Warnf(template string, args ...interface{})
+	Warnw(msg string, keysAndValues ...interface{})
+
+	SetLevel(level Level)
 }
 
 type Log struct {
 	stdLogger *zap.Logger
 	encoder   zapcore.Encoder
 	writer    zapcore.WriteSyncer
+	name      string
 }
 
 var loggers art.Tree
