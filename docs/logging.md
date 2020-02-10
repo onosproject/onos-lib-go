@@ -62,15 +62,20 @@ There are two methods that a user can use to add a logger to a package or go pro
    log, found := logging.GetLogger("controller", "device", "change")	
    ```
   
- 
+### Change Log Level at Runtime
 
+There are two different ways to change log level of a logger at runtime:
 
+1- By providing the new log level and the name of a logger to the *SetLevel* function in the logging package, e.g.:
 
+```bash
+logging.SetLevel(logging.FatalLevel, "controller")
+```
 
-
-
-
-
+2- Using *SetLevel* function of each logger, e.g.
+```bash
+log.SetLevel(logging.WarnLevel)
+```
 
 
 
