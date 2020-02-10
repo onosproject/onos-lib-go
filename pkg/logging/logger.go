@@ -74,6 +74,7 @@ func (l *Log) SetLevel(level Level) {
 					}))
 			newLogger.Named(string(node.Key()))
 			loggerNode.stdLogger = newLogger
+			l.stdLogger = newLogger
 			logger = Log{newLogger, loggerNode.encoder, loggerNode.writer, string(node.Key())}
 			loggers.Insert(node.Key(), logger)
 		}
