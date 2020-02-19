@@ -21,22 +21,11 @@ logger interface that implements
 
 There are two methods that a user can use to add a logger to a package or go program:
 
-*  Create a logger using the default configuration as follows:
-
-   1- First, create a logger using the default configuration by providing just a name and a level for the logger to *AddLogger* function.
-     For example:
-      ```bash
-        logging.AddLogger("warn", "controller")   
-        logging.AddLogger("info", "controller", "device")
-        logging.AddLogger("error", "controller", "device", "change")
-      ```
-      > if you don't provide the logger level, the logger inherits the parent logger
-      > and if none of its parents exists then it inherits from root logger (i.e. default logger).
-    
-   2- Get a logger from the list of loggers using its name:
-     ```bash
-     log, found := logging.GetLogger("controller", "device")
-     ``` 
+*  Create a logger using the default configuration as follows: 
+   
+   ```bash
+     log, := logging.GetLogger("controller", "device")
+   ``` 
  
 * Create a logger using a custom configuration as follows:
    
@@ -54,13 +43,8 @@ There are two methods that a user can use to add a logger to a package or go pro
    		SetECTimeEncoder(zc.ISO8601TimeEncoder).
    		SetECEncodeLevel(zc.CapitalLevelEncoder).
    		Build()
-   	cfg.AddLogger() 
-   ```
-   
-   2- Get a logger from the list of loggers using its name:
-   ```bash
-   log, found := logging.GetLogger("controller", "device", "change")	
-   ```
+   	log := cfg.GetLogger() 
+   ``` 
   
 ### Change Log Level at Runtime
 
@@ -69,7 +53,7 @@ There are two different ways to change log level of a logger at runtime:
 1- By providing the new log level and the name of a logger to the *SetLevel* function in the logging package, e.g.:
 
 ```bash
-logging.SetLevel(logging.FatalLevel, "controller")
+newLogger := logging.SetLevel(logging.FatalLevel, "controller")
 ```
 
 2- Using *SetLevel* function of each logger, e.g.
