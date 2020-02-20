@@ -22,26 +22,18 @@ import (
 )
 
 func TestHierarchicalLogger(t *testing.T) {
-	AddLogger("warn", "foo")
-	AddLogger("", "foo", "bar")
-	AddLogger("error", "foo", "bar", "baz")
-
-	fooLogger, found := GetLogger("foo")
-	assert.Equal(t, found, true)
+	fooLogger := GetLogger("foo")
 	assert.NotNil(t, fooLogger.stdLogger)
 
 	// Inherits from foo logger (i.e. warn level)
-	fooBarLogger, found := GetLogger("foo", "bar")
-	assert.Equal(t, found, true)
+	fooBarLogger := GetLogger("foo", "bar")
 	assert.NotNil(t, fooBarLogger.stdLogger)
 
-	fooBarBazLogger, found := GetLogger("foo", "bar", "baz")
-	assert.Equal(t, found, true)
+	fooBarBazLogger := GetLogger("foo", "bar", "baz")
 	assert.NotNil(t, fooBarBazLogger.stdLogger)
 
-	fooBarBadLogger, found := GetLogger("foo", "bar", "bad")
-	assert.Equal(t, found, false)
-	assert.Nil(t, fooBarBadLogger.stdLogger)
+	fooBarBadLogger := GetLogger("foo", "bar", "bad")
+	assert.NotNil(t, fooBarBadLogger.stdLogger)
 
 	cfg := Configuration{}
 
@@ -56,9 +48,8 @@ func TestHierarchicalLogger(t *testing.T) {
 		SetECTimeEncoder(zc.ISO8601TimeEncoder).
 		SetECEncodeLevel(zc.CapitalLevelEncoder).
 		Build()
-	cfg.AddLogger()
-	loggerWithCustomConfig, found := GetLogger("config", "foo", "bar")
-	assert.Equal(t, found, true)
+
+	loggerWithCustomConfig := cfg.GetLogger()
 	assert.NotNil(t, loggerWithCustomConfig.stdLogger)
 
 }

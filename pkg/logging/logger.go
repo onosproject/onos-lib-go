@@ -209,7 +209,7 @@ func GetKey(name string) art.Key {
 	return art.Key(name)
 }
 
-func assignParentLevelLogger(name string) {
+func assignParentLevelLogger(name string) Log {
 	parentNames := findParentsNames(name)
 	for _, parentName := range parentNames {
 		parentLogger, found := loggers.Search(art.Key(parentName))
@@ -219,7 +219,7 @@ func assignParentLevelLogger(name string) {
 			zapLogger := zap.New(core).Named(name)
 			logger.stdLogger = zapLogger
 			loggers.Insert(art.Key(name), logger)
-			return
+			return logger
 		}
 	}
 	root := GetDefaultLogger()
@@ -227,25 +227,25 @@ func assignParentLevelLogger(name string) {
 	zapLogger := zap.New(core).Named(name)
 	root.stdLogger = zapLogger
 	loggers.Insert(art.Key(name), root)
+	return root
 }
 
 // GetLogger gets a logger based on a give name
-func GetLogger(names ...string) (Log, bool) {
+func GetLogger(names ...string) Log {
 	name := buildTreeName(names...)
 	value, found := GetLoggers().Search(GetKey(name))
 	if found {
-		return value.(Log), found
+		return value.(Log)
 	} else {
-		return Log{}, found
+		return AddLogger(InfoLevel, names...)
 	}
 }
 
-func (c *Configuration) AddLogger() {
+func (c *Configuration) GetLogger() Log {
 	level := c.zapConfig.Level.Level().String()
 	name := c.zapConfig.EncoderConfig.NameKey
 	if level == "" {
-		assignParentLevelLogger(name)
-		return
+		return assignParentLevelLogger(name)
 	}
 
 	atomLevel := zap.AtomicLevel{}
@@ -277,11 +277,12 @@ func (c *Configuration) AddLogger() {
 	configLogger = newLogger.Named(name)
 	logger := Log{configLogger, encoder, writer, name}
 	loggers.Insert(art.Key(name), logger)
+	return logger
 
 }
 
 // SetLevel change level of a logger and propagates the change to its children
-func SetLevel(level Level, names ...string) {
+func SetLevel(level Level, names ...string) Log {
 	name := buildTreeName(names...)
 	logger := Log{}
 	loggers.ForEachPrefix(art.Key(name), func(node art.Node) bool {
@@ -300,35 +301,35 @@ func SetLevel(level Level, names ...string) {
 		}
 		return true
 	})
+	return logger
 }
 
 // AddLogger adds a logger based on a given level and a hierarchy of names
-func AddLogger(level string, names ...string) {
+func AddLogger(level Level, names ...string) Log {
 	name := buildTreeName(names...)
-	if level == "" {
-		assignParentLevelLogger(name)
-		return
+	if level.String() == "" {
+		return assignParentLevelLogger(name)
 	}
 
 	atomLevel := zap.AtomicLevel{}
 	var internalLevel Level
 	switch level {
-	case zc.InfoLevel.String():
+	case InfoLevel:
 		atomLevel = zap.NewAtomicLevelAt(zc.InfoLevel)
 		internalLevel = InfoLevel
-	case zc.DebugLevel.String():
+	case DebugLevel:
 		atomLevel = zap.NewAtomicLevelAt(zc.DebugLevel)
 		internalLevel = DebugLevel
-	case zc.ErrorLevel.String():
+	case ErrorLevel:
 		atomLevel = zap.NewAtomicLevelAt(zc.ErrorLevel)
 		internalLevel = ErrorLevel
-	case zc.PanicLevel.String():
+	case PanicLevel:
 		atomLevel = zap.NewAtomicLevelAt(zc.PanicLevel)
 		internalLevel = PanicLevel
-	case zc.FatalLevel.String():
+	case FatalLevel:
 		atomLevel = zap.NewAtomicLevelAt(zc.FatalLevel)
 		internalLevel = FatalLevel
-	case zc.WarnLevel.String():
+	case WarnLevel:
 		atomLevel = zap.NewAtomicLevelAt(zc.WarnLevel)
 		internalLevel = WarnLevel
 	}
@@ -346,6 +347,7 @@ func AddLogger(level string, names ...string) {
 	configLogger = newLogger.Named(name)
 	logger := Log{configLogger, defaultEncoder, defaultWriter, name}
 	loggers.Insert(art.Key(name), logger)
+	return logger
 }
 
 // GetLoggers get loggers radix tree

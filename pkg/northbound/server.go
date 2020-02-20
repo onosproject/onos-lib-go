@@ -30,7 +30,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var log, _ = logging.GetLogger("northbound")
+var log = logging.GetLogger("northbound")
 
 // Service provides service-specific registration for grpc services.
 type Service interface {
@@ -54,7 +54,6 @@ type ServerConfig struct {
 
 // NewServer initializes gNMI server using the supplied configuration.
 func NewServer(cfg *ServerConfig) *Server {
-	logging.AddLogger("info", "northbound")
 	return &Server{
 		services: []Service{},
 		cfg:      cfg,
