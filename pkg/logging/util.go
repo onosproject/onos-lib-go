@@ -16,6 +16,7 @@ package logging
 
 import (
 	"bytes"
+	"strings"
 
 	zp "go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
@@ -92,4 +93,21 @@ func (e Errors) Error() string {
 		errBuf.WriteByte('\n')
 	}
 	return errBuf.String()
+}
+
+func buildTreeName(names ...string) string {
+	var treeName string
+	var values []string
+	values = append(values, names...)
+	treeName = strings.Join(values, "/")
+	return treeName
+}
+
+func findParentsNames(name string) []string {
+	var results []string
+	names := strings.Split(name, "/")
+	for i := 1; i < len(names); i++ {
+		results = append(results, strings.Join(names[:len(names)-i], "/"))
+	}
+	return results
 }

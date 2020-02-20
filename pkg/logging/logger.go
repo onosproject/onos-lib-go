@@ -15,9 +15,7 @@
 package logging
 
 import (
-	"fmt"
 	"os"
-	"strings"
 
 	art "github.com/plar/go-adaptive-radix-tree"
 
@@ -59,7 +57,11 @@ func init() {
 
 	rootLogger = newLogger.Named(defaultLoggerName)
 	loggers = art.New()
-	root = Log{rootLogger, defaultEncoder, defaultWriter, defaultLoggerName}
+	err := zap.RegisterSink("kafka", GetSink)
+	if err != nil {
+		// TODO error handling for sink registration
+	}
+	root = Log{rootLogger, defaultEncoder, defaultWriter, defaultLoggerName, nil}
 }
 
 // SetLevel defines a new logger level and propagate the change its children
@@ -77,11 +79,35 @@ func (l *Log) SetLevel(level Level) {
 			newLogger.Named(string(node.Key()))
 			loggerNode.stdLogger = newLogger
 			l.stdLogger = newLogger
-			logger = Log{newLogger, loggerNode.encoder, loggerNode.writer, string(node.Key())}
+			logger = Log{newLogger, loggerNode.encoder, loggerNode.writer, string(node.Key()), nil}
 			loggers.Insert(node.Key(), logger)
 		}
 		return true
 	})
+}
+
+func (l *Log) SetSink(sink SinkURL) {
+	l.sinkURLs = append(l.sinkURLs, sink)
+	key := art.Key(l.name)
+	value, found := loggers.Search(key)
+	if found {
+		loggerNode := value.(Log)
+		ws, _, err := zap.Open(sink.String())
+		if err != nil {
+		}
+		newLevel := intToAtomicLevel(InfoLevel)
+		newLogger := loggerNode.stdLogger.WithOptions(
+			zp.WrapCore(
+				func(zc.Core) zc.Core {
+					return zc.NewCore(loggerNode.encoder, ws, &newLevel)
+				}))
+		newLogger.Named(string(key))
+		loggerNode.stdLogger = newLogger
+		l.stdLogger = newLogger
+		logger := Log{newLogger, loggerNode.encoder, ws, string(key), nil}
+		loggers.Insert(key, logger)
+	}
+
 }
 
 // Debug logs a message at Debug level on the sugar logger.
@@ -189,23 +215,6 @@ func (l *Log) Warnw(msg string, keysAndValues ...interface{}) {
 	l.stdLogger.Sugar().Warnw(msg, keysAndValues...)
 }
 
-func buildTreeName(names ...string) string {
-	var treeName string
-	var values []string
-	values = append(values, names...)
-	treeName = strings.Join(values, "/")
-	return treeName
-}
-
-func findParentsNames(name string) []string {
-	var results []string
-	names := strings.Split(name, "/")
-	for i := 1; i < len(names); i++ {
-		results = append(results, strings.Join(names[:len(names)-i], "/"))
-	}
-	return results
-}
-
 // GetKey returns a key object of radix tree
 func GetKey(name string) art.Key {
 	return art.Key(name)
@@ -244,7 +253,6 @@ func GetLogger(names ...string) Log {
 }
 
 func (c *Configuration) GetLogger() Log {
-
 	level := c.zapConfig.Level.Level().String()
 	name := c.zapConfig.EncoderConfig.NameKey
 	if level == "" {
@@ -268,28 +276,21 @@ func (c *Configuration) GetLogger() Log {
 	}
 
 	sinkURLs := c.GetSinkURLs()
-	urls := make([]string, len(sinkURLs))
+	var urls []string
 	if len(sinkURLs) > 0 {
-		err := zap.RegisterSink("kafka", GetSink)
-		if err != nil {
-			return Log{}
-		}
-
 		for _, url := range sinkURLs {
-			fmt.Println(url)
 			urls = append(urls, url.String())
+
 		}
 
-		ws, _, err := zap.Open(urls[1])
+		ws, _, err := zap.Open(urls...)
 		if err != nil {
-			fmt.Println(err)
 			return Log{}
 		}
 
 		cfg := c.zapConfig
-		configLogger, _ := cfg.Build()
+		configLogger, _ := cfg.Build(zap.AddCallerSkip(1))
 		encoder := zc.NewJSONEncoder(cfg.EncoderConfig)
-		writer := zc.Lock(os.Stdout)
 		newLogger := configLogger.WithOptions(
 			zap.WrapCore(
 				func(zc.Core) zc.Core {
@@ -297,14 +298,14 @@ func (c *Configuration) GetLogger() Log {
 				}))
 
 		configLogger = newLogger.Named(name)
-		logger := Log{configLogger, encoder, writer, name}
+		logger := Log{configLogger, encoder, ws, name, nil}
 		loggers.Insert(art.Key(name), logger)
 		return logger
 
 	} else {
 
 		cfg := c.zapConfig
-		configLogger, _ := cfg.Build()
+		configLogger, _ := cfg.Build(zap.AddCallerSkip(1))
 		encoder := zc.NewJSONEncoder(cfg.EncoderConfig)
 		writer := zc.Lock(os.Stdout)
 		newLogger := configLogger.WithOptions(
@@ -314,7 +315,7 @@ func (c *Configuration) GetLogger() Log {
 				}))
 
 		configLogger = newLogger.Named(name)
-		logger := Log{configLogger, encoder, writer, name}
+		logger := Log{configLogger, encoder, writer, name, nil}
 		loggers.Insert(art.Key(name), logger)
 		return logger
 	}
@@ -336,7 +337,7 @@ func SetLevel(level Level, names ...string) Log {
 					}))
 			newLogger.Named(string(node.Key()))
 			loggerNode.stdLogger = newLogger
-			logger = Log{newLogger, loggerNode.encoder, loggerNode.writer, string(node.Key())}
+			logger = Log{newLogger, loggerNode.encoder, loggerNode.writer, string(node.Key()), nil}
 			loggers.Insert(node.Key(), logger)
 		}
 		return true
@@ -385,7 +386,7 @@ func AddLogger(level Level, names ...string) Log {
 			}))
 
 	configLogger = newLogger.Named(name)
-	logger := Log{configLogger, defaultEncoder, defaultWriter, name}
+	logger := Log{configLogger, defaultEncoder, defaultWriter, name, nil}
 	loggers.Insert(art.Key(name), logger)
 	return logger
 }
