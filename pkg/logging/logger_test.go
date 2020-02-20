@@ -48,8 +48,8 @@ func TestHierarchicalLogger(t *testing.T) {
 		SetECTimeEncoder(zc.ISO8601TimeEncoder).
 		SetECEncodeLevel(zc.CapitalLevelEncoder).
 		Build()
-	cfg.AddLogger()
-	loggerWithCustomConfig := GetLogger("config", "foo", "bar")
+
+	loggerWithCustomConfig := cfg.GetLogger()
 	assert.NotNil(t, loggerWithCustomConfig.stdLogger)
 
 }
