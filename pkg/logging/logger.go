@@ -88,7 +88,7 @@ func (l *Log) SetLevel(level Level) {
 	})
 }
 
-func (l *Log) DisableSink() {
+func (l *Log) RemoveSink() {
 	key := art.Key(l.name)
 	value, found := loggers.Search(key)
 	if found {
@@ -109,7 +109,7 @@ func (l *Log) DisableSink() {
 
 }
 
-func (l *Log) EnableSink(sink SinkURL) {
+func (l *Log) AddSink(sink SinkURL) {
 	key := art.Key(l.name)
 	value, found := loggers.Search(key)
 	if found {
