@@ -84,52 +84,52 @@ func (l *Log) SetLevel(level Level) {
 
 // Debug logs a message at Debug level on the sugar logger.
 func (l *Log) Debug(args ...interface{}) {
-	l.stdLogger.Sugar().Debug(args)
+	l.stdLogger.Sugar().Debug(args...)
 }
 
 // Debugf logs a message at Debugf level on the sugar logger.
 func (l *Log) Debugf(template string, args ...interface{}) {
-	l.stdLogger.Sugar().Debugf(template, args)
+	l.stdLogger.Sugar().Debugf(template, args...)
 }
 
 // Debugw logs a message at Debugw level on the sugar logger.
 func (l *Log) Debugw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Debugw(msg, keysAndValues)
+	l.stdLogger.Sugar().Debugw(msg, keysAndValues...)
 }
 
 // Info logs a message at Info level on the sugar logger
 func (l *Log) Info(args ...interface{}) {
-	l.stdLogger.Sugar().Info(args)
+	l.stdLogger.Sugar().Info(args...)
 }
 
 // Infof logs a message at Infof level on the sugar logger.
 func (l *Log) Infof(template string, args ...interface{}) {
-	l.stdLogger.Sugar().Infof(template, args)
+	l.stdLogger.Sugar().Infof(template, args...)
 }
 
 // Infow logs a message at Infow level on the sugar logger.
 func (l *Log) Infow(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Infow(msg, keysAndValues)
+	l.stdLogger.Sugar().Infow(msg, keysAndValues...)
 }
 
 // Error logs a message at Error level on the sugar logger
 func (l *Log) Error(args ...interface{}) {
-	l.stdLogger.Sugar().Error(args)
+	l.stdLogger.Sugar().Error(args...)
 }
 
 // Errorf logs a message at Errorf level on the sugar logger.
 func (l *Log) Errorf(template string, args ...interface{}) {
-	l.stdLogger.Sugar().Errorf(template, args)
+	l.stdLogger.Sugar().Errorf(template, args...)
 }
 
 // Errorw logs a message at Errorw level on the sugar logger.
 func (l *Log) Errorw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Errorw(msg, keysAndValues)
+	l.stdLogger.Sugar().Errorw(msg, keysAndValues...)
 }
 
 // Fatal logs a message at Fatal level on the sugar logger
 func (l *Log) Fatal(args ...interface{}) {
-	l.stdLogger.Sugar().Fatal(args)
+	l.stdLogger.Sugar().Fatal(args...)
 }
 
 // Fatalf logs a message at Fatalf level on the sugar logger.
@@ -139,52 +139,52 @@ func (l *Log) Fatalf(template string, args ...interface{}) {
 
 // Fatalw logs a message at Fatalw level on the sugar logger.
 func (l *Log) Fatalw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Fatalw(msg, keysAndValues)
+	l.stdLogger.Sugar().Fatalw(msg, keysAndValues...)
 }
 
 // Panic logs a message at Panic level on the sugar logger
 func (l *Log) Panic(args ...interface{}) {
-	l.stdLogger.Sugar().Panic(args)
+	l.stdLogger.Sugar().Panic(args...)
 }
 
 // Panicf logs a message at Panicf level on the sugar logger.
 func (l *Log) Panicf(template string, args ...interface{}) {
-	l.stdLogger.Sugar().Panicf(template, args)
+	l.stdLogger.Sugar().Panicf(template, args...)
 }
 
 // Panicw logs a message at Panicw level on the sugar logger.
 func (l *Log) Panicw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Panicw(msg, keysAndValues)
+	l.stdLogger.Sugar().Panicw(msg, keysAndValues...)
 }
 
 // DPanic logs a message at DPanic level on the sugar logger
 func (l *Log) DPanic(args ...interface{}) {
-	l.stdLogger.Sugar().DPanic(args)
+	l.stdLogger.Sugar().DPanic(args...)
 }
 
 // DPanicf logs a message at DPanicf level on the sugar logger.
 func (l *Log) DPanicf(template string, args ...interface{}) {
-	l.stdLogger.Sugar().DPanicf(template, args)
+	l.stdLogger.Sugar().DPanicf(template, args...)
 }
 
 // Panicw logs a message at DPanicw level on the sugar logger.
 func (l *Log) DPanicw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().DPanicw(msg, keysAndValues)
+	l.stdLogger.Sugar().DPanicw(msg, keysAndValues...)
 }
 
 // Warn logs a message at Warn level on the sugar logger
 func (l *Log) Warn(args ...interface{}) {
-	l.stdLogger.Sugar().Warn(args)
+	l.stdLogger.Sugar().Warn(args...)
 }
 
 // Warnf logs a message at Warnf level on the sugar logger.
 func (l *Log) Warnf(template string, args ...interface{}) {
-	l.stdLogger.Sugar().Warnf(template, args)
+	l.stdLogger.Sugar().Warnf(template, args...)
 }
 
 // Warnw logs a message at Warnw level on the sugar logger.
 func (l *Log) Warnw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Warnw(msg, keysAndValues)
+	l.stdLogger.Sugar().Warnw(msg, keysAndValues...)
 }
 
 func buildTreeName(names ...string) string {
