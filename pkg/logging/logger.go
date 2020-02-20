@@ -33,6 +33,7 @@ func getDefaultConfig(name string, level Level) Configuration {
 		SetErrorOutputPaths([]string{"stderr"}).
 		SetECMsgKey("msg").
 		SetECLevelKey("level").
+		SetECEncoderCaller("caller", zc.ShortCallerEncoder).
 		SetECTimeKey("ts").
 		SetECTimeEncoder(zc.ISO8601TimeEncoder).
 		SetECEncodeLevel(zc.CapitalLevelEncoder).
@@ -45,7 +46,7 @@ func getDefaultConfig(name string, level Level) Configuration {
 func init() {
 	defaultLoggerName := "root"
 	cfg := getDefaultConfig(defaultLoggerName, levelToInt(zc.InfoLevel))
-	rootLogger, _ := cfg.GetZapConfig().Build()
+	rootLogger, _ := cfg.GetZapConfig().Build(zap.AddCallerSkip(1))
 	defaultAtomLevel := zap.NewAtomicLevelAt(zc.InfoLevel)
 	defaultEncoder := zc.NewJSONEncoder(cfg.GetZapConfig().EncoderConfig)
 	defaultWriter := zc.Lock(os.Stdout)
@@ -265,7 +266,7 @@ func (c *Configuration) GetLogger() Log {
 	}
 
 	cfg := c.zapConfig
-	configLogger, _ := cfg.Build()
+	configLogger, _ := cfg.Build(zap.AddCallerSkip(1))
 	encoder := zc.NewJSONEncoder(cfg.EncoderConfig)
 	writer := zc.Lock(os.Stdout)
 	newLogger := configLogger.WithOptions(
@@ -335,7 +336,7 @@ func AddLogger(level Level, names ...string) Log {
 	}
 
 	cfg := getDefaultConfig(name, internalLevel)
-	configLogger, _ := cfg.GetZapConfig().Build()
+	configLogger, _ := cfg.GetZapConfig().Build(zap.AddCallerSkip(1))
 	defaultEncoder := zc.NewJSONEncoder(cfg.GetZapConfig().EncoderConfig)
 	defaultWriter := zc.Lock(os.Stdout)
 	newLogger := configLogger.WithOptions(

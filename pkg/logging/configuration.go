@@ -41,7 +41,7 @@ type ConfigurationBuilder interface {
 	SetECTimeEncoder(zc.TimeEncoder) ConfigurationBuilder
 	SetName(...string) ConfigurationBuilder
 	SetECEncodeDuration(zc.DurationEncoder) ConfigurationBuilder
-	SetECEncoderCaller(encoder zc.CallerEncoder) ConfigurationBuilder
+	SetECEncoderCaller(string, zc.CallerEncoder) ConfigurationBuilder
 	Build() Configuration
 }
 
@@ -142,8 +142,9 @@ func (c *Configuration) SetECEncodeDuration(encodeDuration zc.DurationEncoder) C
 }
 
 // SetECEncoderCaller sets log encoder config encoder caller
-func (c *Configuration) SetECEncoderCaller(encoderCaller zc.CallerEncoder) ConfigurationBuilder {
+func (c *Configuration) SetECEncoderCaller(callerKey string, encoderCaller zc.CallerEncoder) ConfigurationBuilder {
 	c.zapConfig.EncoderConfig.EncodeCaller = encoderCaller
+	c.zapConfig.EncoderConfig.CallerKey = callerKey
 	return c
 }
 
