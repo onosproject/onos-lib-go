@@ -30,6 +30,7 @@ There are two methods that a user can use to add a logger to a package or go pro
 * Create a logger using a custom configuration as follows:
    
    1- First, create a logger using a custom configuration as follows:
+   
    ```bash
    cfg := logging.Configuration{}
    	cfg.SetEncoding("json").
@@ -60,6 +61,8 @@ newLogger := logging.SetLevel(logging.FatalLevel, "controller")
 ```bash
 log.SetLevel(logging.WarnLevel)
 ```
+
+### Change the Logger Sink
 
 
 

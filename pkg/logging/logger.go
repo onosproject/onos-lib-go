@@ -63,7 +63,7 @@ func init() {
 	if err != nil {
 		fmt.Println("Kafka Sink cannot be registered", err)
 	}
-	root = Log{rootLogger, defaultEncoder, defaultWriter, defaultLoggerName, nil}
+	root = Log{rootLogger, defaultEncoder, defaultWriter, defaultLoggerName}
 }
 
 // SetLevel defines a new logger level and propagate the change its children
@@ -81,15 +81,35 @@ func (l *Log) SetLevel(level Level) {
 			newLogger.Named(string(node.Key()))
 			loggerNode.stdLogger = newLogger
 			l.stdLogger = newLogger
-			logger = Log{newLogger, loggerNode.encoder, loggerNode.writer, string(node.Key()), nil}
+			logger = Log{newLogger, loggerNode.encoder, loggerNode.writer, string(node.Key())}
 			loggers.Insert(node.Key(), logger)
 		}
 		return true
 	})
 }
 
-func (l *Log) SetSink(sink SinkURL) {
-	l.sinkURLs = append(l.sinkURLs, sink)
+func (l *Log) DisableSink() {
+	key := art.Key(l.name)
+	value, found := loggers.Search(key)
+	if found {
+		loggerNode := value.(Log)
+		newLevel := intToAtomicLevel(InfoLevel)
+		defaultWriter := zc.Lock(os.Stdout)
+		newLogger := loggerNode.stdLogger.WithOptions(
+			zp.WrapCore(
+				func(zc.Core) zc.Core {
+					return zc.NewCore(loggerNode.encoder, defaultWriter, &newLevel)
+				}))
+		newLogger.Named(string(key))
+		loggerNode.stdLogger = newLogger
+		l.stdLogger = newLogger
+		logger := Log{newLogger, loggerNode.encoder, defaultWriter, string(key)}
+		loggers.Insert(key, logger)
+	}
+
+}
+
+func (l *Log) EnableSink(sink SinkURL) {
 	key := art.Key(l.name)
 	value, found := loggers.Search(key)
 	if found {
@@ -107,7 +127,7 @@ func (l *Log) SetSink(sink SinkURL) {
 		newLogger.Named(string(key))
 		loggerNode.stdLogger = newLogger
 		l.stdLogger = newLogger
-		logger := Log{newLogger, loggerNode.encoder, ws, string(key), nil}
+		logger := Log{newLogger, loggerNode.encoder, ws, string(key)}
 		loggers.Insert(key, logger)
 	}
 
@@ -301,7 +321,7 @@ func (c *Configuration) GetLogger() Log {
 				}))
 
 		configLogger = newLogger.Named(name)
-		logger := Log{configLogger, encoder, ws, name, nil}
+		logger := Log{configLogger, encoder, ws, name}
 		loggers.Insert(art.Key(name), logger)
 		return logger
 
@@ -318,7 +338,7 @@ func (c *Configuration) GetLogger() Log {
 				}))
 
 		configLogger = newLogger.Named(name)
-		logger := Log{configLogger, encoder, writer, name, nil}
+		logger := Log{configLogger, encoder, writer, name}
 		loggers.Insert(art.Key(name), logger)
 		return logger
 	}
@@ -340,7 +360,7 @@ func SetLevel(level Level, names ...string) Log {
 					}))
 			newLogger.Named(string(node.Key()))
 			loggerNode.stdLogger = newLogger
-			logger = Log{newLogger, loggerNode.encoder, loggerNode.writer, string(node.Key()), nil}
+			logger = Log{newLogger, loggerNode.encoder, loggerNode.writer, string(node.Key())}
 			loggers.Insert(node.Key(), logger)
 		}
 		return true
@@ -389,7 +409,7 @@ func AddLogger(level Level, names ...string) Log {
 			}))
 
 	configLogger = newLogger.Named(name)
-	logger := Log{configLogger, defaultEncoder, defaultWriter, name, nil}
+	logger := Log{configLogger, defaultEncoder, defaultWriter, name}
 	loggers.Insert(art.Key(name), logger)
 	return logger
 }

@@ -85,7 +85,6 @@ type Log struct {
 	encoder   zapcore.Encoder
 	writer    zapcore.WriteSyncer
 	name      string
-	sinkURLs  []SinkURL
 }
 
 var loggers art.Tree
