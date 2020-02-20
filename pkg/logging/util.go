@@ -15,6 +15,8 @@
 package logging
 
 import (
+	"bytes"
+
 	zp "go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
 )
@@ -78,4 +80,16 @@ func StringToInt(l string) Level {
 		return DPanicLevel
 	}
 	return ErrorLevel
+}
+
+// Errors concatenates multiple error into one error buf
+type Errors []error
+
+func (e Errors) Error() string {
+	var errBuf bytes.Buffer
+	for _, err := range e {
+		errBuf.WriteString(err.Error())
+		errBuf.WriteByte('\n')
+	}
+	return errBuf.String()
 }

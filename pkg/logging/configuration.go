@@ -22,6 +22,7 @@ import (
 // Configuration log config structure
 type Configuration struct {
 	zapConfig zp.Config
+	sinkURLs  []SinkURL
 }
 
 // ConfigurationBuilder log configuration builder interface
@@ -31,6 +32,7 @@ type ConfigurationBuilder interface {
 	SetDevelopment(bool) ConfigurationBuilder
 	SetOutputPaths([]string) ConfigurationBuilder
 	SetErrorOutputPaths([]string) ConfigurationBuilder
+	SetSinkURLs([]SinkURL) ConfigurationBuilder
 	//SetInitialFields(Fields) ConfigurationBuilder
 	SetECLevelKey(string) ConfigurationBuilder
 	SetECMsgKey(string) ConfigurationBuilder
@@ -43,6 +45,17 @@ type ConfigurationBuilder interface {
 	SetECEncodeDuration(zc.DurationEncoder) ConfigurationBuilder
 	SetECEncoderCaller(string, zc.CallerEncoder) ConfigurationBuilder
 	Build() Configuration
+}
+
+// GetSinkURLs gets sink urls
+func (c *Configuration) GetSinkURLs() []SinkURL {
+	return c.sinkURLs
+}
+
+// SetSinkURLs sets sink urls
+func (c *Configuration) SetSinkURLs(sinkURLs []SinkURL) ConfigurationBuilder {
+	c.sinkURLs = sinkURLs
+	return c
 }
 
 // GetZapConfig gets zap configuration

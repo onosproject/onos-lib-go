@@ -15,6 +15,7 @@
 package logging
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -243,6 +244,7 @@ func GetLogger(names ...string) Log {
 }
 
 func (c *Configuration) GetLogger() Log {
+
 	level := c.zapConfig.Level.Level().String()
 	name := c.zapConfig.EncoderConfig.NameKey
 	if level == "" {
@@ -265,20 +267,57 @@ func (c *Configuration) GetLogger() Log {
 		atomLevel = zap.NewAtomicLevelAt(zc.WarnLevel)
 	}
 
-	cfg := c.zapConfig
-	configLogger, _ := cfg.Build(zap.AddCallerSkip(1))
-	encoder := zc.NewJSONEncoder(cfg.EncoderConfig)
-	writer := zc.Lock(os.Stdout)
-	newLogger := configLogger.WithOptions(
-		zap.WrapCore(
-			func(zc.Core) zc.Core {
-				return zc.NewCore(encoder, writer, &atomLevel)
-			}))
+	sinkURLs := c.GetSinkURLs()
+	urls := make([]string, len(sinkURLs))
+	if len(sinkURLs) > 0 {
+		err := zap.RegisterSink("kafka", GetSink)
+		if err != nil {
+			return Log{}
+		}
 
-	configLogger = newLogger.Named(name)
-	logger := Log{configLogger, encoder, writer, name}
-	loggers.Insert(art.Key(name), logger)
-	return logger
+		for _, url := range sinkURLs {
+			fmt.Println(url)
+			urls = append(urls, url.String())
+		}
+
+		ws, _, err := zap.Open(urls[1])
+		if err != nil {
+			fmt.Println(err)
+			return Log{}
+		}
+
+		cfg := c.zapConfig
+		configLogger, _ := cfg.Build()
+		encoder := zc.NewJSONEncoder(cfg.EncoderConfig)
+		writer := zc.Lock(os.Stdout)
+		newLogger := configLogger.WithOptions(
+			zap.WrapCore(
+				func(zc.Core) zc.Core {
+					return zc.NewCore(encoder, ws, &atomLevel)
+				}))
+
+		configLogger = newLogger.Named(name)
+		logger := Log{configLogger, encoder, writer, name}
+		loggers.Insert(art.Key(name), logger)
+		return logger
+
+	} else {
+
+		cfg := c.zapConfig
+		configLogger, _ := cfg.Build()
+		encoder := zc.NewJSONEncoder(cfg.EncoderConfig)
+		writer := zc.Lock(os.Stdout)
+		newLogger := configLogger.WithOptions(
+			zap.WrapCore(
+				func(zc.Core) zc.Core {
+					return zc.NewCore(encoder, writer, &atomLevel)
+				}))
+
+		configLogger = newLogger.Named(name)
+		logger := Log{configLogger, encoder, writer, name}
+		loggers.Insert(art.Key(name), logger)
+		return logger
+	}
 
 }
 
