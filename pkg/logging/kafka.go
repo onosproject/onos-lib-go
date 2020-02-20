@@ -49,7 +49,7 @@ func getSink(brokers []string, topic string, config *kafka.Config) Sink {
 
 // GetSink  initialize a kafka sink instance
 func GetSink(u *url.URL) (zap.Sink, error) {
-	topic := "just_a_test_topic"
+	topic := "kafka_default_topic"
 	if t := u.Query().Get("topic"); len(t) > 0 {
 		topic = t
 	}

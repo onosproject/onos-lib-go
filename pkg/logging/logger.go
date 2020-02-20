@@ -17,6 +17,8 @@ package logging
 import (
 	"os"
 
+	"fmt"
+
 	art "github.com/plar/go-adaptive-radix-tree"
 
 	"go.uber.org/zap"
@@ -59,7 +61,7 @@ func init() {
 	loggers = art.New()
 	err := zap.RegisterSink("kafka", GetSink)
 	if err != nil {
-		// TODO error handling for sink registration
+		fmt.Println("Kafka Sink cannot be registered", err)
 	}
 	root = Log{rootLogger, defaultEncoder, defaultWriter, defaultLoggerName, nil}
 }
@@ -94,6 +96,7 @@ func (l *Log) SetSink(sink SinkURL) {
 		loggerNode := value.(Log)
 		ws, _, err := zap.Open(sink.String())
 		if err != nil {
+			fmt.Println("Cannot open sink", err)
 		}
 		newLevel := intToAtomicLevel(InfoLevel)
 		newLogger := loggerNode.stdLogger.WithOptions(
