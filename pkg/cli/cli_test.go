@@ -23,13 +23,13 @@ import (
 // These are mainly placeholders for the moment for functions that are not
 // otherwise called
 func Test_InitConfig(t *testing.T) {
-	initConfig("test-module")
+	InitConfig("test-module")
 
 	assert.Equal(t, "test-module", configName)
 }
 
 func Test_GetConnection(t *testing.T) {
-	conn, err := getConnection(&cobra.Command{
+	conn, err := GetConnection(&cobra.Command{
 		Short: "test command",
 	})
 	assert.NilError(t, err)
@@ -37,13 +37,13 @@ func Test_GetConnection(t *testing.T) {
 }
 
 func Test_AddConfigFlags(t *testing.T) {
-	addConfigFlags(&cobra.Command{
+	AddConfigFlags(&cobra.Command{
 		Short: "test command",
 	})
 }
 
 func Test_GetConfigCommand(t *testing.T) {
-	getConfigCommand()
+	GetConfigCommand()
 }
 
 func Test_RunConfigSetCommand(t *testing.T) {

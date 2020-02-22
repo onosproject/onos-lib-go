@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	configDir  = ".onos"
+	configDir      = ".onos"
 	addressKey     = "service-address"
 	defaultAddress = "localhost:5150"
 
@@ -46,7 +46,8 @@ var configOptions = []string{
 	noTLSKey,
 }
 
-func addConfigFlags(cmd *cobra.Command) {
+// AddConfigFlags
+func AddConfigFlags(cmd *cobra.Command) {
 	viper.SetDefault(addressKey, defaultAddress)
 
 	cmd.PersistentFlags().String(addressFlag, viper.GetString(addressKey), "the onos-ran service address")
@@ -55,7 +56,7 @@ func addConfigFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().Bool(noTLSFlag, viper.GetBool(noTLSKey), "if present, do not use TLS")
 }
 
-func getConfigCommand() *cobra.Command {
+func GetConfigCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config {set,get,delete,init} [args]",
 		Short: "Manage the CLI configuration",
@@ -184,7 +185,7 @@ func noTLS(cmd *cobra.Command) bool {
 	return tls
 }
 
-func initConfig(configNameInit string) {
+func InitConfig(configNameInit string) {
 	home, err := homedir.Dir()
 	if err != nil {
 		panic(err)

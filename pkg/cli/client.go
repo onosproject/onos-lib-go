@@ -22,8 +22,8 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// getConnection returns a gRPC client connection to the onos service
-func getConnection(cmd *cobra.Command) (*grpc.ClientConn, error) {
+// GetConnection returns a gRPC client connection to the onos service
+func GetConnection(cmd *cobra.Command) (*grpc.ClientConn, error) {
 	address := getAddress(cmd)
 	certPath := getCertPath(cmd)
 	keyPath := getKeyPath(cmd)
