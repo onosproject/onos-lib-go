@@ -59,7 +59,7 @@ func init() {
 
 	rootLogger = newLogger.Named(defaultLoggerName)
 	loggers = art.New()
-	err := zap.RegisterSink("kafka", GetSink)
+	err := zap.RegisterSink("kafka", InitSink)
 	if err != nil {
 		fmt.Println("Kafka Sink cannot be registered", err)
 	}

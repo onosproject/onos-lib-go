@@ -68,7 +68,7 @@ Currently, we support enabling one Kafka sink for a logger. To do so, you can ru
 logs to a Kafka cluster:
 
 ```bash
-sinkUrl := logging.SinkURL{url.URL{Scheme: "kafka", Host: "127.0.0.1:9092", RawQuery: "topic=test_log_topic"}}
+sinkUrl := logging.SinkURL{url.URL{Scheme: "kafka", Host: "127.0.0.1:9092", RawQuery: "topic=test_log_topic&key=test-key"}}
 log.EnableSink(sinkURL)
 ```
 

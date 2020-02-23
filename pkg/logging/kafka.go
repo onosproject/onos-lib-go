@@ -19,7 +19,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	kafka "github.com/Shopify/sarama"
 	"go.uber.org/zap"
@@ -33,6 +32,7 @@ var (
 type Sink struct {
 	producer kafka.SyncProducer
 	topic    string
+	key      string
 }
 
 func getSink(brokers []string, topic string, config *kafka.Config) Sink {
@@ -48,7 +48,7 @@ func getSink(brokers []string, topic string, config *kafka.Config) Sink {
 }
 
 // GetSink  initialize a kafka sink instance
-func GetSink(u *url.URL) (zap.Sink, error) {
+func InitSink(u *url.URL) (zap.Sink, error) {
 	topic := "kafka_default_topic"
 	if t := u.Query().Get("topic"); len(t) > 0 {
 		topic = t
@@ -82,9 +82,9 @@ func GetSink(u *url.URL) (zap.Sink, error) {
 func (s Sink) Write(b []byte) (n int, err error) {
 	var errors Errors
 	for _, topic := range strings.Split(s.topic, ",") {
-		_, _, err = s.producer.SendMessage(&kafka.ProducerMessage{
+		_, _, err := s.producer.SendMessage(&kafka.ProducerMessage{
 			Topic: topic,
-			Key:   kafka.StringEncoder(time.Now().String()),
+			Key:   kafka.StringEncoder(s.key),
 			Value: kafka.ByteEncoder(b),
 		})
 		if err != nil {
