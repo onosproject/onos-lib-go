@@ -82,14 +82,25 @@ func InitSink(u *url.URL) (zap.Sink, error) {
 func (s Sink) Write(b []byte) (n int, err error) {
 	var errors Errors
 	for _, topic := range strings.Split(s.topic, ",") {
-		_, _, err := s.producer.SendMessage(&kafka.ProducerMessage{
-			Topic: topic,
-			Key:   kafka.StringEncoder(s.key),
-			Value: kafka.ByteEncoder(b),
-		})
-		if err != nil {
-			errors = append(errors, err)
+		if s.key != "" {
+			_, _, err := s.producer.SendMessage(&kafka.ProducerMessage{
+				Topic: topic,
+				Key:   kafka.StringEncoder(s.key),
+				Value: kafka.ByteEncoder(b),
+			})
+			if err != nil {
+				errors = append(errors, err)
+			}
+		} else {
+			_, _, err := s.producer.SendMessage(&kafka.ProducerMessage{
+				Topic: topic,
+				Value: kafka.ByteEncoder(b),
+			})
+			if err != nil {
+				errors = append(errors, err)
+			}
 		}
+
 	}
 	return len(b), errors
 }
