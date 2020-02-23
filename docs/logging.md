@@ -30,6 +30,7 @@ There are two methods that a user can use to add a logger to a package or go pro
 * Create a logger using a custom configuration as follows:
    
    1- First, create a logger using a custom configuration as follows:
+   
    ```bash
    cfg := logging.Configuration{}
    	cfg.SetEncoding("json").
@@ -61,6 +62,21 @@ newLogger := logging.SetLevel(logging.FatalLevel, "controller")
 log.SetLevel(logging.WarnLevel)
 ```
 
+### Change the Logger Sink
+
+Currently, we support enabling one Kafka sink for a logger. To do so, you can run the following command to enable forwarding 
+logs to a Kafka cluster:
+
+```bash
+sinkUrl := logging.SinkURL{url.URL{Scheme: "kafka", Host: "127.0.0.1:9092", RawQuery: "topic=test_log_topic&key=test-key"}}
+log.EnableSink(sinkURL)
+```
+
+And to disable writing to the Kafka cluster,
+
+```bash
+log.DisableSink()
+```
 
 
 

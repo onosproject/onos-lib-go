@@ -15,6 +15,8 @@
 package logging
 
 import (
+	"net/url"
+
 	art "github.com/plar/go-adaptive-radix-tree"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -87,3 +89,8 @@ type Log struct {
 
 var loggers art.Tree
 var root Log
+
+// SinkURL sink url
+type SinkURL struct {
+	url.URL
+}

@@ -15,6 +15,9 @@
 package logging
 
 import (
+	"bytes"
+	"strings"
+
 	zp "go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
 )
@@ -78,4 +81,33 @@ func StringToInt(l string) Level {
 		return DPanicLevel
 	}
 	return ErrorLevel
+}
+
+// Errors concatenates multiple error into one error buf
+type Errors []error
+
+func (e Errors) Error() string {
+	var errBuf bytes.Buffer
+	for _, err := range e {
+		errBuf.WriteString(err.Error())
+		errBuf.WriteByte('\n')
+	}
+	return errBuf.String()
+}
+
+func buildTreeName(names ...string) string {
+	var treeName string
+	var values []string
+	values = append(values, names...)
+	treeName = strings.Join(values, "/")
+	return treeName
+}
+
+func findParentsNames(name string) []string {
+	var results []string
+	names := strings.Split(name, "/")
+	for i := 1; i < len(names); i++ {
+		results = append(results, strings.Join(names[:len(names)-i], "/"))
+	}
+	return results
 }
