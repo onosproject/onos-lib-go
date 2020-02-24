@@ -23,15 +23,13 @@ There are two methods that a user can use to add a logger to a package or go pro
 
 *  Create a logger using the default configuration as follows: 
    
-   ```bash
+```bash
      log, := logging.GetLogger("controller", "device")
-   ``` 
+ ``` 
  
 * Create a logger using a custom configuration as follows:
-   
-   1- First, create a logger using a custom configuration as follows:
-   
-   ```bash
+    
+```bash
    cfg := logging.Configuration{}
    	cfg.SetEncoding("json").
    		SetLevel(logging.WarnLevel).
@@ -45,7 +43,7 @@ There are two methods that a user can use to add a logger to a package or go pro
    		SetECEncodeLevel(zc.CapitalLevelEncoder).
    		Build()
    	log := cfg.GetLogger() 
-   ``` 
+``` 
   
 ### Change Log Level at Runtime
 
@@ -58,6 +56,7 @@ newLogger := logging.SetLevel(logging.FatalLevel, "controller")
 ```
 
 2- Using *SetLevel* function of each logger, e.g.
+
 ```bash
 log.SetLevel(logging.WarnLevel)
 ```
