@@ -21,17 +21,17 @@ logger interface that implements
 
 There are two methods that a user can use to add a logger to a package or go program:
 
-*  Create a logger using the default configuration as follows: 
+Create a logger using the default configuration as follows: 
    
 ```bash
-     log, := logging.GetLogger("controller", "device")
+log, := logging.GetLogger("controller", "device")
  ``` 
- 
-* Create a logger using a custom configuration as follows:
+
+Create a logger using a custom configuration as follows:
     
 ```bash
-   cfg := logging.Configuration{}
-   	cfg.SetEncoding("json").
+cfg := logging.Configuration{}
+cfg.SetEncoding("json").
    		SetLevel(logging.WarnLevel).
    		SetOutputPaths([]string{"stdout"}).
    		SetName("controller", "device", "change").
@@ -42,7 +42,7 @@ There are two methods that a user can use to add a logger to a package or go pro
    		SetECTimeEncoder(zc.ISO8601TimeEncoder).
    		SetECEncodeLevel(zc.CapitalLevelEncoder).
    		Build()
-   	log := cfg.GetLogger() 
+log := cfg.GetLogger() 
 ``` 
   
 ### Change Log Level at Runtime
