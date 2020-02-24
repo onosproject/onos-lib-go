@@ -25,7 +25,7 @@ Create a logger using the default configuration as follows:
    
 ```bash
 log, := logging.GetLogger("controller", "device")
- ``` 
+``` 
 
 Create a logger using a custom configuration as follows:
     
@@ -68,13 +68,13 @@ logs to a Kafka cluster:
 
 ```bash
 sinkUrl := logging.SinkURL{url.URL{Scheme: "kafka", Host: "127.0.0.1:9092", RawQuery: "topic=test_log_topic&key=test-key"}}
-log.EnableSink(sinkURL)
+log.AddSink(sinkURL)
 ```
 
-And to disable writing to the Kafka cluster,
+And to disable writing to the Kafka cluster, you can remove the sink as follows:
 
 ```bash
-log.DisableSink()
+log.RemoveSink()
 ```
 
 
