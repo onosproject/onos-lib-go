@@ -24,6 +24,12 @@ license_check: # @HELP examine and ensure license headers exist
 	@if [ ! -d "../build-tools" ]; then cd .. && git clone https://github.com/onosproject/build-tools.git; fi
 	./../build-tools/licensing/boilerplate.py -v --rootdir=${CURDIR}
 
+protos: # @HELP compile the protobuf files (using protoc-go Docker)
+	docker run -it -v `pwd`:/go/src/github.com/onosproject/onos-lib-go \
+		-w /go/src/github.com/onosproject/onos-lib-go \
+		--entrypoint build/bin/compile-protos.sh \
+		onosproject/protoc-go:stable
+
 
 
 all: test
