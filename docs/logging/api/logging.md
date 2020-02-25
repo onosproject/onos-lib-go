@@ -3,31 +3,31 @@
 
 ## Table of Contents
 
-- [pkg/logging/api/logging.proto](#pkg/logging/api/logging.proto)
-    - [SetLevelRequest](#onos.lib.go.logger.SetLevelRequest)
-    - [SetLevelResponse](#onos.lib.go.logger.SetLevelResponse)
-    - [SetSinkRequest](#onos.lib.go.logger.SetSinkRequest)
-    - [SetSinkResponse](#onos.lib.go.logger.SetSinkResponse)
+- [api/logging/logging.proto](#api/logging/logging.proto)
+    - [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest)
+    - [SetLevelResponse](#onos.lib.go.logging.SetLevelResponse)
+    - [SetSinkRequest](#onos.lib.go.logging.SetSinkRequest)
+    - [SetSinkResponse](#onos.lib.go.logging.SetSinkResponse)
   
-    - [Level](#onos.lib.go.logger.Level)
-    - [ResponseStatus](#onos.lib.go.logger.ResponseStatus)
+    - [Level](#onos.lib.go.logging.Level)
+    - [ResponseStatus](#onos.lib.go.logging.ResponseStatus)
   
   
-    - [logger](#onos.lib.go.logger.logger)
+    - [logger](#onos.lib.go.logging.logger)
   
 
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="pkg/logging/api/logging.proto"></a>
+<a name="api/logging/logging.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## pkg/logging/api/logging.proto
+## api/logging/logging.proto
 
 
 
-<a name="onos.lib.go.logger.SetLevelRequest"></a>
+<a name="onos.lib.go.logging.SetLevelRequest"></a>
 
 ### SetLevelRequest
 SetLevelRequest request for setting a logger level
@@ -36,14 +36,14 @@ SetLevelRequest request for setting a logger level
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | logger_name | [string](#string) |  | logger name |
-| level | [Level](#onos.lib.go.logger.Level) |  | logger level |
+| level | [Level](#onos.lib.go.logging.Level) |  | logger level |
 
 
 
 
 
 
-<a name="onos.lib.go.logger.SetLevelResponse"></a>
+<a name="onos.lib.go.logging.SetLevelResponse"></a>
 
 ### SetLevelResponse
 SetLevelResponse response for setting a logger level
@@ -51,14 +51,14 @@ SetLevelResponse response for setting a logger level
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| response_status | [ResponseStatus](#onos.lib.go.logger.ResponseStatus) |  |  |
+| response_status | [ResponseStatus](#onos.lib.go.logging.ResponseStatus) |  |  |
 
 
 
 
 
 
-<a name="onos.lib.go.logger.SetSinkRequest"></a>
+<a name="onos.lib.go.logging.SetSinkRequest"></a>
 
 ### SetSinkRequest
 SetSinkRequest request for setting a sink
@@ -73,7 +73,7 @@ SetSinkRequest request for setting a sink
 
 
 
-<a name="onos.lib.go.logger.SetSinkResponse"></a>
+<a name="onos.lib.go.logging.SetSinkResponse"></a>
 
 ### SetSinkResponse
 SetSinkResponse response for setting a sink
@@ -81,7 +81,7 @@ SetSinkResponse response for setting a sink
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| response_status | [ResponseStatus](#onos.lib.go.logger.ResponseStatus) |  |  |
+| response_status | [ResponseStatus](#onos.lib.go.logging.ResponseStatus) |  |  |
 
 
 
@@ -90,7 +90,7 @@ SetSinkResponse response for setting a sink
  
 
 
-<a name="onos.lib.go.logger.Level"></a>
+<a name="onos.lib.go.logging.Level"></a>
 
 ### Level
 Logger level
@@ -106,7 +106,7 @@ Logger level
 
 
 
-<a name="onos.lib.go.logger.ResponseStatus"></a>
+<a name="onos.lib.go.logging.ResponseStatus"></a>
 
 ### ResponseStatus
 
@@ -123,15 +123,15 @@ Logger level
  
 
 
-<a name="onos.lib.go.logger.logger"></a>
+<a name="onos.lib.go.logging.logger"></a>
 
 ### logger
 logger service provides rpc functions to controller a logger remotely
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| SetLevel | [SetLevelRequest](#onos.lib.go.logger.SetLevelRequest) | [SetLevelResponse](#onos.lib.go.logger.SetLevelResponse) | Sets a logger level |
-| SetSink | [SetSinkRequest](#onos.lib.go.logger.SetSinkRequest) | [SetSinkResponse](#onos.lib.go.logger.SetSinkResponse) | Sets a sink for a logger |
+| SetLevel | [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest) | [SetLevelResponse](#onos.lib.go.logging.SetLevelResponse) | Sets a logger level |
+| SetSink | [SetSinkRequest](#onos.lib.go.logging.SetSinkRequest) | [SetSinkResponse](#onos.lib.go.logging.SetSinkResponse) | Sets a sink for a logger |
 
  
 
