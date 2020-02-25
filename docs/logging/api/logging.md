@@ -67,6 +67,8 @@ SetSinkRequest request for setting a sink
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | logger_name | [string](#string) |  |  |
+| topic | [string](#string) |  |  |
+| key | [string](#string) |  |  |
 
 
 

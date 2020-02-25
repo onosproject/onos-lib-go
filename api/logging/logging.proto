@@ -74,6 +74,9 @@ message SetLevelResponse {
 // SetSinkRequest request for setting a sink
 message SetSinkRequest {
     string logger_name = 1;
+    string topic = 2;
+    string key = 3;
+
 }
 
 // SetSinkResponse response for setting a sink

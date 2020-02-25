@@ -15,6 +15,8 @@
 package logging
 
 import (
+	"errors"
+
 	"github.com/onosproject/onos-lib-go/api/logging"
 	"github.com/onosproject/onos-lib-go/pkg/logging/service"
 
@@ -44,8 +46,33 @@ type Server struct {
 
 // SetLevel implements SetLevel rpc function to set a logger level
 func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*logging.SetLevelResponse, error) {
+	name := req.GetLoggerName()
+	level := req.GetLevel()
+	if name == "" {
+		return &logging.SetLevelResponse{
+			ResponseStatus: logging.ResponseStatus_PRECONDITION_FAILED,
+		}, errors.New("precondition for set level request is failed")
+	}
 
-	return &logging.SetLevelResponse{}, nil
+	logger := GetLogger(name)
+	switch level {
+	case logging.Level_INFO:
+		logger.SetLevel(InfoLevel)
+	case logging.Level_DEBUG:
+		logger.SetLevel(DebugLevel)
+	case logging.Level_ERROR:
+		logger.SetLevel(ErrorLevel)
+	case logging.Level_PANIC:
+		logger.SetLevel(PanicLevel)
+	case logging.Level_DPANIC:
+		logger.SetLevel(DPanicLevel)
+	case logging.Level_FATAL:
+		logger.SetLevel(FatalLevel)
+	}
+
+	return &logging.SetLevelResponse{
+		ResponseStatus: logging.ResponseStatus_OK,
+	}, nil
 }
 
 // SetSink implements SetSink rpc function to set a sink for a logger
