@@ -11,6 +11,7 @@ require (
 	github.com/spf13/viper v1.5.0
 	github.com/stretchr/testify v1.4.0
 	go.uber.org/zap v1.13.0
+	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 	google.golang.org/grpc v1.27.1
 	gotest.tools v2.2.0+incompatible
 )
