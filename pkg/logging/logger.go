@@ -269,8 +269,10 @@ func GetLogger(names ...string) Log {
 	name := buildTreeName(names...)
 	value, found := GetLoggers().Search(GetKey(name))
 	if found {
+		fmt.Println("found")
 		return value.(Log)
 	} else {
+		fmt.Println("not found")
 		return AddLogger(InfoLevel, names...)
 	}
 }

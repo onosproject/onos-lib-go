@@ -77,6 +77,12 @@ func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*l
 
 // SetSink implements SetSink rpc function to set a sink for a logger
 func (s *Server) SetSink(ctx context.Context, req *logging.SetSinkRequest) (*logging.SetSinkResponse, error) {
+	name := req.GetLoggerName()
+	if name == "" {
+		return &logging.SetSinkResponse{
+			ResponseStatus: logging.ResponseStatus_PRECONDITION_FAILED,
+		}, errors.New("precondition for set sink request is failed")
+	}
 
 	return &logging.SetSinkResponse{}, nil
 }

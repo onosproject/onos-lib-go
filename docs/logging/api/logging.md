@@ -69,6 +69,7 @@ SetSinkRequest request for setting a sink
 | logger_name | [string](#string) |  |  |
 | topic | [string](#string) |  |  |
 | key | [string](#string) |  |  |
+| address | [string](#string) |  |  |
 
 
 

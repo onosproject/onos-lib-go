@@ -76,7 +76,7 @@ message SetSinkRequest {
     string logger_name = 1;
     string topic = 2;
     string key = 3;
-
+    string address = 4;
 }
 
 // SetSinkResponse response for setting a sink

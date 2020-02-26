@@ -85,7 +85,7 @@ func (s *Server) Serve(started func(string)) error {
 		// Load default Certificates
 		clientCerts, err := tls.X509KeyPair([]byte(certs.DefaultLocalhostCrt), []byte(certs.DefaultLocalhostKey))
 		if err != nil {
-			//log.Error("Error loading default certs")
+			fmt.Println("Error loading default certs")
 			return err
 		}
 		tlsCfg.Certificates = []tls.Certificate{clientCerts}
