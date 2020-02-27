@@ -6,8 +6,6 @@
 - [api/logging/logging.proto](#api/logging/logging.proto)
     - [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest)
     - [SetLevelResponse](#onos.lib.go.logging.SetLevelResponse)
-    - [SetSinkRequest](#onos.lib.go.logging.SetSinkRequest)
-    - [SetSinkResponse](#onos.lib.go.logging.SetSinkResponse)
   
     - [Level](#onos.lib.go.logging.Level)
     - [ResponseStatus](#onos.lib.go.logging.ResponseStatus)
@@ -57,39 +55,6 @@ SetLevelResponse response for setting a logger level
 
 
 
-
-<a name="onos.lib.go.logging.SetSinkRequest"></a>
-
-### SetSinkRequest
-SetSinkRequest request for setting a sink
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| logger_name | [string](#string) |  |  |
-| topic | [string](#string) |  |  |
-| key | [string](#string) |  |  |
-| address | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="onos.lib.go.logging.SetSinkResponse"></a>
-
-### SetSinkResponse
-SetSinkResponse response for setting a sink
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| response_status | [ResponseStatus](#onos.lib.go.logging.ResponseStatus) |  |  |
-
-
-
-
-
  
 
 
@@ -102,10 +67,11 @@ Logger level
 | ---- | ------ | ----------- |
 | DEBUG | 0 | Debug log level |
 | INFO | 1 | Info log level |
-| ERROR | 2 | Error log level |
-| DPANIC | 3 | DPanic log level |
-| PANIC | 4 | Panic log level |
-| FATAL | 5 | Fatal log level |
+| WARN | 2 | Warn log level |
+| ERROR | 3 | Error log level |
+| DPANIC | 4 | DPanic log level |
+| PANIC | 5 | Panic log level |
+| FATAL | 6 | Fatal log level |
 
 
 
@@ -134,7 +100,6 @@ logger service provides rpc functions to controller a logger remotely
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | SetLevel | [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest) | [SetLevelResponse](#onos.lib.go.logging.SetLevelResponse) | Sets a logger level |
-| SetSink | [SetSinkRequest](#onos.lib.go.logging.SetSinkRequest) | [SetSinkResponse](#onos.lib.go.logging.SetSinkResponse) | Sets a sink for a logger |
 
  
 

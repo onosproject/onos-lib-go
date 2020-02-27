@@ -40,17 +40,28 @@ func getSetLevelCommand() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE:  runSetLevelCommand,
 	}
-	cmd.Flags().StringP("level", "i", "info", "the logger level")
+	cmd.Flags().StringP("level", "l", "INFO", "the logger level")
 
 	return cmd
 }
 
 func runSetLevelCommand(cmd *cobra.Command, args []string) error {
+	conn, err := cli.GetConnection(cmd)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = conn.Close()
+	}()
+
 	name := args[0]
 	if name == "" {
 		return errors.New("The logger name should be provided")
 	}
-	level, _ := cmd.Flags().GetString("level")
+	level, err := cmd.Flags().GetString("level")
+	if err != nil {
+		return err
+	}
 	var apiLevel api.Level
 	switch level {
 	case api.Level_INFO.String():
@@ -65,14 +76,11 @@ func runSetLevelCommand(cmd *cobra.Command, args []string) error {
 		apiLevel = api.Level_DPANIC
 	case api.Level_FATAL.String():
 		apiLevel = api.Level_FATAL
+	case api.Level_WARN.String():
+		apiLevel = api.Level_WARN
 
 	}
 
-	conn, err := cli.GetConnection(cmd)
-	defer conn.Close()
-	if err != nil {
-		return err
-	}
 	client := api.NewLoggerClient(conn)
 	req := api.SetLevelRequest{
 		LoggerName: name,

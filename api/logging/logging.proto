@@ -33,17 +33,20 @@ enum Level {
     // Info log level
     INFO = 1;
 
+    // Warn log level
+    WARN = 2;
+
     // Error log level
-    ERROR = 2;
+    ERROR = 3;
 
     // DPanic log level
-    DPANIC = 3;
+    DPANIC = 4;
 
     // Panic log level
-    PANIC = 4;
+    PANIC = 5;
 
     // Fatal log level
-    FATAL = 5;
+    FATAL = 6;
 
 }
 
@@ -51,9 +54,6 @@ enum Level {
 service logger {
     // Sets a logger level
     rpc SetLevel(SetLevelRequest) returns (SetLevelResponse);
-
-    // Sets a sink for a logger
-    rpc SetSink(SetSinkRequest) returns (SetSinkResponse);
 
 }
 
@@ -71,16 +71,4 @@ message SetLevelResponse {
     ResponseStatus response_status = 1;
 }
 
-// SetSinkRequest request for setting a sink
-message SetSinkRequest {
-    string logger_name = 1;
-    string topic = 2;
-    string key = 3;
-    string address = 4;
-}
-
-// SetSinkResponse response for setting a sink
-message SetSinkResponse {
-    ResponseStatus response_status = 1;
-}
 

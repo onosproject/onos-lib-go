@@ -82,9 +82,10 @@ type Logger interface {
 
 type Log struct {
 	stdLogger *zap.Logger
-	encoder   zapcore.Encoder
-	writer    zapcore.WriteSyncer
+	encoder   *zapcore.Encoder
+	writer    *zapcore.WriteSyncer
 	name      string
+	level     zap.AtomicLevel
 }
 
 var loggers art.Tree
@@ -94,3 +95,5 @@ var root Log
 type SinkURL struct {
 	url.URL
 }
+
+var dbg Debug

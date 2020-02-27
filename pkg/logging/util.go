@@ -16,11 +16,22 @@ package logging
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 
 	zp "go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
 )
+
+type Debug bool
+
+func (d Debug) Println(s string, args ...interface{}) {
+	if d {
+		fmt.Printf("DEBUG:")
+		fmt.Printf(s, args...)
+		fmt.Println()
+	}
+}
 
 func intToAtomicLevel(l Level) zp.AtomicLevel {
 	switch l {

@@ -15,12 +15,11 @@
 package cli
 
 import (
-	cli "github.com/onosproject/onos-lib-go/pkg/cli"
+	"github.com/onosproject/onos-lib-go/pkg/cli"
 	"github.com/spf13/cobra"
-	viperapi "github.com/spf13/viper"
 )
 
-var viper = viperapi.New()
+//var viper = viperapi.New()
 
 // init initializes the command line
 func init() {

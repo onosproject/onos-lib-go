@@ -54,12 +54,20 @@ func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*l
 		}, errors.New("precondition for set level request is failed")
 	}
 
-	logger := GetLogger(name)
+	logger, found := FindLogger(name)
+	if !found {
+		return &logging.SetLevelResponse{
+			ResponseStatus: logging.ResponseStatus_PRECONDITION_FAILED,
+		}, errors.New("the logger does not exist")
+	}
 	switch level {
 	case logging.Level_INFO:
 		logger.SetLevel(InfoLevel)
+
 	case logging.Level_DEBUG:
 		logger.SetLevel(DebugLevel)
+	case logging.Level_WARN:
+		logger.SetLevel(WarnLevel)
 	case logging.Level_ERROR:
 		logger.SetLevel(ErrorLevel)
 	case logging.Level_PANIC:
@@ -68,21 +76,15 @@ func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*l
 		logger.SetLevel(DPanicLevel)
 	case logging.Level_FATAL:
 		logger.SetLevel(FatalLevel)
+
+	default:
+		return &logging.SetLevelResponse{
+			ResponseStatus: logging.ResponseStatus_PRECONDITION_FAILED,
+		}, errors.New("the requested level is not supported")
+
 	}
 
 	return &logging.SetLevelResponse{
 		ResponseStatus: logging.ResponseStatus_OK,
 	}, nil
-}
-
-// SetSink implements SetSink rpc function to set a sink for a logger
-func (s *Server) SetSink(ctx context.Context, req *logging.SetSinkRequest) (*logging.SetSinkResponse, error) {
-	name := req.GetLoggerName()
-	if name == "" {
-		return &logging.SetSinkResponse{
-			ResponseStatus: logging.ResponseStatus_PRECONDITION_FAILED,
-		}, errors.New("precondition for set sink request is failed")
-	}
-
-	return &logging.SetSinkResponse{}, nil
 }
