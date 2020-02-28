@@ -38,7 +38,6 @@ func GetCommand() *cobra.Command {
 		Short: "logging api commands",
 	}
 
-	cli.AddConfigFlags(cmd)
 	cmd.AddCommand(getSetCommand())
 
 	return cmd

@@ -17,8 +17,6 @@ package logging
 import (
 	"os"
 
-	"fmt"
-
 	art "github.com/plar/go-adaptive-radix-tree"
 
 	"go.uber.org/zap"
@@ -63,7 +61,7 @@ func init() {
 		fmt.Println("Kafka Sink cannot be registered", err)
 	}*/
 	root = Log{rootLogger, &defaultEncoder, &defaultWriter, defaultLoggerName, defaultAtomLevel}
-
+	dbg = false
 }
 
 // SetLevel defines a new logger level and propagate the change its children
@@ -80,41 +78,52 @@ func (l *Log) SetLevel(level Level) {
 	})
 }
 
-func (l *Log) RemoveSink() {
-	key := art.Key(l.name)
-	_, found := loggers.Search(key)
-	if found {
-		defaultWriter := zc.Lock(os.Stdout)
-		*l.writer = defaultWriter
-	}
-}
-
-func (l *Log) AddSink(sink SinkURL) {
-	dbg.Println("Add sink function")
+// TODO should be re-implemented
+/*func (l *Log) RemoveSink() {
 	key := art.Key(l.name)
 	value, found := loggers.Search(key)
 	if found {
-		loggerNode := value.(*Log)
+		loggerNode := value.(Log)
+		newLevel := intToAtomicLevel(InfoLevel)
+		defaultWriter := zc.Lock(os.Stdout)
+		newLogger := loggerNode.stdLogger.WithOptions(
+			zap.WrapCore(
+				func(zc.Core) zc.Core {
+					return zc.NewCore(*loggerNode.encoder, defaultWriter, &newLevel)
+				}))
+		newLogger.Named(string(key))
+		loggerNode.stdLogger = newLogger
+		l.stdLogger = newLogger
+		logger := Log{newLogger, loggerNode.encoder, &defaultWriter, string(key), newLevel}
+		loggers.Insert(key, logger)
+	}
+
+}
+
+// TODO should be re-implemented
+func (l *Log) AddSink(sink SinkURL) {
+	key := art.Key(l.name)
+	value, found := loggers.Search(key)
+	if found {
+		loggerNode := value.(Log)
 		ws, _, err := zap.Open(sink.String())
 		if err != nil {
 			fmt.Println("Cannot open sink", err)
 		}
-		/*dbg.Println("Before Address of write %s and value %s", l.writer, *l.writer)
-		*l.writer = ws
-
-		dbg.Println("After Address of write %s and value %s", l.writer, *l.writer)*/
+		newLevel := intToAtomicLevel(InfoLevel)
 		newLogger := loggerNode.stdLogger.WithOptions(
-			zap.WrapCore(
+			zp.WrapCore(
 				func(zc.Core) zc.Core {
-					return zc.NewCore(*loggerNode.encoder, ws, loggerNode.level)
+					return zc.NewCore(*loggerNode.encoder, ws, &newLevel)
 				}))
 		newLogger.Named(string(key))
 		loggerNode.stdLogger = newLogger
-		//l.stdLogger = newLogger
-		logger := Log{l.stdLogger, loggerNode.encoder, &ws, string(key), loggerNode.level}
-		loggers.Insert(key, &logger)
+		l.stdLogger = newLogger
+		logger := Log{newLogger, loggerNode.encoder, ws, string(key), newLevel}
+		loggers.Insert(key, logger)
 	}
-}
+
+}*/
 
 // GetKey returns a key object of radix tree
 func GetKey(name string) art.Key {
@@ -157,7 +166,7 @@ func GetLogger(names ...string) *Log {
 	name := buildTreeName(names...)
 	value, found := GetLoggers().Search(GetKey(name))
 	if found {
-		dbg.Println("found logger:", names)
+		dbg.Println("found logger: %s", names)
 		return value.(*Log)
 	} else {
 		dbg.Println("not found logger: %s, creating it", name)
