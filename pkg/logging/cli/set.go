@@ -26,11 +26,58 @@ import (
 
 func getSetCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "set {level, sink} [args]",
-		Short: "Sets a logger level or sink",
+		Use:   "set {level, debug} [args]",
+		Short: "Sets a logger level or enable debug mode for logging package",
 	}
 	cmd.AddCommand(getSetLevelCommand())
+	cmd.AddCommand(getSetDebugCommand())
 	return cmd
+}
+
+func getSetDebugCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "debug [args]",
+		Short: "enable/disable debug mode for logging package",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runSetDebugCommand,
+	}
+	return cmd
+}
+
+func runSetDebugCommand(cmd *cobra.Command, args []string) error {
+	conn, err := cli.GetConnection(cmd)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = conn.Close()
+	}()
+
+	debugMode := args[0]
+	client := api.NewLoggerClient(conn)
+
+	if debugMode == "enable" {
+		req := api.SetDebugModeRequest{
+			Debug: true,
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		_, err = client.SetDebug(ctx, &req)
+		return err
+
+	} else if debugMode == "disable" {
+		req := api.SetDebugModeRequest{
+			Debug: false,
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		_, err = client.SetDebug(ctx, &req)
+		return err
+
+	}
+	return nil
 }
 
 func getSetLevelCommand() *cobra.Command {

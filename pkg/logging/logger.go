@@ -129,8 +129,10 @@ func init() {
 
 	rootLogger = newLogger.Named(defaultLoggerName)
 	root = Log{rootLogger, &defaultEncoder, &defaultWriter, defaultLoggerName, defaultAtomLevel}
-	loggersConfig := config.GetConfig()
-	AddConfiguredLoggers(loggersConfig)
+	loggersConfig, err := config.GetConfig()
+	if err == nil {
+		AddConfiguredLoggers(loggersConfig)
+	}
 
 }
 

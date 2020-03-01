@@ -44,6 +44,20 @@ func (s Service) Register(r *grpc.Server) {
 type Server struct {
 }
 
+// SetDebug enable/disable debug mode for logging package
+func (s *Server) SetDebug(ctx context.Context, req *logging.SetDebugModeRequest) (*logging.SetDebugModeResponse, error) {
+	if req.Debug {
+		dbg = true
+	} else {
+		dbg = false
+	}
+
+	return &logging.SetDebugModeResponse{
+		ResponseStatus: logging.ResponseStatus_OK,
+	}, nil
+
+}
+
 // SetLevel implements SetLevel rpc function to set a logger level
 func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*logging.SetLevelResponse, error) {
 	name := req.GetLoggerName()

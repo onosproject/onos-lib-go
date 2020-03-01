@@ -4,6 +4,8 @@
 ## Table of Contents
 
 - [api/logging/logging.proto](#api/logging/logging.proto)
+    - [SetDebugModeRequest](#onos.lib.go.logging.SetDebugModeRequest)
+    - [SetDebugModeResponse](#onos.lib.go.logging.SetDebugModeResponse)
     - [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest)
     - [SetLevelResponse](#onos.lib.go.logging.SetLevelResponse)
   
@@ -22,6 +24,36 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## api/logging/logging.proto
+
+
+
+<a name="onos.lib.go.logging.SetDebugModeRequest"></a>
+
+### SetDebugModeRequest
+SetDebugModeRequest enable/disable debug mode of the logger
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| debug | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="onos.lib.go.logging.SetDebugModeResponse"></a>
+
+### SetDebugModeResponse
+SetDebugModeResponse response for setting debug mode of a logger
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| response_status | [ResponseStatus](#onos.lib.go.logging.ResponseStatus) |  |  |
+
+
+
 
 
 
@@ -100,6 +132,7 @@ logger service provides rpc functions to controller a logger remotely
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | SetLevel | [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest) | [SetLevelResponse](#onos.lib.go.logging.SetLevelResponse) | Sets a logger level |
+| SetDebug | [SetDebugModeRequest](#onos.lib.go.logging.SetDebugModeRequest) | [SetDebugModeResponse](#onos.lib.go.logging.SetDebugModeResponse) | Sets debug mode to debug logging package |
 
  
 
