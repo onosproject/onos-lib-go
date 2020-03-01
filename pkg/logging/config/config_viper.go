@@ -17,8 +17,12 @@ package config
 import (
 	"fmt"
 
+	"github.com/mitchellh/go-homedir"
+
 	"github.com/spf13/viper"
 )
+
+const configDir = ".onos"
 
 // Config loggers configuration
 type Config struct {
@@ -40,12 +44,19 @@ type Config struct {
 }
 
 func GetConfig() *Config {
+	home, err := homedir.Dir()
+	if err != nil {
+		panic(err)
+	}
 	var config Config
+
 	// Set the file name of the configurations file
 	viper.SetConfigName("logging")
 
 	// Set the path to look for the configurations file
-	viper.AddConfigPath("./config/")
+	viper.AddConfigPath("./configs/")
+	viper.AddConfigPath(home + "/" + configDir)
+	viper.AddConfigPath("/etc/onos")
 	viper.AddConfigPath(".")
 
 	viper.SetConfigType("yaml")
@@ -54,7 +65,7 @@ func GetConfig() *Config {
 		fmt.Printf("Error reading config file, %s", err)
 	}
 
-	err := viper.Unmarshal(&config)
+	err = viper.Unmarshal(&config)
 	if err != nil {
 		fmt.Printf("Unable to decode into struct, %v", err)
 	}

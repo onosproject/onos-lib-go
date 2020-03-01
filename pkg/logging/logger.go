@@ -89,10 +89,10 @@ func AddConfiguredLoggers(config *config.Config) {
 		if found {
 			switch loggerSinkInfo._type {
 			case Kafka.String():
-				err := zap.RegisterSink("kafka", InitSink)
+				/*err := zap.RegisterSink("kafka", InitSink)
 				if err != nil {
 					dbg.Println("Kafka Sink cannot be registered %s", err)
-				}
+				}*/
 				var urls []SinkURL
 				var rawQuery bytes.Buffer
 				if loggerSinkInfo.topic != "" {
@@ -146,15 +146,11 @@ func AddConfiguredLoggers(config *config.Config) {
 
 // init initialize logger package data structures
 func init() {
-	dbg = true
+	dbg = false
 
 	// Adds default logger (i.e. root logger)
 	defaultLoggerName := "root"
 	loggers = art.New()
-	/*err := zap.RegisterSink("kafka", InitSink)
-	if err != nil {
-		fmt.Println("Kafka Sink cannot be registered", err)
-	}*/
 	cfg := getDefaultConfig(defaultLoggerName, levelToInt(zc.InfoLevel))
 	rootLogger, _ := cfg.GetZapConfig().Build(zap.AddCallerSkip(1))
 	defaultAtomLevel := zap.NewAtomicLevelAt(zc.InfoLevel)
