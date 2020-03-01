@@ -35,19 +35,20 @@ type Sink struct {
 	key      string
 }
 
-func getSink(brokers []string, topic string, config *kafka.Config) Sink {
+func getSink(brokers []string, topic string, config *kafka.Config) (Sink, error) {
 	producer, err := kafka.NewSyncProducer(brokers, config)
 	if err != nil {
 		dbg.Println("Cannot get sink %s", err)
+		return Sink{}, err
 	}
 	sink := Sink{
 		producer: producer,
 		topic:    topic,
 	}
-	return sink
+	return sink, nil
 }
 
-// GetSink  initialize a kafka sink instance
+// InitSink  initialize a kafka sink instance
 func InitSink(u *url.URL) (zap.Sink, error) {
 	dbg.Println("Init sink is called")
 	topic := "kafka_default_topic"
@@ -75,8 +76,9 @@ func InitSink(u *url.URL) (zap.Sink, error) {
 			log.Printf("kafka producer retries value '%s' default value %d\n", retries, config.Producer.Retry.Max)
 		}
 	}
-	Sinks[instKey] = getSink(brokers, topic, config)
-	return Sinks[instKey], nil
+	sink, err := getSink(brokers, topic, config)
+	Sinks[instKey] = sink
+	return Sinks[instKey], err
 }
 
 // Write implements zap.Sink Write function

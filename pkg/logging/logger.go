@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/onosproject/onos-lib-go/pkg/logging/config"
 
@@ -88,14 +89,20 @@ func AddConfiguredLoggers(config *config.Config) {
 		if found {
 			switch loggerSinkInfo._type {
 			case Kafka.String():
+				err := zap.RegisterSink("kafka", InitSink)
+				if err != nil {
+					dbg.Println("Kafka Sink cannot be registered %s", err)
+					return
+				}
 				var urls []SinkURL
 				var rawQuery bytes.Buffer
 				if loggerSinkInfo.topic != "" {
 					rawQuery.WriteString("topic=")
 					rawQuery.WriteString(loggerSinkInfo.topic)
 				}
-				rawQuery.WriteString(",")
+
 				if loggerSinkInfo.key != "" {
+					rawQuery.WriteString(",")
 					rawQuery.WriteString("key=")
 					rawQuery.WriteString(loggerSinkInfo.key)
 				}
@@ -106,7 +113,7 @@ func AddConfiguredLoggers(config *config.Config) {
 
 				cfg := Configuration{}
 				cfg.SetEncoding(logger.Encoding).
-					SetLevel(StringToInt(logger.Level)).
+					SetLevel(StringToInt(strings.ToUpper(logger.Level))).
 					SetSinkURLs(urls).
 					SetName(logger.Name).
 					SetECMsgKey("msg").
@@ -120,7 +127,7 @@ func AddConfiguredLoggers(config *config.Config) {
 			case Stdout.String():
 				cfg := Configuration{}
 				cfg.SetEncoding(logger.Encoding).
-					SetLevel(StringToInt(logger.Level)).
+					SetLevel(StringToInt(strings.ToUpper(logger.Level))).
 					SetOutputPaths([]string{Stdout.String()}).
 					SetName(logger.Name).
 					SetECMsgKey("msg").
@@ -163,10 +170,6 @@ func init() {
 	root = Log{rootLogger, &defaultEncoder, &defaultWriter, defaultLoggerName, defaultAtomLevel}
 	dbg = false
 
-	err := zap.RegisterSink("kafka", InitSink)
-	if err != nil {
-		dbg.Println("Kafka Sink cannot be registered %s", err)
-	}
 	loggersConfig := config.GetConfig()
 	AddConfiguredLoggers(loggersConfig)
 
@@ -263,6 +266,7 @@ func (c *Configuration) GetLogger() *Log {
 	if len(sinkURLs) > 0 {
 		for _, url := range sinkURLs {
 			urls = append(urls, url.String())
+			dbg.Println(url.String())
 		}
 
 		ws, _, err := zap.Open(urls...)
