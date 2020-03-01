@@ -45,41 +45,6 @@ func getDefaultConfig(name string, level Level) Configuration {
 	return cfg
 }
 
-// SinkInfo sink information
-type SinkInfo struct {
-	name  string
-	_type string
-	uri   string
-	topic string
-	key   string
-}
-
-// GetSinks get sinks info from the configuration
-func GetSinks(config *config.Config) []SinkInfo {
-	sinksList := config.Logging.Sinks
-	sinks := make([]SinkInfo, len(sinksList))
-	for _, sink := range sinksList {
-		sinkInfo := SinkInfo{
-			name:  sink.Name,
-			_type: sink.Type,
-			topic: sink.Topic,
-			key:   sink.Key,
-			uri:   sink.URI,
-		}
-		sinks = append(sinks, sinkInfo)
-	}
-	return sinks
-}
-
-func ContainSink(sinks []SinkInfo, sinkName string) (SinkInfo, bool) {
-	for _, sink := range sinks {
-		if sink.name == sinkName {
-			return sink, true
-		}
-	}
-	return SinkInfo{}, false
-}
-
 // AddConfiguredLoggers adds configured loggers
 func AddConfiguredLoggers(config *config.Config) {
 	loggersList := config.Logging.Loggers
@@ -89,10 +54,10 @@ func AddConfiguredLoggers(config *config.Config) {
 		if found {
 			switch loggerSinkInfo._type {
 			case Kafka.String():
-				/*err := zap.RegisterSink("kafka", InitSink)
+				err := zap.RegisterSink("kafka", InitSink)
 				if err != nil {
 					dbg.Println("Kafka Sink cannot be registered %s", err)
-				}*/
+				}
 				var urls []SinkURL
 				var rawQuery bytes.Buffer
 				if loggerSinkInfo.topic != "" {
