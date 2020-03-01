@@ -92,23 +92,24 @@ func AddConfiguredLoggers(config *config.Config) {
 				err := zap.RegisterSink("kafka", InitSink)
 				if err != nil {
 					dbg.Println("Kafka Sink cannot be registered %s", err)
-					return
 				}
 				var urls []SinkURL
 				var rawQuery bytes.Buffer
 				if loggerSinkInfo.topic != "" {
 					rawQuery.WriteString("topic=")
 					rawQuery.WriteString(loggerSinkInfo.topic)
+					dbg.Println(rawQuery.String())
 				}
 
 				if loggerSinkInfo.key != "" {
-					rawQuery.WriteString(",")
+					rawQuery.WriteString("&")
 					rawQuery.WriteString("key=")
 					rawQuery.WriteString(loggerSinkInfo.key)
 				}
 				urlInfo := SinkURL{
 					URL: url.URL{Scheme: Kafka.String(), Host: loggerSinkInfo.uri, RawQuery: rawQuery.String()},
 				}
+
 				urls = append(urls, urlInfo)
 
 				cfg := Configuration{}
@@ -146,10 +147,14 @@ func AddConfiguredLoggers(config *config.Config) {
 // init initialize logger package data structures
 func init() {
 	dbg = true
-	loggers = art.New()
 
 	// Adds default logger (i.e. root logger)
 	defaultLoggerName := "root"
+	loggers = art.New()
+	/*err := zap.RegisterSink("kafka", InitSink)
+	if err != nil {
+		fmt.Println("Kafka Sink cannot be registered", err)
+	}*/
 	cfg := getDefaultConfig(defaultLoggerName, levelToInt(zc.InfoLevel))
 	rootLogger, _ := cfg.GetZapConfig().Build(zap.AddCallerSkip(1))
 	defaultAtomLevel := zap.NewAtomicLevelAt(zc.InfoLevel)
@@ -162,14 +167,7 @@ func init() {
 			}))
 
 	rootLogger = newLogger.Named(defaultLoggerName)
-	loggers = art.New()
-	/*err := zap.RegisterSink("kafka", InitSink)
-	if err != nil {
-		fmt.Println("Kafka Sink cannot be registered", err)
-	}*/
 	root = Log{rootLogger, &defaultEncoder, &defaultWriter, defaultLoggerName, defaultAtomLevel}
-	dbg = false
-
 	loggersConfig := config.GetConfig()
 	AddConfiguredLoggers(loggersConfig)
 
