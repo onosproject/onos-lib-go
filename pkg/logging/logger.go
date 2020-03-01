@@ -15,7 +15,11 @@
 package logging
 
 import (
+	"bytes"
+	"net/url"
 	"os"
+
+	"github.com/onosproject/onos-lib-go/pkg/logging/config"
 
 	art "github.com/plar/go-adaptive-radix-tree"
 
@@ -40,8 +44,104 @@ func getDefaultConfig(name string, level Level) Configuration {
 	return cfg
 }
 
+// SinkInfo sink information
+type SinkInfo struct {
+	name  string
+	_type string
+	uri   string
+	topic string
+	key   string
+}
+
+// GetSinks get sinks info from the configuration
+func GetSinks(config *config.Config) []SinkInfo {
+	sinksList := config.Logging.Sinks
+	sinks := make([]SinkInfo, len(sinksList))
+	for _, sink := range sinksList {
+		sinkInfo := SinkInfo{
+			name:  sink.Name,
+			_type: sink.Type,
+			topic: sink.Topic,
+			key:   sink.Key,
+			uri:   sink.URI,
+		}
+		sinks = append(sinks, sinkInfo)
+	}
+	return sinks
+}
+
+func ContainSink(sinks []SinkInfo, sinkName string) (SinkInfo, bool) {
+	for _, sink := range sinks {
+		if sink.name == sinkName {
+			return sink, true
+		}
+	}
+	return SinkInfo{}, false
+}
+
+// AddConfiguredLoggers adds configured loggers
+func AddConfiguredLoggers(config *config.Config) {
+	loggersList := config.Logging.Loggers
+	sinks := GetSinks(config)
+	for _, logger := range loggersList {
+		loggerSinkInfo, found := ContainSink(sinks, logger.Sink)
+		if found {
+			switch loggerSinkInfo._type {
+			case Kafka.String():
+				var urls []SinkURL
+				var rawQuery bytes.Buffer
+				if loggerSinkInfo.topic != "" {
+					rawQuery.WriteString("topic=")
+					rawQuery.WriteString(loggerSinkInfo.topic)
+				}
+				rawQuery.WriteString(",")
+				if loggerSinkInfo.key != "" {
+					rawQuery.WriteString("key=")
+					rawQuery.WriteString(loggerSinkInfo.key)
+				}
+				urlInfo := SinkURL{
+					URL: url.URL{Scheme: Kafka.String(), Host: loggerSinkInfo.uri, RawQuery: rawQuery.String()},
+				}
+				urls = append(urls, urlInfo)
+
+				cfg := Configuration{}
+				cfg.SetEncoding(logger.Encoding).
+					SetLevel(StringToInt(logger.Level)).
+					SetSinkURLs(urls).
+					SetName(logger.Name).
+					SetECMsgKey("msg").
+					SetECLevelKey("level").
+					SetECTimeKey("ts").
+					SetECTimeEncoder(zc.ISO8601TimeEncoder).
+					SetECEncodeLevel(zc.CapitalLevelEncoder).
+					Build()
+				cfg.GetLogger()
+
+			case Stdout.String():
+				cfg := Configuration{}
+				cfg.SetEncoding(logger.Encoding).
+					SetLevel(StringToInt(logger.Level)).
+					SetOutputPaths([]string{Stdout.String()}).
+					SetName(logger.Name).
+					SetECMsgKey("msg").
+					SetECLevelKey("level").
+					SetECTimeKey("ts").
+					SetECTimeEncoder(zc.ISO8601TimeEncoder).
+					SetECEncodeLevel(zc.CapitalLevelEncoder).
+					Build()
+				cfg.GetLogger()
+			}
+
+		}
+	}
+}
+
 // init initialize logger package data structures
 func init() {
+	dbg = true
+	loggers = art.New()
+
+	// Adds default logger (i.e. root logger)
 	defaultLoggerName := "root"
 	cfg := getDefaultConfig(defaultLoggerName, levelToInt(zc.InfoLevel))
 	rootLogger, _ := cfg.GetZapConfig().Build(zap.AddCallerSkip(1))
@@ -62,6 +162,14 @@ func init() {
 	}*/
 	root = Log{rootLogger, &defaultEncoder, &defaultWriter, defaultLoggerName, defaultAtomLevel}
 	dbg = false
+
+	err := zap.RegisterSink("kafka", InitSink)
+	if err != nil {
+		dbg.Println("Kafka Sink cannot be registered %s", err)
+	}
+	loggersConfig := config.GetConfig()
+	AddConfiguredLoggers(loggersConfig)
+
 }
 
 // SetLevel defines a new logger level and propagate the change its children
@@ -77,53 +185,6 @@ func (l *Log) SetLevel(level Level) {
 		return true
 	})
 }
-
-// TODO should be re-implemented
-/*func (l *Log) RemoveSink() {
-	key := art.Key(l.name)
-	value, found := loggers.Search(key)
-	if found {
-		loggerNode := value.(Log)
-		newLevel := intToAtomicLevel(InfoLevel)
-		defaultWriter := zc.Lock(os.Stdout)
-		newLogger := loggerNode.stdLogger.WithOptions(
-			zap.WrapCore(
-				func(zc.Core) zc.Core {
-					return zc.NewCore(*loggerNode.encoder, defaultWriter, &newLevel)
-				}))
-		newLogger.Named(string(key))
-		loggerNode.stdLogger = newLogger
-		l.stdLogger = newLogger
-		logger := Log{newLogger, loggerNode.encoder, &defaultWriter, string(key), newLevel}
-		loggers.Insert(key, logger)
-	}
-
-}
-
-// TODO should be re-implemented
-func (l *Log) AddSink(sink SinkURL) {
-	key := art.Key(l.name)
-	value, found := loggers.Search(key)
-	if found {
-		loggerNode := value.(Log)
-		ws, _, err := zap.Open(sink.String())
-		if err != nil {
-			fmt.Println("Cannot open sink", err)
-		}
-		newLevel := intToAtomicLevel(InfoLevel)
-		newLogger := loggerNode.stdLogger.WithOptions(
-			zp.WrapCore(
-				func(zc.Core) zc.Core {
-					return zc.NewCore(*loggerNode.encoder, ws, &newLevel)
-				}))
-		newLogger.Named(string(key))
-		loggerNode.stdLogger = newLogger
-		l.stdLogger = newLogger
-		logger := Log{newLogger, loggerNode.encoder, ws, string(key), newLevel}
-		loggers.Insert(key, logger)
-	}
-
-}*/
 
 // GetKey returns a key object of radix tree
 func GetKey(name string) art.Key {
@@ -224,7 +285,6 @@ func (c *Configuration) GetLogger() *Log {
 		return &logger
 
 	} else {
-
 		cfg := c.zapConfig
 		configLogger, _ := cfg.Build(zap.AddCallerSkip(1))
 		encoder := zc.NewJSONEncoder(cfg.EncoderConfig)

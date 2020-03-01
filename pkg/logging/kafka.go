@@ -38,7 +38,7 @@ type Sink struct {
 func getSink(brokers []string, topic string, config *kafka.Config) Sink {
 	producer, err := kafka.NewSyncProducer(brokers, config)
 	if err != nil {
-		panic(err)
+		dbg.Println("Cannot get sink %s", err)
 	}
 	sink := Sink{
 		producer: producer,
@@ -49,6 +49,7 @@ func getSink(brokers []string, topic string, config *kafka.Config) Sink {
 
 // GetSink  initialize a kafka sink instance
 func InitSink(u *url.URL) (zap.Sink, error) {
+	dbg.Println("Init sink is called")
 	topic := "kafka_default_topic"
 	if t := u.Query().Get("topic"); len(t) > 0 {
 		topic = t

@@ -22,6 +22,20 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+type SinkType int
+
+const (
+	// Kafka kafka sink type
+	Kafka SinkType = iota
+
+	// Stdout sink type
+	Stdout
+)
+
+func (s SinkType) String() string {
+	return [...]string{"kafka", "stdout"}[s]
+}
+
 type Level int
 
 const (

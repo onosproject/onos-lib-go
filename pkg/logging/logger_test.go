@@ -17,14 +17,28 @@ package logging
 import (
 	"testing"
 
+	art "github.com/plar/go-adaptive-radix-tree"
+
+	"github.com/onosproject/onos-lib-go/pkg/logging/config"
+
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
 )
 
+func TestPreConfiguredLogger(t *testing.T) {
+	loggersConfig := config.GetConfig()
+	AddConfiguredLoggers(loggersConfig)
+
+	for _, configuredLogger := range loggersConfig.Logging.Loggers {
+		loggers.ForEachPrefix(art.Key(configuredLogger.Name), func(node art.Node) bool {
+			return assert.NotNil(t, node.Key())
+		})
+	}
+}
+
 func TestCustomLogger(t *testing.T) {
 	cfgFooLogger := Configuration{}
-
 	cfgFooLogger.SetEncoding("json").
 		SetLevel(ErrorLevel).
 		SetOutputPaths([]string{"stdout"}).
