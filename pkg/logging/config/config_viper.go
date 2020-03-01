@@ -55,6 +55,7 @@ func GetConfig() *Config {
 
 	// Set the path to look for the configurations file
 	viper.AddConfigPath("./configs/")
+	viper.AddConfigPath("./usr/local/configs/")
 	viper.AddConfigPath(home + "/" + configDir)
 	viper.AddConfigPath("/etc/onos")
 	viper.AddConfigPath(".")
