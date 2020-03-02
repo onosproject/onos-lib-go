@@ -15,14 +15,16 @@
 package logging
 
 import (
+	"bytes"
+	"net/url"
 	"os"
+	"strings"
 
-	"fmt"
+	"github.com/onosproject/onos-lib-go/pkg/logging/config"
 
 	art "github.com/plar/go-adaptive-radix-tree"
 
 	"go.uber.org/zap"
-	zp "go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
 )
 
@@ -43,9 +45,77 @@ func getDefaultConfig(name string, level Level) Configuration {
 	return cfg
 }
 
+// AddConfiguredLoggers adds configured loggers
+func AddConfiguredLoggers(config *config.Config) {
+	loggersList := config.Logging.Loggers
+	sinks := GetSinks(config)
+	for _, logger := range loggersList {
+		loggerSinkInfo, found := ContainSink(sinks, logger.Sink)
+		if found {
+			switch loggerSinkInfo._type {
+			case Kafka.String():
+				err := zap.RegisterSink("kafka", InitSink)
+				if err != nil {
+					dbg.Println("Kafka Sink cannot be registered %s", err)
+				}
+				var urls []SinkURL
+				var rawQuery bytes.Buffer
+				if loggerSinkInfo.topic != "" {
+					rawQuery.WriteString("topic=")
+					rawQuery.WriteString(loggerSinkInfo.topic)
+					dbg.Println(rawQuery.String())
+				}
+
+				if loggerSinkInfo.key != "" {
+					rawQuery.WriteString("&")
+					rawQuery.WriteString("key=")
+					rawQuery.WriteString(loggerSinkInfo.key)
+				}
+				urlInfo := SinkURL{
+					URL: url.URL{Scheme: Kafka.String(), Host: loggerSinkInfo.uri, RawQuery: rawQuery.String()},
+				}
+
+				urls = append(urls, urlInfo)
+
+				cfg := Configuration{}
+				cfg.SetEncoding(logger.Encoding).
+					SetLevel(StringToInt(strings.ToUpper(logger.Level))).
+					SetSinkURLs(urls).
+					SetName(logger.Name).
+					SetECMsgKey("msg").
+					SetECLevelKey("level").
+					SetECTimeKey("ts").
+					SetECTimeEncoder(zc.ISO8601TimeEncoder).
+					SetECEncodeLevel(zc.CapitalLevelEncoder).
+					Build()
+				cfg.GetLogger()
+
+			case Stdout.String():
+				cfg := Configuration{}
+				cfg.SetEncoding(logger.Encoding).
+					SetLevel(StringToInt(strings.ToUpper(logger.Level))).
+					SetOutputPaths([]string{Stdout.String()}).
+					SetName(logger.Name).
+					SetECMsgKey("msg").
+					SetECLevelKey("level").
+					SetECTimeKey("ts").
+					SetECTimeEncoder(zc.ISO8601TimeEncoder).
+					SetECEncodeLevel(zc.CapitalLevelEncoder).
+					Build()
+				cfg.GetLogger()
+			}
+
+		}
+	}
+}
+
 // init initialize logger package data structures
 func init() {
+	dbg = false
+
+	// Adds default logger (i.e. root logger)
 	defaultLoggerName := "root"
+	loggers = art.New()
 	cfg := getDefaultConfig(defaultLoggerName, levelToInt(zc.InfoLevel))
 	rootLogger, _ := cfg.GetZapConfig().Build(zap.AddCallerSkip(1))
 	defaultAtomLevel := zap.NewAtomicLevelAt(zc.InfoLevel)
@@ -58,184 +128,26 @@ func init() {
 			}))
 
 	rootLogger = newLogger.Named(defaultLoggerName)
-	loggers = art.New()
-	/*err := zap.RegisterSink("kafka", InitSink)
-	if err != nil {
-		fmt.Println("Kafka Sink cannot be registered", err)
-	}*/
-	root = Log{rootLogger, defaultEncoder, defaultWriter, defaultLoggerName}
+	root = Log{rootLogger, &defaultEncoder, &defaultWriter, defaultLoggerName, defaultAtomLevel}
+	loggersConfig, err := config.GetConfig()
+	if err == nil {
+		AddConfiguredLoggers(loggersConfig)
+	}
+
 }
 
 // SetLevel defines a new logger level and propagate the change its children
 func (l *Log) SetLevel(level Level) {
-	logger := Log{}
+	newLevel := intToAtomicLevel(level)
+	l.level.SetLevel(newLevel.Level())
+	dbg.Println("Logger %s writer, encoder, stdlogger memory addresses are 0X%08x, 0X%08x, 0X%08x", l.name, &l.writer, &l.encoder, &l.stdLogger)
 	loggers.ForEachPrefix(art.Key(l.name), func(node art.Node) bool {
 		if node.Key() != nil {
-			loggerNode := node.Value().(Log)
-			newLevel := intToAtomicLevel(level)
-			newLogger := loggerNode.stdLogger.WithOptions(
-				zp.WrapCore(
-					func(zc.Core) zc.Core {
-						return zc.NewCore(loggerNode.encoder, loggerNode.writer, &newLevel)
-					}))
-			newLogger.Named(string(node.Key()))
-			loggerNode.stdLogger = newLogger
-			l.stdLogger = newLogger
-			logger = Log{newLogger, loggerNode.encoder, loggerNode.writer, string(node.Key())}
-			loggers.Insert(node.Key(), logger)
+			loggerNode := node.Value().(*Log)
+			loggerNode.level.SetLevel(newLevel.Level())
 		}
 		return true
 	})
-}
-
-func (l *Log) RemoveSink() {
-	key := art.Key(l.name)
-	value, found := loggers.Search(key)
-	if found {
-		loggerNode := value.(Log)
-		newLevel := intToAtomicLevel(InfoLevel)
-		defaultWriter := zc.Lock(os.Stdout)
-		newLogger := loggerNode.stdLogger.WithOptions(
-			zp.WrapCore(
-				func(zc.Core) zc.Core {
-					return zc.NewCore(loggerNode.encoder, defaultWriter, &newLevel)
-				}))
-		newLogger.Named(string(key))
-		loggerNode.stdLogger = newLogger
-		l.stdLogger = newLogger
-		logger := Log{newLogger, loggerNode.encoder, defaultWriter, string(key)}
-		loggers.Insert(key, logger)
-	}
-
-}
-
-func (l *Log) AddSink(sink SinkURL) {
-	key := art.Key(l.name)
-	value, found := loggers.Search(key)
-	if found {
-		loggerNode := value.(Log)
-		ws, _, err := zap.Open(sink.String())
-		if err != nil {
-			fmt.Println("Cannot open sink", err)
-		}
-		newLevel := intToAtomicLevel(InfoLevel)
-		newLogger := loggerNode.stdLogger.WithOptions(
-			zp.WrapCore(
-				func(zc.Core) zc.Core {
-					return zc.NewCore(loggerNode.encoder, ws, &newLevel)
-				}))
-		newLogger.Named(string(key))
-		loggerNode.stdLogger = newLogger
-		l.stdLogger = newLogger
-		logger := Log{newLogger, loggerNode.encoder, ws, string(key)}
-		loggers.Insert(key, logger)
-	}
-
-}
-
-// Debug logs a message at Debug level on the sugar logger.
-func (l *Log) Debug(args ...interface{}) {
-	l.stdLogger.Sugar().Debug(args...)
-}
-
-// Debugf logs a message at Debugf level on the sugar logger.
-func (l *Log) Debugf(template string, args ...interface{}) {
-	l.stdLogger.Sugar().Debugf(template, args...)
-}
-
-// Debugw logs a message at Debugw level on the sugar logger.
-func (l *Log) Debugw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Debugw(msg, keysAndValues...)
-}
-
-// Info logs a message at Info level on the sugar logger
-func (l *Log) Info(args ...interface{}) {
-	l.stdLogger.Sugar().Info(args...)
-}
-
-// Infof logs a message at Infof level on the sugar logger.
-func (l *Log) Infof(template string, args ...interface{}) {
-	l.stdLogger.Sugar().Infof(template, args...)
-}
-
-// Infow logs a message at Infow level on the sugar logger.
-func (l *Log) Infow(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Infow(msg, keysAndValues...)
-}
-
-// Error logs a message at Error level on the sugar logger
-func (l *Log) Error(args ...interface{}) {
-	l.stdLogger.Sugar().Error(args...)
-}
-
-// Errorf logs a message at Errorf level on the sugar logger.
-func (l *Log) Errorf(template string, args ...interface{}) {
-	l.stdLogger.Sugar().Errorf(template, args...)
-}
-
-// Errorw logs a message at Errorw level on the sugar logger.
-func (l *Log) Errorw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Errorw(msg, keysAndValues...)
-}
-
-// Fatal logs a message at Fatal level on the sugar logger
-func (l *Log) Fatal(args ...interface{}) {
-	l.stdLogger.Sugar().Fatal(args...)
-}
-
-// Fatalf logs a message at Fatalf level on the sugar logger.
-func (l *Log) Fatalf(template string, args ...interface{}) {
-	l.stdLogger.Sugar().Fatalf(template, args)
-}
-
-// Fatalw logs a message at Fatalw level on the sugar logger.
-func (l *Log) Fatalw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Fatalw(msg, keysAndValues...)
-}
-
-// Panic logs a message at Panic level on the sugar logger
-func (l *Log) Panic(args ...interface{}) {
-	l.stdLogger.Sugar().Panic(args...)
-}
-
-// Panicf logs a message at Panicf level on the sugar logger.
-func (l *Log) Panicf(template string, args ...interface{}) {
-	l.stdLogger.Sugar().Panicf(template, args...)
-}
-
-// Panicw logs a message at Panicw level on the sugar logger.
-func (l *Log) Panicw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Panicw(msg, keysAndValues...)
-}
-
-// DPanic logs a message at DPanic level on the sugar logger
-func (l *Log) DPanic(args ...interface{}) {
-	l.stdLogger.Sugar().DPanic(args...)
-}
-
-// DPanicf logs a message at DPanicf level on the sugar logger.
-func (l *Log) DPanicf(template string, args ...interface{}) {
-	l.stdLogger.Sugar().DPanicf(template, args...)
-}
-
-// Panicw logs a message at DPanicw level on the sugar logger.
-func (l *Log) DPanicw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().DPanicw(msg, keysAndValues...)
-}
-
-// Warn logs a message at Warn level on the sugar logger
-func (l *Log) Warn(args ...interface{}) {
-	l.stdLogger.Sugar().Warn(args...)
-}
-
-// Warnf logs a message at Warnf level on the sugar logger.
-func (l *Log) Warnf(template string, args ...interface{}) {
-	l.stdLogger.Sugar().Warnf(template, args...)
-}
-
-// Warnw logs a message at Warnw level on the sugar logger.
-func (l *Log) Warnw(msg string, keysAndValues ...interface{}) {
-	l.stdLogger.Sugar().Warnw(msg, keysAndValues...)
 }
 
 // GetKey returns a key object of radix tree
@@ -243,7 +155,7 @@ func GetKey(name string) art.Key {
 	return art.Key(name)
 }
 
-func assignParentLevelLogger(name string) Log {
+func assignParentLevelLogger(name string) *Log {
 	parentNames := findParentsNames(name)
 	for _, parentName := range parentNames {
 		parentLogger, found := loggers.Search(art.Key(parentName))
@@ -252,30 +164,42 @@ func assignParentLevelLogger(name string) Log {
 			core := logger.stdLogger.Core()
 			zapLogger := zap.New(core).Named(name)
 			logger.stdLogger = zapLogger
-			loggers.Insert(art.Key(name), logger)
-			return logger
+			loggers.Insert(art.Key(name), &logger)
+			return &logger
 		}
 	}
 	root := GetDefaultLogger()
 	core := root.stdLogger.Core()
 	zapLogger := zap.New(core).Named(name)
 	root.stdLogger = zapLogger
-	loggers.Insert(art.Key(name), root)
-	return root
+	loggers.Insert(art.Key(name), &root)
+	return &root
 }
 
-// GetLogger gets a logger based on a give name
-func GetLogger(names ...string) Log {
+func FindLogger(names ...string) (*Log, bool) {
 	name := buildTreeName(names...)
 	value, found := GetLoggers().Search(GetKey(name))
 	if found {
-		return value.(Log)
+		dbg.Println("found logger: %s", names)
+		return value.(*Log), found
+	}
+	return &Log{}, found
+}
+
+// GetLogger gets a logger based on a give name
+func GetLogger(names ...string) *Log {
+	name := buildTreeName(names...)
+	value, found := GetLoggers().Search(GetKey(name))
+	if found {
+		dbg.Println("found logger: %s", names)
+		return value.(*Log)
 	} else {
+		dbg.Println("not found logger: %s, creating it", name)
 		return AddLogger(InfoLevel, names...)
 	}
 }
 
-func (c *Configuration) GetLogger() Log {
+func (c *Configuration) GetLogger() *Log {
 	level := c.zapConfig.Level.Level().String()
 	name := c.zapConfig.EncoderConfig.NameKey
 	if level == "" {
@@ -303,12 +227,12 @@ func (c *Configuration) GetLogger() Log {
 	if len(sinkURLs) > 0 {
 		for _, url := range sinkURLs {
 			urls = append(urls, url.String())
-
+			dbg.Println(url.String())
 		}
 
 		ws, _, err := zap.Open(urls...)
 		if err != nil {
-			return Log{}
+			return &Log{}
 		}
 
 		cfg := c.zapConfig
@@ -321,12 +245,11 @@ func (c *Configuration) GetLogger() Log {
 				}))
 
 		configLogger = newLogger.Named(name)
-		logger := Log{configLogger, encoder, ws, name}
-		loggers.Insert(art.Key(name), logger)
-		return logger
+		logger := Log{configLogger, &encoder, &ws, name, atomLevel}
+		loggers.Insert(art.Key(name), &logger)
+		return &logger
 
 	} else {
-
 		cfg := c.zapConfig
 		configLogger, _ := cfg.Build(zap.AddCallerSkip(1))
 		encoder := zc.NewJSONEncoder(cfg.EncoderConfig)
@@ -338,38 +261,28 @@ func (c *Configuration) GetLogger() Log {
 				}))
 
 		configLogger = newLogger.Named(name)
-		logger := Log{configLogger, encoder, writer, name}
-		loggers.Insert(art.Key(name), logger)
-		return logger
+		logger := Log{configLogger, &encoder, &writer, name, atomLevel}
+		loggers.Insert(art.Key(name), &logger)
+		return &logger
 	}
 
 }
 
 // SetLevel change level of a logger and propagates the change to its children
-func SetLevel(level Level, names ...string) Log {
+func SetLevel(level Level, names ...string) {
 	name := buildTreeName(names...)
-	logger := Log{}
 	loggers.ForEachPrefix(art.Key(name), func(node art.Node) bool {
 		if node.Key() != nil {
-			loggerNode := node.Value().(Log)
+			loggerNode := node.Value().(*Log)
 			newLevel := intToAtomicLevel(level)
-			newLogger := loggerNode.stdLogger.WithOptions(
-				zp.WrapCore(
-					func(zc.Core) zc.Core {
-						return zc.NewCore(loggerNode.encoder, loggerNode.writer, &newLevel)
-					}))
-			newLogger.Named(string(node.Key()))
-			loggerNode.stdLogger = newLogger
-			logger = Log{newLogger, loggerNode.encoder, loggerNode.writer, string(node.Key())}
-			loggers.Insert(node.Key(), logger)
+			loggerNode.level.SetLevel(newLevel.Level())
 		}
 		return true
 	})
-	return logger
 }
 
 // AddLogger adds a logger based on a given level and a hierarchy of names
-func AddLogger(level Level, names ...string) Log {
+func AddLogger(level Level, names ...string) *Log {
 	name := buildTreeName(names...)
 	if level.String() == "" {
 		return assignParentLevelLogger(name)
@@ -409,9 +322,9 @@ func AddLogger(level Level, names ...string) Log {
 			}))
 
 	configLogger = newLogger.Named(name)
-	logger := Log{configLogger, defaultEncoder, defaultWriter, name}
-	loggers.Insert(art.Key(name), logger)
-	return logger
+	logger := Log{configLogger, &defaultEncoder, &defaultWriter, name, atomLevel}
+	loggers.Insert(art.Key(name), &logger)
+	return &logger
 }
 
 // GetLoggers get loggers radix tree

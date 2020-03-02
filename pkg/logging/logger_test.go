@@ -17,9 +17,81 @@ package logging
 import (
 	"testing"
 
+	art "github.com/plar/go-adaptive-radix-tree"
+
+	"github.com/onosproject/onos-lib-go/pkg/logging/config"
+
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
 )
+
+func TestPreConfiguredLogger(t *testing.T) {
+	loggersConfig := config.GetConfig()
+	AddConfiguredLoggers(loggersConfig)
+
+	for _, configuredLogger := range loggersConfig.Logging.Loggers {
+		loggers.ForEachPrefix(art.Key(configuredLogger.Name), func(node art.Node) bool {
+			return assert.NotNil(t, node.Key())
+		})
+	}
+}
+
+func TestCustomLogger(t *testing.T) {
+	cfgFooLogger := Configuration{}
+	cfgFooLogger.SetEncoding("json").
+		SetLevel(ErrorLevel).
+		SetOutputPaths([]string{"stdout"}).
+		SetName("foo").
+		SetErrorOutputPaths([]string{"stderr"}).
+		SetECMsgKey("msg").
+		SetECLevelKey("level").
+		SetECTimeKey("ts").
+		SetECTimeEncoder(zc.ISO8601TimeEncoder).
+		SetECEncodeLevel(zc.CapitalLevelEncoder).
+		Build()
+
+	cfgFooBarLogger := Configuration{}
+
+	cfgFooBarLogger.SetEncoding("json").
+		SetLevel(WarnLevel).
+		SetOutputPaths([]string{"stdout"}).
+		SetName("foo", "bar").
+		SetErrorOutputPaths([]string{"stderr"}).
+		SetECMsgKey("msg").
+		SetECLevelKey("level").
+		SetECTimeKey("ts").
+		SetECTimeEncoder(zc.ISO8601TimeEncoder).
+		SetECEncodeLevel(zc.CapitalLevelEncoder).
+		Build()
+
+	fooLogger := cfgFooLogger.GetLogger()
+	fooBarLogger := cfgFooBarLogger.GetLogger()
+
+	assert.NotNil(t, fooLogger.stdLogger)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.DebugLevel), false)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.InfoLevel), false)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.WarnLevel), false)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.ErrorLevel), true)
+
+	assert.NotNil(t, fooBarLogger.stdLogger)
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.DebugLevel), false)
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.InfoLevel), false)
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.WarnLevel), true)
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.ErrorLevel), true)
+
+	fooLogger.SetLevel(InfoLevel)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.DebugLevel), false)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.InfoLevel), true)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.WarnLevel), true)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.ErrorLevel), true)
+
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.DebugLevel), false)
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.InfoLevel), true)
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.WarnLevel), true)
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.ErrorLevel), true)
+
+}
 
 func TestHierarchicalLogger(t *testing.T) {
 	fooLogger := GetLogger("foo")
@@ -35,21 +107,48 @@ func TestHierarchicalLogger(t *testing.T) {
 	fooBarBadLogger := GetLogger("foo", "bar", "bad")
 	assert.NotNil(t, fooBarBadLogger.stdLogger)
 
-	cfg := Configuration{}
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.DebugLevel), false)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.InfoLevel), true)
 
-	cfg.SetEncoding("json").
-		SetLevel(WarnLevel).
-		SetOutputPaths([]string{"stdout"}).
-		SetName("config", "foo", "bar").
-		SetErrorOutputPaths([]string{"stderr"}).
-		SetECMsgKey("Msg").
-		SetECLevelKey("Level").
-		SetECTimeKey("Ts").
-		SetECTimeEncoder(zc.ISO8601TimeEncoder).
-		SetECEncodeLevel(zc.CapitalLevelEncoder).
-		Build()
+	fooLogger.SetLevel(DebugLevel)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.DebugLevel), true)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.InfoLevel), true)
 
-	loggerWithCustomConfig := cfg.GetLogger()
-	assert.NotNil(t, loggerWithCustomConfig.stdLogger)
+	assert.Equal(t, fooBarBazLogger.stdLogger.Core().Enabled(zap.DebugLevel), true)
+	assert.Equal(t, fooBarBazLogger.stdLogger.Core().Enabled(zap.InfoLevel), true)
+
+	assert.Equal(t, fooBarBadLogger.stdLogger.Core().Enabled(zap.DebugLevel), true)
+	assert.Equal(t, fooBarBazLogger.stdLogger.Core().Enabled(zap.InfoLevel), true)
+
+	fooBarLogger.SetLevel(InfoLevel)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.DebugLevel), true)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.InfoLevel), true)
+
+	assert.Equal(t, fooBarBazLogger.stdLogger.Core().Enabled(zap.InfoLevel), true)
+	assert.Equal(t, fooBarBazLogger.stdLogger.Core().Enabled(zap.DebugLevel), false)
+
+	assert.Equal(t, fooBarBazLogger.stdLogger.Core().Enabled(zap.InfoLevel), true)
+	assert.Equal(t, fooBarBadLogger.stdLogger.Core().Enabled(zap.DebugLevel), false)
+
+	fooLogger.SetLevel(ErrorLevel)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.DebugLevel), false)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.InfoLevel), false)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.WarnLevel), false)
+	assert.Equal(t, fooLogger.stdLogger.Core().Enabled(zap.ErrorLevel), true)
+
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.DebugLevel), false)
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.InfoLevel), false)
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.WarnLevel), false)
+	assert.Equal(t, fooBarLogger.stdLogger.Core().Enabled(zap.ErrorLevel), true)
+
+	assert.Equal(t, fooBarBazLogger.stdLogger.Core().Enabled(zap.DebugLevel), false)
+	assert.Equal(t, fooBarBazLogger.stdLogger.Core().Enabled(zap.InfoLevel), false)
+	assert.Equal(t, fooBarBazLogger.stdLogger.Core().Enabled(zap.WarnLevel), false)
+	assert.Equal(t, fooBarBazLogger.stdLogger.Core().Enabled(zap.ErrorLevel), true)
+
+	assert.Equal(t, fooBarBadLogger.stdLogger.Core().Enabled(zap.DebugLevel), false)
+	assert.Equal(t, fooBarBadLogger.stdLogger.Core().Enabled(zap.InfoLevel), false)
+	assert.Equal(t, fooBarBadLogger.stdLogger.Core().Enabled(zap.WarnLevel), false)
+	assert.Equal(t, fooBarBadLogger.stdLogger.Core().Enabled(zap.ErrorLevel), true)
 
 }

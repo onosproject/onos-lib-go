@@ -22,6 +22,20 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+type SinkType int
+
+const (
+	// Kafka kafka sink type
+	Kafka SinkType = iota
+
+	// Stdout sink type
+	Stdout
+)
+
+func (s SinkType) String() string {
+	return [...]string{"kafka", "stdout"}[s]
+}
+
 type Level int
 
 const (
@@ -82,9 +96,10 @@ type Logger interface {
 
 type Log struct {
 	stdLogger *zap.Logger
-	encoder   zapcore.Encoder
-	writer    zapcore.WriteSyncer
+	encoder   *zapcore.Encoder
+	writer    *zapcore.WriteSyncer
 	name      string
+	level     zap.AtomicLevel
 }
 
 var loggers art.Tree
@@ -94,3 +109,5 @@ var root Log
 type SinkURL struct {
 	url.URL
 }
+
+var dbg Debug

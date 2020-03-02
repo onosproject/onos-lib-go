@@ -15,9 +15,7 @@
 package logging
 
 import (
-	"log"
 	"net/url"
-	"strconv"
 	"strings"
 
 	kafka "github.com/Shopify/sarama"
@@ -35,47 +33,39 @@ type Sink struct {
 	key      string
 }
 
-func getSink(brokers []string, topic string, config *kafka.Config) Sink {
+func getSink(brokers []string, topic string, key string, config *kafka.Config) (Sink, error) {
 	producer, err := kafka.NewSyncProducer(brokers, config)
 	if err != nil {
-		panic(err)
+		dbg.Println("Cannot get sink %s", err)
+		return Sink{}, err
 	}
 	sink := Sink{
 		producer: producer,
 		topic:    topic,
+		key:      key,
 	}
-	return sink
+	return sink, nil
 }
 
-// GetSink  initialize a kafka sink instance
+// InitSink  initialize a kafka sink instance
 func InitSink(u *url.URL) (zap.Sink, error) {
 	topic := "kafka_default_topic"
-	if t := u.Query().Get("topic"); len(t) > 0 {
-		topic = t
+	key := "kafka_default_key"
+	m, _ := url.ParseQuery(u.RawQuery)
+	if len(m["topic"]) != 0 {
+		topic = m["topic"][0]
 	}
+
+	if len(m["key"]) != 0 {
+		key = m["key"][0]
+	}
+
 	brokers := []string{u.Host}
-	instKey := strings.Join(brokers, ",")
-	if v, ok := Sinks[instKey]; ok {
-		return v, nil
-	}
 	config := kafka.NewConfig()
 	config.Producer.Return.Successes = true
-	if ack := u.Query().Get("acks"); len(ack) > 0 {
-		if iack, err := strconv.Atoi(ack); err == nil {
-			config.Producer.RequiredAcks = kafka.RequiredAcks(iack)
-		} else {
-			log.Printf("kafka producer acks value '%s'; the required acks %d\n", ack, config.Producer.RequiredAcks)
-		}
-	}
-	if retries := u.Query().Get("retries"); len(retries) > 0 {
-		if iretries, err := strconv.Atoi(retries); err == nil {
-			config.Producer.Retry.Max = iretries
-		} else {
-			log.Printf("kafka producer retries value '%s' default value %d\n", retries, config.Producer.Retry.Max)
-		}
-	}
-	Sinks[instKey] = getSink(brokers, topic, config)
-	return Sinks[instKey], nil
+	dbg.Println("topic and key: %s %s", topic, key)
+	sink, err := getSink(brokers, topic, key, config)
+	return sink, err
 }
 
 // Write implements zap.Sink Write function
@@ -92,6 +82,7 @@ func (s Sink) Write(b []byte) (n int, err error) {
 				errors = append(errors, err)
 			}
 		} else {
+			dbg.Println("Write:%s", topic)
 			_, _, err := s.producer.SendMessage(&kafka.ProducerMessage{
 				Topic: topic,
 				Value: kafka.ByteEncoder(b),
