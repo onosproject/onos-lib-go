@@ -16,12 +16,40 @@ package southbound
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"github.com/onosproject/onos-lib-go/pkg/certs"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // Connect establishes a client-side connection to the gRPC end-point.
-func Connect(ctx context.Context, address string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func Connect(ctx context.Context, address string, certPath string, keyPath string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	if certPath != "" && keyPath != "" {
+		cert, err := tls.LoadX509KeyPair(certPath, keyPath)
+		if err != nil {
+			return nil, err
+		}
+		opts = []grpc.DialOption{
+			grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+				Certificates:       []tls.Certificate{cert},
+				InsecureSkipVerify: true,
+			})),
+		}
+	} else {
+		// Load default Certificates
+		cert, err := tls.X509KeyPair([]byte(certs.DefaultClientCrt), []byte(certs.DefaultClientKey))
+		if err != nil {
+			return nil, err
+		}
+		opts = []grpc.DialOption{
+			grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+				Certificates:       []tls.Certificate{cert},
+				InsecureSkipVerify: true,
+			})),
+		}
+	}
+
 	conn, err := grpc.DialContext(ctx, address, opts...)
 	if err != nil {
 		fmt.Println("Can't connect", err)
