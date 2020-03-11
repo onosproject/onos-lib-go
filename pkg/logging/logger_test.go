@@ -27,8 +27,8 @@ import (
 )
 
 func TestPreConfiguredLogger(t *testing.T) {
-	t.Skip()
-	loggersConfig, _ := config.GetConfig()
+	loggersConfig, err := config.GetConfig()
+	assert.Nil(t, err)
 	AddConfiguredLoggers(loggersConfig)
 
 	for _, configuredLogger := range loggersConfig.Logging.Loggers {
