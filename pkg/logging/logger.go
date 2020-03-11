@@ -193,10 +193,9 @@ func GetLogger(names ...string) *Log {
 	if found {
 		dbg.Println("found logger: %s", names)
 		return value.(*Log)
-	} else {
-		dbg.Println("not found logger: %s, creating it", name)
-		return AddLogger(InfoLevel, names...)
 	}
+	dbg.Println("not found logger: %s, creating it", name)
+	return AddLogger(InfoLevel, names...)
 }
 
 func (c *Configuration) GetLogger() *Log {
@@ -248,24 +247,21 @@ func (c *Configuration) GetLogger() *Log {
 		logger := Log{configLogger, &encoder, &ws, name, atomLevel}
 		loggers.Insert(art.Key(name), &logger)
 		return &logger
-
-	} else {
-		cfg := c.zapConfig
-		configLogger, _ := cfg.Build(zap.AddCallerSkip(1))
-		encoder := zc.NewJSONEncoder(cfg.EncoderConfig)
-		writer := zc.Lock(os.Stdout)
-		newLogger := configLogger.WithOptions(
-			zap.WrapCore(
-				func(zc.Core) zc.Core {
-					return zc.NewCore(encoder, writer, &atomLevel)
-				}))
-
-		configLogger = newLogger.Named(name)
-		logger := Log{configLogger, &encoder, &writer, name, atomLevel}
-		loggers.Insert(art.Key(name), &logger)
-		return &logger
 	}
+	cfg := c.zapConfig
+	configLogger, _ := cfg.Build(zap.AddCallerSkip(1))
+	encoder := zc.NewJSONEncoder(cfg.EncoderConfig)
+	writer := zc.Lock(os.Stdout)
+	newLogger := configLogger.WithOptions(
+		zap.WrapCore(
+			func(zc.Core) zc.Core {
+				return zc.NewCore(encoder, writer, &atomLevel)
+			}))
 
+	configLogger = newLogger.Named(name)
+	logger := Log{configLogger, &encoder, &writer, name, atomLevel}
+	loggers.Insert(art.Key(name), &logger)
+	return &logger
 }
 
 // SetLevel change level of a logger and propagates the change to its children

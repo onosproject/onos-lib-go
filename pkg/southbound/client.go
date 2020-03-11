@@ -25,12 +25,13 @@ import (
 
 // Connect establishes a client-side connection to the gRPC end-point.
 func Connect(ctx context.Context, address string, certPath string, keyPath string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	var tlsOpts []grpc.DialOption
 	if certPath != "" && keyPath != "" {
 		cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 		if err != nil {
 			return nil, err
 		}
-		opts = []grpc.DialOption{
+		tlsOpts = []grpc.DialOption{
 			grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 				Certificates:       []tls.Certificate{cert},
 				InsecureSkipVerify: true,
@@ -42,7 +43,7 @@ func Connect(ctx context.Context, address string, certPath string, keyPath strin
 		if err != nil {
 			return nil, err
 		}
-		opts = []grpc.DialOption{
+		tlsOpts = []grpc.DialOption{
 			grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 				Certificates:       []tls.Certificate{cert},
 				InsecureSkipVerify: true,
@@ -50,6 +51,7 @@ func Connect(ctx context.Context, address string, certPath string, keyPath strin
 		}
 	}
 
+	opts = append(tlsOpts, opts...)
 	conn, err := grpc.DialContext(ctx, address, opts...)
 	if err != nil {
 		fmt.Println("Can't connect", err)
