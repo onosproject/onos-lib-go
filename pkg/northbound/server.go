@@ -18,9 +18,7 @@ package northbound
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 
 	"github.com/onosproject/onos-lib-go/pkg/certs"
@@ -82,7 +80,6 @@ func (s *Server) Serve(started func(string)) error {
 	if err != nil {
 		return err
 	}
-
 	tlsCfg := &tls.Config{}
 
 	if *s.cfg.CertPath == "" && *s.cfg.KeyPath == "" {
@@ -113,11 +110,13 @@ func (s *Server) Serve(started func(string)) error {
 
 	if *s.cfg.CaPath == "" {
 		log.Info("Loading default CA onfca")
-		tlsCfg.ClientCAs = getCertPoolDefault()
+		tlsCfg.ClientCAs, err = certs.GetCertPoolDefault()
 	} else {
-		tlsCfg.ClientCAs = getCertPool(*s.cfg.CaPath)
+		tlsCfg.ClientCAs, err = certs.GetCertPool(*s.cfg.CaPath)
 	}
-
+	if err != nil {
+		return err
+	}
 	opts := []grpc.ServerOption{grpc.Creds(credentials.NewTLS(tlsCfg))}
 	server := grpc.NewServer(opts...)
 	for i := range s.services {
@@ -127,24 +126,4 @@ func (s *Server) Serve(started func(string)) error {
 
 	log.Infof("Starting RPC server on address: %s", lis.Addr().String())
 	return server.Serve(lis)
-}
-
-func getCertPoolDefault() *x509.CertPool {
-	certPool := x509.NewCertPool()
-	if ok := certPool.AppendCertsFromPEM([]byte(certs.OnfCaCrt)); !ok {
-		log.Warn("failed to append CA certificates")
-	}
-	return certPool
-}
-
-func getCertPool(CaPath string) *x509.CertPool {
-	certPool := x509.NewCertPool()
-	ca, err := ioutil.ReadFile(CaPath)
-	if err != nil {
-		log.Warn("could not read ", CaPath, err)
-	}
-	if ok := certPool.AppendCertsFromPEM(ca); !ok {
-		log.Warn("failed to append CA certificates")
-	}
-	return certPool
 }
