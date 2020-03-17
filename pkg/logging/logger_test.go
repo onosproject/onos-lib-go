@@ -15,23 +15,26 @@
 package logging
 
 import (
+	"github.com/onosproject/onos-lib-go/pkg/config"
 	"testing"
 
-	art "github.com/plar/go-adaptive-radix-tree"
-
-	"github.com/onosproject/onos-lib-go/pkg/logging/config"
+	"github.com/plar/go-adaptive-radix-tree"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
 )
 
-func TestPreConfiguredLogger(t *testing.T) {
-	loggersConfig, err := config.GetConfig()
-	assert.Nil(t, err)
-	AddConfiguredLoggers(loggersConfig)
+type testConfig struct {
+	Logging Config `yaml:"logging,omitempty"`
+}
 
-	for _, configuredLogger := range loggersConfig.Logging.Loggers {
+func TestPreConfiguredLogger(t *testing.T) {
+	c := &testConfig{}
+	err := config.Load(c)
+	assert.NoError(t, err)
+	Configure(c.Logging)
+	for _, configuredLogger := range c.Logging.Loggers {
 		loggers.ForEachPrefix(art.Key(configuredLogger.Name), func(node art.Node) bool {
 			return assert.NotNil(t, node.Key())
 		})
@@ -39,7 +42,7 @@ func TestPreConfiguredLogger(t *testing.T) {
 }
 
 func TestCustomLogger(t *testing.T) {
-	cfgFooLogger := Configuration{}
+	cfgFooLogger := LoggerConfig{}
 	cfgFooLogger.SetEncoding("json").
 		SetLevel(ErrorLevel).
 		SetOutputPaths([]string{"stdout"}).
@@ -52,7 +55,7 @@ func TestCustomLogger(t *testing.T) {
 		SetECEncodeLevel(zc.CapitalLevelEncoder).
 		Build()
 
-	cfgFooBarLogger := Configuration{}
+	cfgFooBarLogger := LoggerConfig{}
 
 	cfgFooBarLogger.SetEncoding("json").
 		SetLevel(WarnLevel).

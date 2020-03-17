@@ -19,151 +19,151 @@ import (
 	zc "go.uber.org/zap/zapcore"
 )
 
-// Configuration log config structure
-type Configuration struct {
+// LoggerConfig log config structure
+type LoggerConfig struct {
 	zapConfig zp.Config
 	sinkURLs  []SinkURL
 }
 
-// ConfigurationBuilder log configuration builder interface
-type ConfigurationBuilder interface {
-	SetLevel(Level) ConfigurationBuilder
-	SetEncoding(string) ConfigurationBuilder
-	SetDevelopment(bool) ConfigurationBuilder
-	SetOutputPaths([]string) ConfigurationBuilder
-	SetErrorOutputPaths([]string) ConfigurationBuilder
-	SetSinkURLs([]SinkURL) ConfigurationBuilder
-	//SetInitialFields(Fields) ConfigurationBuilder
-	SetECLevelKey(string) ConfigurationBuilder
-	SetECMsgKey(string) ConfigurationBuilder
-	SetECTimeKey(string) ConfigurationBuilder
-	SetECStackTraceKey(string) ConfigurationBuilder
-	SetECLineEnding(string) ConfigurationBuilder
-	SetECEncodeLevel(zc.LevelEncoder) ConfigurationBuilder
-	SetECTimeEncoder(zc.TimeEncoder) ConfigurationBuilder
-	SetName(...string) ConfigurationBuilder
-	SetECEncodeDuration(zc.DurationEncoder) ConfigurationBuilder
-	SetECEncoderCaller(string, zc.CallerEncoder) ConfigurationBuilder
-	Build() Configuration
+// LoggerBuilder log configuration builder interface
+type LoggerBuilder interface {
+	SetLevel(Level) LoggerBuilder
+	SetEncoding(string) LoggerBuilder
+	SetDevelopment(bool) LoggerBuilder
+	SetOutputPaths([]string) LoggerBuilder
+	SetErrorOutputPaths([]string) LoggerBuilder
+	SetSinkURLs([]SinkURL) LoggerBuilder
+	//SetInitialFields(Fields) LoggerBuilder
+	SetECLevelKey(string) LoggerBuilder
+	SetECMsgKey(string) LoggerBuilder
+	SetECTimeKey(string) LoggerBuilder
+	SetECStackTraceKey(string) LoggerBuilder
+	SetECLineEnding(string) LoggerBuilder
+	SetECEncodeLevel(zc.LevelEncoder) LoggerBuilder
+	SetECTimeEncoder(zc.TimeEncoder) LoggerBuilder
+	SetName(...string) LoggerBuilder
+	SetECEncodeDuration(zc.DurationEncoder) LoggerBuilder
+	SetECEncoderCaller(string, zc.CallerEncoder) LoggerBuilder
+	Build() LoggerConfig
 }
 
 // GetSinkURLs gets sink urls
-func (c *Configuration) GetSinkURLs() []SinkURL {
+func (c *LoggerConfig) GetSinkURLs() []SinkURL {
 	return c.sinkURLs
 }
 
 // SetSinkURLs sets sink urls
-func (c *Configuration) SetSinkURLs(sinkURLs []SinkURL) ConfigurationBuilder {
+func (c *LoggerConfig) SetSinkURLs(sinkURLs []SinkURL) LoggerBuilder {
 	c.sinkURLs = sinkURLs
 	return c
 }
 
 // GetZapConfig gets zap configuration
-func (c *Configuration) GetZapConfig() zp.Config {
+func (c *LoggerConfig) GetZapConfig() zp.Config {
 	return c.zapConfig
 }
 
 // SetLevel sets log level
-func (c *Configuration) SetLevel(level Level) ConfigurationBuilder {
+func (c *LoggerConfig) SetLevel(level Level) LoggerBuilder {
 	c.zapConfig.Level = intToAtomicLevel(level)
 	return c
 }
 
 // SetEncoding sets log encoding
-func (c *Configuration) SetEncoding(encoding string) ConfigurationBuilder {
+func (c *LoggerConfig) SetEncoding(encoding string) LoggerBuilder {
 	c.zapConfig.Encoding = encoding
 	return c
 }
 
 // SetDevelopment sets log development
-func (c *Configuration) SetDevelopment(development bool) ConfigurationBuilder {
+func (c *LoggerConfig) SetDevelopment(development bool) LoggerBuilder {
 	c.zapConfig.Development = development
 	return c
 }
 
 // SetOutputPaths sets log output paths
-func (c *Configuration) SetOutputPaths(outputPaths []string) ConfigurationBuilder {
+func (c *LoggerConfig) SetOutputPaths(outputPaths []string) LoggerBuilder {
 	c.zapConfig.OutputPaths = outputPaths
 	return c
 }
 
 // SetErrorOutputPaths sets log error output paths
-func (c *Configuration) SetErrorOutputPaths(errorOutputPaths []string) ConfigurationBuilder {
+func (c *LoggerConfig) SetErrorOutputPaths(errorOutputPaths []string) LoggerBuilder {
 	c.zapConfig.ErrorOutputPaths = errorOutputPaths
 	return c
 }
 
 // SetInitialFields sets log initial fields
-/*func (c *Configuration) SetInitialFields(initFields Fields) ConfigurationBuilder {
+/*func (c *LoggerConfig) SetInitialFields(initFields Fields) LoggerBuilder {
 	c.zapConfig.InitialFields = initFields
 	return c
 }*/
 
 // SetEncoderConfigLevelKey sets log encoder config level key
-func (c *Configuration) SetECLevelKey(levelKey string) ConfigurationBuilder {
+func (c *LoggerConfig) SetECLevelKey(levelKey string) LoggerBuilder {
 	c.zapConfig.EncoderConfig.LevelKey = levelKey
 	return c
 }
 
 // SetECNameKey sets encoder config name key
-func (c *Configuration) SetName(names ...string) ConfigurationBuilder {
+func (c *LoggerConfig) SetName(names ...string) LoggerBuilder {
 	nameKey := buildTreeName(names...)
 	c.zapConfig.EncoderConfig.NameKey = nameKey
 	return c
 }
 
 // SetEncoderConfigMsgKey sets log encoder config message key
-func (c *Configuration) SetECMsgKey(msgKey string) ConfigurationBuilder {
+func (c *LoggerConfig) SetECMsgKey(msgKey string) LoggerBuilder {
 	c.zapConfig.EncoderConfig.MessageKey = msgKey
 	return c
 }
 
 // SetECTimeKey sets log encoder config time key
-func (c *Configuration) SetECTimeKey(timeKey string) ConfigurationBuilder {
+func (c *LoggerConfig) SetECTimeKey(timeKey string) LoggerBuilder {
 	c.zapConfig.EncoderConfig.TimeKey = timeKey
 	return c
 }
 
 // SetECStackTraceKey sets log encoder config start trace key
-func (c *Configuration) SetECStackTraceKey(stackTraceKey string) ConfigurationBuilder {
+func (c *LoggerConfig) SetECStackTraceKey(stackTraceKey string) LoggerBuilder {
 	c.zapConfig.EncoderConfig.StacktraceKey = stackTraceKey
 	return c
 }
 
 // SetECLineEnding sets log encoder config line ending
-func (c *Configuration) SetECLineEnding(lineEnding string) ConfigurationBuilder {
+func (c *LoggerConfig) SetECLineEnding(lineEnding string) LoggerBuilder {
 	c.zapConfig.EncoderConfig.LineEnding = lineEnding
 	return c
 }
 
 // SetECEncodeLevel sets log encoder config encode level
-func (c *Configuration) SetECEncodeLevel(encodeLevel zc.LevelEncoder) ConfigurationBuilder {
+func (c *LoggerConfig) SetECEncodeLevel(encodeLevel zc.LevelEncoder) LoggerBuilder {
 	c.zapConfig.EncoderConfig.EncodeLevel = encodeLevel
 	return c
 }
 
 // SetECTimeEncoder sets log encoder config time encoder
-func (c *Configuration) SetECTimeEncoder(timeEncoder zc.TimeEncoder) ConfigurationBuilder {
+func (c *LoggerConfig) SetECTimeEncoder(timeEncoder zc.TimeEncoder) LoggerBuilder {
 	c.zapConfig.EncoderConfig.EncodeTime = timeEncoder
 	return c
 }
 
 // SetECEncodeDuration sets log encoder config encode duration
-func (c *Configuration) SetECEncodeDuration(encodeDuration zc.DurationEncoder) ConfigurationBuilder {
+func (c *LoggerConfig) SetECEncodeDuration(encodeDuration zc.DurationEncoder) LoggerBuilder {
 	c.zapConfig.EncoderConfig.EncodeDuration = encodeDuration
 	return c
 }
 
 // SetECEncoderCaller sets log encoder config encoder caller
-func (c *Configuration) SetECEncoderCaller(callerKey string, encoderCaller zc.CallerEncoder) ConfigurationBuilder {
+func (c *LoggerConfig) SetECEncoderCaller(callerKey string, encoderCaller zc.CallerEncoder) LoggerBuilder {
 	c.zapConfig.EncoderConfig.EncodeCaller = encoderCaller
 	c.zapConfig.EncoderConfig.CallerKey = callerKey
 	return c
 }
 
 // Build builds a custom log configuration
-func (c *Configuration) Build() Configuration {
-	return Configuration{
+func (c *LoggerConfig) Build() LoggerConfig {
+	return LoggerConfig{
 		zapConfig: c.zapConfig,
 	}
 

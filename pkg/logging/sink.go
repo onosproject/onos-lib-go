@@ -14,8 +14,6 @@
 
 package logging
 
-import "github.com/onosproject/onos-lib-go/pkg/logging/config"
-
 // SinkInfo sink information
 type SinkInfo struct {
 	name  string
@@ -26,8 +24,8 @@ type SinkInfo struct {
 }
 
 // GetSinks get sinks info from the configuration
-func GetSinks(config *config.Config) []SinkInfo {
-	sinksList := config.Logging.Sinks
+func GetSinks(config Config) []SinkInfo {
+	sinksList := config.Sinks
 	sinks := make([]SinkInfo, len(sinksList))
 	for _, sink := range sinksList {
 		sinkInfo := SinkInfo{
