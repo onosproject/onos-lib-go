@@ -20,16 +20,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/onosproject/onos-lib-go/pkg/logging/config"
-
-	art "github.com/plar/go-adaptive-radix-tree"
+	"github.com/plar/go-adaptive-radix-tree"
 
 	"go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
 )
 
-func getDefaultConfig(name string, level Level) Configuration {
-	cfg := Configuration{}
+func getDefaultConfig(name string, level Level) LoggerConfig {
+	cfg := LoggerConfig{}
 	cfg.SetEncoding("json").
 		SetLevel(level).
 		SetOutputPaths([]string{"stdout"}).
@@ -46,8 +44,8 @@ func getDefaultConfig(name string, level Level) Configuration {
 }
 
 // AddConfiguredLoggers adds configured loggers
-func AddConfiguredLoggers(config *config.Config) {
-	loggersList := config.Logging.Loggers
+func AddConfiguredLoggers(config Config) {
+	loggersList := config.Loggers
 	sinks := GetSinks(config)
 	for _, logger := range loggersList {
 		loggerSinkInfo, found := ContainSink(sinks, logger.Sink)
@@ -77,7 +75,7 @@ func AddConfiguredLoggers(config *config.Config) {
 
 				urls = append(urls, urlInfo)
 
-				cfg := Configuration{}
+				cfg := LoggerConfig{}
 				cfg.SetEncoding(logger.Encoding).
 					SetLevel(StringToInt(strings.ToUpper(logger.Level))).
 					SetSinkURLs(urls).
@@ -91,7 +89,7 @@ func AddConfiguredLoggers(config *config.Config) {
 				cfg.GetLogger()
 
 			case Stdout.String():
-				cfg := Configuration{}
+				cfg := LoggerConfig{}
 				cfg.SetEncoding(logger.Encoding).
 					SetLevel(StringToInt(strings.ToUpper(logger.Level))).
 					SetOutputPaths([]string{Stdout.String()}).
@@ -129,11 +127,11 @@ func init() {
 
 	rootLogger = newLogger.Named(defaultLoggerName)
 	root = Log{rootLogger, &defaultEncoder, &defaultWriter, defaultLoggerName, defaultAtomLevel}
-	loggersConfig, err := config.GetConfig()
-	if err == nil {
-		AddConfiguredLoggers(loggersConfig)
-	}
+}
 
+// Configure configures logging with the given configuration
+func Configure(config Config) {
+	AddConfiguredLoggers(config)
 }
 
 // SetLevel defines a new logger level and propagate the change its children
@@ -198,7 +196,7 @@ func GetLogger(names ...string) *Log {
 	return AddLogger(InfoLevel, names...)
 }
 
-func (c *Configuration) GetLogger() *Log {
+func (c *LoggerConfig) GetLogger() *Log {
 	level := c.zapConfig.Level.Level().String()
 	name := c.zapConfig.EncoderConfig.NameKey
 	if level == "" {

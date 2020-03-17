@@ -22,54 +22,31 @@ import (
 
 const configDir = ".onos"
 
-// Config loggers configuration
-type Config struct {
-	Logging struct {
-		Loggers []struct {
-			Encoding string `yaml:"encoding"`
-			Level    string `yaml:"level"`
-			Name     string `yaml:"name"`
-			Sink     string `yaml:"sink"`
-		} `yaml:"loggers"`
-		Sinks []struct {
-			Key   string `yaml:"key"`
-			Name  string `yaml:"name"`
-			Type  string `yaml:"type"`
-			Topic string `yaml:"topic"`
-			URI   string `yaml:"uri"`
-		} `yaml:"sinks"`
-	} `yaml:"logging"`
-}
-
-func GetConfig() (*Config, error) {
+// Load loads the configuration
+func Load(config interface{}) error {
 	home, err := homedir.Dir()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var config Config
 
 	// Set the file name of the configurations file
-	viper.SetConfigName("logging")
+	viper.SetConfigName("onos")
 
 	// Set the path to look for the configurations file
-	viper.AddConfigPath("./configs/")
-	viper.AddConfigPath("./config/")
-	viper.AddConfigPath("./usr/local/configs/")
-	viper.AddConfigPath(home + "/" + configDir)
-	viper.AddConfigPath("/etc/onos")
+	viper.AddConfigPath("./" + configDir + "/config")
+	viper.AddConfigPath(home + "/" + configDir + "/config")
+	viper.AddConfigPath("/etc/onos/config")
 	viper.AddConfigPath(".")
 
 	viper.SetConfigType("yaml")
 
 	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
+		return err
 	}
 
-	err = viper.Unmarshal(&config)
+	err = viper.Unmarshal(config)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	return &config, nil
-
+	return nil
 }
