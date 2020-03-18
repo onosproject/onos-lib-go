@@ -16,7 +16,7 @@ package atomix
 
 import (
 	"fmt"
-	"os"
+	"github.com/onosproject/onos-lib-go/pkg/env"
 )
 
 // Config is the Atomix configuration
@@ -27,6 +27,8 @@ type Config struct {
 	Namespace string `yaml:"namespace,omitempty"`
 	// Scope is the Atomix client/application scope
 	Scope string `yaml:"scope,omitempty"`
+	// Protocols is a mapping of protocol types to databases
+	Protocols map[string]string `yaml:"protocols"`
 }
 
 // GetController gets the Atomix controller address
@@ -43,7 +45,7 @@ func (c Config) GetController() string {
 // GetNamespace gets the Atomix client namespace
 func (c Config) GetNamespace() string {
 	if c.Namespace == "" {
-		c.Namespace = os.Getenv("POD_NAMESPACE")
+		c.Namespace = env.GetServiceNamespace()
 	}
 	return c.Namespace
 }
@@ -51,7 +53,18 @@ func (c Config) GetNamespace() string {
 // GetScope gets the Atomix client scope
 func (c Config) GetScope() string {
 	if c.Scope == "" {
+		c.Scope = env.GetServiceName()
+	}
+	if c.Scope == "" {
 		c.Scope = c.GetNamespace()
 	}
 	return c.Scope
+}
+
+// GetDatabase gets the database name for the given protocol
+func (c Config) GetDatabase(protocol string) string {
+	if db, ok := c.Protocols[protocol]; ok {
+		return db
+	}
+	return protocol
 }
