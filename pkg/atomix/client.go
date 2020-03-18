@@ -24,15 +24,7 @@ import (
 	"github.com/atomix/go-framework/pkg/atomix/registry"
 	"github.com/atomix/go-local/pkg/atomix/local"
 	"net"
-	"os"
 	"time"
-)
-
-const (
-	atomixControllerEnv = "ATOMIX_CONTROLLER"
-	atomixNamespaceEnv  = "ATOMIX_NAMESPACE"
-	atomixAppEnv        = "ATOMIX_APP"
-	atomixRaftGroup     = "ATOMIX_RAFT"
 )
 
 const basePort = 45000
@@ -56,39 +48,22 @@ func StartLocalNode() (*atomix.Node, netutil.Address) {
 	panic("cannot find open port")
 }
 
-func getAtomixController() string {
-	return os.Getenv(atomixControllerEnv)
-}
-
-func getAtomixNamespace() string {
-	return os.Getenv(atomixNamespaceEnv)
-}
-
-func getAtomixScope() string {
-	return os.Getenv(atomixAppEnv)
-}
-
-// GetAtomixRaftGroup get the Atomix Raft group
-func GetAtomixRaftGroup() string {
-	return os.Getenv(atomixRaftGroup)
-}
-
-// GetAtomixClient returns the Atomix client
-func GetAtomixClient() (*client.Client, error) {
+// GetClient returns the Atomix client
+func GetClient(config Config) (*client.Client, error) {
 	opts := []client.Option{
-		client.WithNamespace(getAtomixNamespace()),
-		client.WithScope(getAtomixScope()),
+		client.WithNamespace(config.GetNamespace()),
+		client.WithScope(config.GetScope()),
 	}
-	return client.NewClient(getAtomixController(), opts...)
+	return client.NewClient(config.GetController(), opts...)
 }
 
-// GetAtomixDatabase returns the Atomix database
-func GetAtomixDatabase() (*client.Database, error) {
-	client, err := GetAtomixClient()
+// GetDatabase returns the Atomix database
+func GetDatabase(config Config, database string) (*client.Database, error) {
+	client, err := GetClient(config)
 	if err != nil {
 		return nil, err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	return client.GetDatabase(ctx, GetAtomixRaftGroup())
+	return client.GetDatabase(ctx, database)
 }
