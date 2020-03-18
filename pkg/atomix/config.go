@@ -19,6 +19,20 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/env"
 )
 
+// DatabaseType is the type of a database
+type DatabaseType string
+
+const (
+	// DatabaseTypeConsensus indicates a consensus database
+	DatabaseTypeConsensus DatabaseType = "consensus"
+	// DatabaseTypeCache indicates a cache database
+	DatabaseTypeCache DatabaseType = "cache"
+	// DatabaseTypeTimeSeries indicates a time series database
+	DatabaseTypeTimeSeries DatabaseType = "timeSeries"
+	// DatabaseTypeRelational indicates a relational database
+	DatabaseTypeRelational DatabaseType = "relational"
+)
+
 // Config is the Atomix configuration
 type Config struct {
 	// Controller is the Atomix controller address
@@ -27,8 +41,8 @@ type Config struct {
 	Namespace string `yaml:"namespace,omitempty"`
 	// Scope is the Atomix client/application scope
 	Scope string `yaml:"scope,omitempty"`
-	// Protocols is a mapping of protocol types to databases
-	Protocols map[string]string `yaml:"protocols"`
+	// Databases is a mapping of database types to databases
+	Databases map[DatabaseType]string `yaml:"databases"`
 }
 
 // GetController gets the Atomix controller address
@@ -61,10 +75,7 @@ func (c Config) GetScope() string {
 	return c.Scope
 }
 
-// GetDatabase gets the database name for the given protocol
-func (c Config) GetDatabase(protocol string) string {
-	if db, ok := c.Protocols[protocol]; ok {
-		return db
-	}
-	return protocol
+// GetDatabase gets the database name for the given database type
+func (c Config) GetDatabase(databaseType DatabaseType) string {
+	return c.Databases[databaseType]
 }
