@@ -39,7 +39,8 @@ func Test_GetConnection(t *testing.T) {
 func Test_AddConfigFlags(t *testing.T) {
 	AddConfigFlags(&cobra.Command{
 		Short: "test command",
-	})
+	},
+	"localhost:5150")
 }
 
 func Test_GetConfigCommand(t *testing.T) {
