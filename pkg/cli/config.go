@@ -25,7 +25,6 @@ import (
 const (
 	configDir      = ".onos"
 	addressKey     = "service-address"
-	defaultAddress = "localhost:5150"
 
 	tlsCertPathKey = "tls.certPath"
 	tlsKeyPathKey  = "tls.keyPath"
@@ -47,10 +46,10 @@ var configOptions = []string{
 }
 
 // AddConfigFlags
-func AddConfigFlags(cmd *cobra.Command) {
-	viper.SetDefault(addressKey, defaultAddress)
+func AddConfigFlags(cmd *cobra.Command, serviceAddress string) {
+	viper.SetDefault(addressKey, serviceAddress)
 
-	cmd.PersistentFlags().String(addressFlag, viper.GetString(addressKey), "the onos-ran service address")
+	cmd.PersistentFlags().String(addressFlag, viper.GetString(addressKey), "the gRPC endpoint")
 	cmd.PersistentFlags().String(tlsCertPathFlag, viper.GetString(tlsCertPathKey), "the path to the TLS certificate")
 	cmd.PersistentFlags().String(tlsKeyPathFlag, viper.GetString(tlsKeyPathKey), "the path to the TLS key")
 	cmd.PersistentFlags().Bool(noTLSFlag, viper.GetBool(noTLSKey), "if present, do not use TLS")
@@ -80,7 +79,7 @@ func getConfigGetCommand() *cobra.Command {
 
 func runConfigGetCommand(_ *cobra.Command, args []string) error {
 	value := viper.Get(args[0])
-	fmt.Fprintln(GetOutput(), value)
+	_, _ = fmt.Fprintln(GetOutput(), value)
 	return nil
 }
 
@@ -101,7 +100,7 @@ func runConfigSetCommand(_ *cobra.Command, args []string) error {
 	}
 
 	value := viper.Get(args[0])
-	fmt.Fprintln(GetOutput(), value)
+	_, _ = fmt.Fprintln(GetOutput(), value)
 	return nil
 }
 
@@ -122,7 +121,7 @@ func runConfigDeleteCommand(_ *cobra.Command, args []string) error {
 	}
 
 	value := viper.Get(args[0])
-	fmt.Fprintln(GetOutput(), value)
+	_, _ = fmt.Fprintln(GetOutput(), value)
 	return nil
 }
 
@@ -153,19 +152,19 @@ func runConfigInitCommand(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	f.Close()
+	_ = f.Close()
 
 	if err := viper.WriteConfig(); err != nil {
 		return err
 	}
-	fmt.Fprintln(GetOutput(), "Created "+filePath)
+	_ , _ = fmt.Fprintf(GetOutput(), "Created %s\n", filePath)
 	return nil
 }
 
 func getAddress(cmd *cobra.Command) string {
 	address, _ := cmd.Flags().GetString(addressFlag)
 	if address == "" {
-		return defaultAddress
+		return viper.GetString(addressKey)
 	}
 	return address
 }
