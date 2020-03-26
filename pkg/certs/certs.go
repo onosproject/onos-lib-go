@@ -87,9 +87,9 @@ func HandleCertPaths(caPath string, keyPath string, certPath string, insecure bo
 	}
 
 	tlsConfig := &tls.Config{
-		Certificates:                []tls.Certificate{cert},
-		ClientCAs:                   clientCAs,
-		InsecureSkipVerify:          insecure,
+		Certificates:       []tls.Certificate{cert},
+		ClientCAs:          clientCAs,
+		InsecureSkipVerify: insecure,
 	}
 	opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 

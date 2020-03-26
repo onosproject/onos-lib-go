@@ -99,7 +99,7 @@ func (l *Log) DPanicf(template string, args ...interface{}) {
 	l.stdLogger.Sugar().DPanicf(template, args...)
 }
 
-// Panicw logs a message at DPanicw level on the sugar logger.
+// DPanicw logs a message at DPanicw level on the sugar logger.
 func (l *Log) DPanicw(msg string, keysAndValues ...interface{}) {
 	l.stdLogger.Sugar().DPanicw(msg, keysAndValues...)
 }

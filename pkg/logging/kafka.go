@@ -23,6 +23,7 @@ import (
 )
 
 var (
+	// Sinks :
 	Sinks = map[string]Sink{}
 )
 

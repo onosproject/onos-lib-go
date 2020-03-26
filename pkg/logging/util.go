@@ -23,8 +23,10 @@ import (
 	zc "go.uber.org/zap/zapcore"
 )
 
+// Debug :
 type Debug bool
 
+// Println :
 func (d Debug) Println(s string, args ...interface{}) {
 	if d {
 		fmt.Printf("DEBUG:")
@@ -74,6 +76,7 @@ func levelToInt(l zc.Level) Level {
 	return ErrorLevel
 }
 
+// StringToInt :
 func StringToInt(l string) Level {
 	switch l {
 	case DebugLevel.String():
