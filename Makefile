@@ -3,7 +3,6 @@ export GO111MODULE=on
 
 .PHONY: build
 
-
 test: # @HELP run the unit tests and source code validation
 test: deps license_check linters
 	go test github.com/onosproject/onos-lib-go/pkg/...
@@ -30,10 +29,7 @@ protos: # @HELP compile the protobuf files (using protoc-go Docker)
 		--entrypoint build/bin/compile-protos.sh \
 		onosproject/protoc-go:stable
 
-
-
 all: test
-
 
 clean: # @HELP remove all the build artifacts
 	rm -rf ./build/_output ./vendor

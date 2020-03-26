@@ -174,6 +174,7 @@ func assignParentLevelLogger(name string) *Log {
 	return &root
 }
 
+// FindLogger :
 func FindLogger(names ...string) (*Log, bool) {
 	name := buildTreeName(names...)
 	value, found := GetLoggers().Search(GetKey(name))
@@ -196,6 +197,7 @@ func GetLogger(names ...string) *Log {
 	return AddLogger(InfoLevel, names...)
 }
 
+// GetLogger :
 func (c *LoggerConfig) GetLogger() *Log {
 	level := c.zapConfig.Level.Level().String()
 	name := c.zapConfig.EncoderConfig.NameKey

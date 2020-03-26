@@ -20,15 +20,20 @@ cache:
     - $HOME/gopath/pkg/mod         # Cache the Go modules
 
 before_script:
-  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin latest
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.6
 
 jobs:
   include:
+    - stage: build
+      name: "build and test"
+      script:
+        - make test
+    -
+      name: "coverage"
+      script:
+        - make coverage
     - stage: docs build
       if: type != pull_request
       script:
         - sh build/bin/trigger-docs-travis $TRAVIS_ACCESS_TOKEN
-    
-    - stage: tests
-      script:
-        - make coverage
+

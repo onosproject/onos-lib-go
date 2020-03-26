@@ -22,6 +22,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// SinkType :
 type SinkType int
 
 const (
@@ -32,10 +33,12 @@ const (
 	Stdout
 )
 
+// String :
 func (s SinkType) String() string {
 	return [...]string{"kafka", "stdout"}[s]
 }
 
+// Level :
 type Level int
 
 const (
@@ -54,9 +57,11 @@ const (
 	// DPanicLevel logs at PanicLevel; otherwise, it logs at ErrorLevel
 	DPanicLevel
 
+	// EmptyLevel :
 	EmptyLevel
 )
 
+// String :
 func (l Level) String() string {
 	return [...]string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL", "PANIC", "DPANIC", ""}[l]
 }
@@ -94,6 +99,7 @@ type Logger interface {
 	SetLevel(level Level)
 }
 
+// Log :
 type Log struct {
 	stdLogger *zap.Logger
 	encoder   *zapcore.Encoder

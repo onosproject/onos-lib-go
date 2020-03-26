@@ -99,20 +99,20 @@ func (c *LoggerConfig) SetErrorOutputPaths(errorOutputPaths []string) LoggerBuil
 	return c
 }*/
 
-// SetEncoderConfigLevelKey sets log encoder config level key
+// SetECLevelKey sets log encoder config level key
 func (c *LoggerConfig) SetECLevelKey(levelKey string) LoggerBuilder {
 	c.zapConfig.EncoderConfig.LevelKey = levelKey
 	return c
 }
 
-// SetECNameKey sets encoder config name key
+// SetName sets encoder config name key
 func (c *LoggerConfig) SetName(names ...string) LoggerBuilder {
 	nameKey := buildTreeName(names...)
 	c.zapConfig.EncoderConfig.NameKey = nameKey
 	return c
 }
 
-// SetEncoderConfigMsgKey sets log encoder config message key
+// SetECMsgKey sets log encoder config message key
 func (c *LoggerConfig) SetECMsgKey(msgKey string) LoggerBuilder {
 	c.zapConfig.EncoderConfig.MessageKey = msgKey
 	return c

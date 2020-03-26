@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	configDir      = ".onos"
-	addressKey     = "service-address"
+	configDir  = ".onos"
+	addressKey = "service-address"
 
 	tlsCertPathKey = "tls.certPath"
 	tlsKeyPathKey  = "tls.keyPath"
@@ -45,7 +45,7 @@ var configOptions = []string{
 	noTLSKey,
 }
 
-// AddConfigFlags
+// AddConfigFlags :
 func AddConfigFlags(cmd *cobra.Command, serviceAddress string) {
 	viper.SetDefault(addressKey, serviceAddress)
 
@@ -55,6 +55,7 @@ func AddConfigFlags(cmd *cobra.Command, serviceAddress string) {
 	cmd.PersistentFlags().Bool(noTLSFlag, viper.GetBool(noTLSKey), "if present, do not use TLS")
 }
 
+// GetConfigCommand :
 func GetConfigCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config {set,get,delete,init} [args]",
@@ -157,7 +158,7 @@ func runConfigInitCommand(_ *cobra.Command, _ []string) error {
 	if err := viper.WriteConfig(); err != nil {
 		return err
 	}
-	_ , _ = fmt.Fprintf(GetOutput(), "Created %s\n", filePath)
+	_, _ = fmt.Fprintf(GetOutput(), "Created %s\n", filePath)
 	return nil
 }
 
@@ -184,6 +185,7 @@ func noTLS(cmd *cobra.Command) bool {
 	return tls
 }
 
+// InitConfig :
 func InitConfig(configNameInit string) {
 	home, err := homedir.Dir()
 	if err != nil {
