@@ -8,6 +8,7 @@ require (
 	github.com/atomix/go-client v0.0.0-20200307025134-f638fa3fb644
 	github.com/atomix/go-framework v0.0.0-20200211010411-ae512dcee9ad
 	github.com/atomix/go-local v0.0.0-20200211010611-c99e53e4c653
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.8.1
