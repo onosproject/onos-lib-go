@@ -29,6 +29,9 @@ protos: # @HELP compile the protobuf files (using protoc-go Docker)
 		--entrypoint build/bin/compile-protos.sh \
 		onosproject/protoc-go:stable
 
+publish: # @HELP publish version on github and dockerhub
+	./../build-tools/publish-version ${VERSION}
+
 all: test
 
 clean: # @HELP remove all the build artifacts
