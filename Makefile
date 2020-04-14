@@ -3,6 +3,8 @@ export GO111MODULE=on
 
 .PHONY: build
 
+ONOS_PROTOC_VERSION := v0.5.0
+
 test: # @HELP run the unit tests and source code validation
 test: deps license_check linters
 	go test github.com/onosproject/onos-lib-go/pkg/...
@@ -27,7 +29,7 @@ protos: # @HELP compile the protobuf files (using protoc-go Docker)
 	docker run -it -v `pwd`:/go/src/github.com/onosproject/onos-lib-go \
 		-w /go/src/github.com/onosproject/onos-lib-go \
 		--entrypoint build/bin/compile-protos.sh \
-		onosproject/protoc-go:stable
+		onosproject/protoc-go:${ONOS_PROTOC_VERSION}
 
 publish: # @HELP publish version on github and dockerhub
 	./../build-tools/publish-version ${VERSION}
