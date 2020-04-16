@@ -23,38 +23,6 @@ import (
 	"io/ioutil"
 )
 
-// HandleCertArgs is a common function for clients like admin/net-changes for
-// handling certificate args if given, or else loading defaults
-// Deprecated: This should not take pointer to string - also ignores the caPath - use HandleCertArgsCa below
-func HandleCertArgs(keyPath *string, certPath *string) ([]grpc.DialOption, error) {
-
-	var opts = []grpc.DialOption{}
-	var cert tls.Certificate
-	var err error
-	if *keyPath != Client1Key && *keyPath != "" &&
-		*certPath != Client1Crt && *certPath != "" {
-		cert, err = tls.LoadX509KeyPair(*certPath, *keyPath)
-		if err != nil {
-			return nil, err
-		}
-
-	} else {
-		// Load default Certificates
-		cert, err = tls.X509KeyPair([]byte(DefaultClientCrt), []byte(DefaultClientKey))
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{cert},
-		InsecureSkipVerify: true,
-	}
-	opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-
-	return opts, nil
-}
-
 // HandleCertPaths is a common function for clients and servers like admin/net-changes for
 // handling certificate args if given, or else loading defaults
 func HandleCertPaths(caPath string, keyPath string, certPath string, insecure bool) ([]grpc.DialOption, error) {
