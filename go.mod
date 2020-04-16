@@ -6,8 +6,8 @@ require (
 	github.com/Shopify/sarama v1.26.1
 	github.com/atomix/api v0.1.0
 	github.com/atomix/go-client v0.1.0
-	github.com/atomix/go-framework v0.0.0-20200211010411-ae512dcee9ad
-	github.com/atomix/go-local v0.0.0-20200211010611-c99e53e4c653
+	github.com/atomix/go-framework v0.1.0
+	github.com/atomix/go-local v0.1.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/mitchellh/go-homedir v1.1.0
