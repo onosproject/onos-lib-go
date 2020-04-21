@@ -28,7 +28,7 @@ import (
 
 // init initialize logger package data structures
 func init() {
-	dbg = true
+	dbg = false
 
 	// Adds default logger (i.e. root logger)
 	defaultLoggerName := "root"
