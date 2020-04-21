@@ -75,6 +75,10 @@ func getDefaultConfig(name string, level Level) LoggerConfig {
 func AddConfiguredLoggers(config Config) {
 	dbg.Println("Add configured loggers %s", config.Loggers)
 	loggersList := config.Loggers
+	if len(loggersList) == 0 {
+		dbg.Println("Config file is empty or not loaded properly")
+		return
+	}
 	sinks := GetSinks(config)
 	for _, logger := range loggersList {
 		loggerSinkInfo, found := ContainSink(sinks, logger.Sink)
