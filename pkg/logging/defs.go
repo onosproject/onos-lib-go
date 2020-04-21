@@ -116,4 +116,11 @@ type SinkURL struct {
 	url.URL
 }
 
+var loggingConf *loggingConfig
+
+type loggingConfig struct {
+	// Logging is the logging configuration
+	Logging Config `yaml:"logging,omitempty"`
+}
+
 var dbg Debug
