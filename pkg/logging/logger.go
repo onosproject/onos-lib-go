@@ -20,11 +20,39 @@ import (
 	"os"
 	"strings"
 
-	"github.com/plar/go-adaptive-radix-tree"
+	art "github.com/plar/go-adaptive-radix-tree"
 
 	"go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
 )
+
+// init initialize logger package data structures
+func init() {
+	dbg = false
+
+	// Adds default logger (i.e. root logger)
+	defaultLoggerName := "root"
+	loggers = art.New()
+	cfg := getDefaultConfig(defaultLoggerName, levelToInt(zc.InfoLevel))
+	rootLogger, _ := cfg.GetZapConfig().Build(zap.AddCallerSkip(1))
+	defaultAtomLevel := zap.NewAtomicLevelAt(zc.InfoLevel)
+	defaultEncoder := zc.NewJSONEncoder(cfg.GetZapConfig().EncoderConfig)
+	defaultWriter := zc.Lock(os.Stdout)
+	newLogger := rootLogger.WithOptions(
+		zap.WrapCore(
+			func(zc.Core) zc.Core {
+				return zc.NewCore(defaultEncoder, defaultWriter, &defaultAtomLevel)
+			}))
+
+	rootLogger = newLogger.Named(defaultLoggerName)
+	root = Log{rootLogger, &defaultEncoder, &defaultWriter, defaultLoggerName, defaultAtomLevel}
+	loggingConf = &loggingConfig{}
+	if err := Load(loggingConf); err != nil {
+		dbg.Println(err.Error())
+	}
+
+	Configure(loggingConf.Logging)
+}
 
 func getDefaultConfig(name string, level Level) LoggerConfig {
 	cfg := LoggerConfig{}
@@ -45,7 +73,12 @@ func getDefaultConfig(name string, level Level) LoggerConfig {
 
 // AddConfiguredLoggers adds configured loggers
 func AddConfiguredLoggers(config Config) {
+	dbg.Println("Add configured loggers %s", config.Loggers)
 	loggersList := config.Loggers
+	if len(loggersList) == 0 {
+		dbg.Println("Config file is empty or not loaded properly")
+		return
+	}
 	sinks := GetSinks(config)
 	for _, logger := range loggersList {
 		loggerSinkInfo, found := ContainSink(sinks, logger.Sink)
@@ -105,28 +138,6 @@ func AddConfiguredLoggers(config Config) {
 
 		}
 	}
-}
-
-// init initialize logger package data structures
-func init() {
-	dbg = false
-
-	// Adds default logger (i.e. root logger)
-	defaultLoggerName := "root"
-	loggers = art.New()
-	cfg := getDefaultConfig(defaultLoggerName, levelToInt(zc.InfoLevel))
-	rootLogger, _ := cfg.GetZapConfig().Build(zap.AddCallerSkip(1))
-	defaultAtomLevel := zap.NewAtomicLevelAt(zc.InfoLevel)
-	defaultEncoder := zc.NewJSONEncoder(cfg.GetZapConfig().EncoderConfig)
-	defaultWriter := zc.Lock(os.Stdout)
-	newLogger := rootLogger.WithOptions(
-		zap.WrapCore(
-			func(zc.Core) zc.Core {
-				return zc.NewCore(defaultEncoder, defaultWriter, &defaultAtomLevel)
-			}))
-
-	rootLogger = newLogger.Named(defaultLoggerName)
-	root = Log{rootLogger, &defaultEncoder, &defaultWriter, defaultLoggerName, defaultAtomLevel}
 }
 
 // Configure configures logging with the given configuration
@@ -199,6 +210,7 @@ func GetLogger(names ...string) *Log {
 
 // GetLogger :
 func (c *LoggerConfig) GetLogger() *Log {
+	dbg.Println("Get Configured Logger: %s", c.zapConfig.EncoderConfig.NameKey)
 	level := c.zapConfig.Level.Level().String()
 	name := c.zapConfig.EncoderConfig.NameKey
 	if level == "" {
