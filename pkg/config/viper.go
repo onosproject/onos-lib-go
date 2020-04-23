@@ -24,13 +24,18 @@ const configDir = ".onos"
 
 // Load loads the configuration
 func Load(config interface{}) error {
+	return LoadNamedConfig("onos", config)
+}
+
+// LoadNamedConfig loads the named configuration
+func LoadNamedConfig(configName string, config interface{}) error {
 	home, err := homedir.Dir()
 	if err != nil {
 		return err
 	}
 
 	// Set the file name of the configurations file
-	viper.SetConfigName("onos")
+	viper.SetConfigName(configName)
 
 	// Set the path to look for the configurations file
 	viper.AddConfigPath("./" + configDir + "/config")
