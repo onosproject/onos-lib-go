@@ -19,7 +19,7 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/env"
 )
 
-const defaultPort = 8080
+const defaultPort = 5678
 
 // DatabaseType is the type of a database
 type DatabaseType string
