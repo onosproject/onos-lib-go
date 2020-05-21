@@ -19,6 +19,8 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/env"
 )
 
+const defaultPort = 5678
+
 // DatabaseType is the type of a database
 type DatabaseType string
 
@@ -37,6 +39,12 @@ const (
 type Config struct {
 	// Controller is the Atomix controller address
 	Controller string `yaml:"controller,omitempty"`
+	// Member is the Atomix member name
+	Member string `yaml:"member,omitempty"`
+	// Host is the Atomix member hostname
+	Host string `yaml:"host,omitempty"`
+	// Port is the Atomix member port
+	Port int `yaml:"port,omitempty"`
 	// Namespace is the Atomix namespace
 	Namespace string `yaml:"namespace,omitempty"`
 	// Scope is the Atomix client/application scope
@@ -54,6 +62,30 @@ func (c Config) GetController() string {
 		}
 	}
 	return c.Controller
+}
+
+// GetMember gets the Atomix member name
+func (c Config) GetMember() string {
+	if c.Member == "" {
+		c.Member = env.GetPodName()
+	}
+	return c.Member
+}
+
+// GetHost gets the Atomix peer host
+func (c Config) GetHost() string {
+	if c.Host == "" {
+		c.Host = env.GetPodName()
+	}
+	return c.Host
+}
+
+// GetPort gets the Atomix peer port
+func (c Config) GetPort() int {
+	if c.Port == 0 {
+		c.Port = defaultPort
+	}
+	return c.Port
 }
 
 // GetNamespace gets the Atomix client namespace
