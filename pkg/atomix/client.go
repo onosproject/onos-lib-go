@@ -17,7 +17,7 @@ package atomix
 import (
 	"context"
 	"fmt"
-	"github.com/atomix/api/proto/atomix/controller"
+	"github.com/atomix/api/proto/atomix/database"
 	"github.com/atomix/go-client/pkg/client"
 	netutil "github.com/atomix/go-client/pkg/client/util/net"
 	"github.com/atomix/go-framework/pkg/atomix"
@@ -37,7 +37,7 @@ func StartLocalNode() (*atomix.Node, netutil.Address) {
 		if err != nil {
 			continue
 		}
-		node := local.NewNode(lis, registry.Registry, []*controller.PartitionId{
+		node := local.NewNode(lis, registry.Registry, []database.PartitionId{
 			{
 				Partition: 1,
 			},
@@ -51,10 +51,13 @@ func StartLocalNode() (*atomix.Node, netutil.Address) {
 // GetClient returns the Atomix client
 func GetClient(config Config) (*client.Client, error) {
 	opts := []client.Option{
+		client.WithMemberID(config.GetMember()),
+		client.WithPeerHost(config.GetHost()),
+		client.WithPeerPort(config.GetPort()),
 		client.WithNamespace(config.GetNamespace()),
 		client.WithScope(config.GetScope()),
 	}
-	return client.NewClient(config.GetController(), opts...)
+	return client.New(config.GetController(), opts...)
 }
 
 // GetDatabase returns the Atomix database
