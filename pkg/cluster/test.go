@@ -93,14 +93,19 @@ func (c *localCluster) open() error {
 		_ = server.Serve(lis)
 	}()
 
+	wg := &sync.WaitGroup{}
 	clusters := c.factory.getClusters()
 	for _, cluster := range clusters {
-		cluster.addReplica(newReplica(ReplicaID(c.nodeID), func() (*grpc.ClientConn, error) {
-			return grpc.DialContext(context.Background(), "local", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
-				return lis.Dial()
+		wg.Add(1)
+		go func(cluster *localCluster) {
+			cluster.addReplica(newReplica(ReplicaID(c.nodeID), func() (*grpc.ClientConn, error) {
+				return grpc.DialContext(context.Background(), "local", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+					return lis.Dial()
+				}))
 			}))
-		}))
+		}(cluster)
 	}
+	wg.Wait()
 	return nil
 }
 
@@ -114,12 +119,26 @@ func (c *localCluster) addReplica(replica *Replica) {
 	if _, ok := c.replicas[replica.ID]; !ok {
 		c.replicas[replica.ID] = replica
 	}
+	replicas := make(ReplicaSet)
+	for id, replica := range c.replicas {
+		replicas[id] = replica
+	}
+	for _, watcher := range c.watchers {
+		watcher <- replicas
+	}
 }
 
 func (c *localCluster) removeReplica(replicaID ReplicaID) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.replicas, replicaID)
+	replicas := make(ReplicaSet)
+	for id, replica := range c.replicas {
+		replicas[id] = replica
+	}
+	for _, watcher := range c.watchers {
+		watcher <- replicas
+	}
 }
 
 func (c *localCluster) Replica(id ReplicaID) *Replica {
@@ -147,9 +166,14 @@ func (c *localCluster) Watch(ch chan<- ReplicaSet) error {
 
 func (c *localCluster) Close() error {
 	c.factory.closeCluster(c.nodeID)
+	wg := &sync.WaitGroup{}
 	clusters := c.factory.getClusters()
 	for _, cluster := range clusters {
-		cluster.removeReplica(ReplicaID(c.nodeID))
+		wg.Add(1)
+		go func(cluster *localCluster) {
+			cluster.removeReplica(ReplicaID(c.nodeID))
+		}(cluster)
 	}
+	wg.Done()
 	return nil
 }
