@@ -65,8 +65,8 @@ func GetClient(config Config) (*client.Client, error) {
 			return func(id peer.ID, server *grpc.Server) {
 				service(cluster.NodeID(id), server)
 			}
-		}
-		opts = append(opts, client.WithService(service(s)))
+		}(s)
+		opts = append(opts, client.WithService(service))
 	}
 	return client.New(config.GetController(), opts...)
 }
