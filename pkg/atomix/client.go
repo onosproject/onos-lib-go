@@ -19,10 +19,13 @@ import (
 	"fmt"
 	"github.com/atomix/api/proto/atomix/database"
 	"github.com/atomix/go-client/pkg/client"
+	"github.com/atomix/go-client/pkg/client/peer"
 	netutil "github.com/atomix/go-client/pkg/client/util/net"
 	"github.com/atomix/go-framework/pkg/atomix"
 	"github.com/atomix/go-framework/pkg/atomix/registry"
 	"github.com/atomix/go-local/pkg/atomix/local"
+	"github.com/onosproject/onos-lib-go/pkg/cluster"
+	"google.golang.org/grpc"
 	"net"
 	"time"
 )
@@ -56,6 +59,14 @@ func GetClient(config Config) (*client.Client, error) {
 		client.WithPeerPort(config.GetPort()),
 		client.WithNamespace(config.GetNamespace()),
 		client.WithScope(config.GetScope()),
+	}
+	for _, s := range serviceRegistry.services {
+		service := func(service cluster.Service) func(peer.ID, *grpc.Server) {
+			return func(id peer.ID, server *grpc.Server) {
+				service(cluster.NodeID(id), server)
+			}
+		}
+		opts = append(opts, client.WithService(service(s)))
 	}
 	return client.New(config.GetController(), opts...)
 }
