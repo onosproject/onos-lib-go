@@ -43,6 +43,7 @@ type TestFactory struct {
 func (f *TestFactory) NewCluster(nodeID NodeID) (Cluster, error) {
 	f.mu.Lock()
 	cluster := &localCluster{
+		factory:  f,
 		nodeID:   nodeID,
 		replicas: make(ReplicaSet),
 		watchers: make([]chan<- ReplicaSet, 0),
@@ -79,6 +80,7 @@ type localCluster struct {
 	nodeID   NodeID
 	replicas ReplicaSet
 	watchers []chan<- ReplicaSet
+	lis      *bufconn.Listener
 	mu       sync.RWMutex
 }
 
@@ -88,9 +90,9 @@ func (c *localCluster) open() error {
 		service(c.nodeID, server)
 	}
 
-	lis := bufconn.Listen(bufSize)
+	c.lis = bufconn.Listen(bufSize)
 	go func() {
-		_ = server.Serve(lis)
+		_ = server.Serve(c.lis)
 	}()
 
 	wg := &sync.WaitGroup{}
@@ -100,9 +102,15 @@ func (c *localCluster) open() error {
 		go func(cluster *localCluster) {
 			cluster.addReplica(newReplica(ReplicaID(c.nodeID), func() (*grpc.ClientConn, error) {
 				return grpc.DialContext(context.Background(), "local", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
-					return lis.Dial()
-				}))
+					return c.lis.Dial()
+				}), grpc.WithInsecure())
 			}))
+			c.addReplica(newReplica(ReplicaID(cluster.nodeID), func() (*grpc.ClientConn, error) {
+				return grpc.DialContext(context.Background(), "local", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+					return cluster.lis.Dial()
+				}), grpc.WithInsecure())
+			}))
+			wg.Done()
 		}(cluster)
 	}
 	wg.Wait()
