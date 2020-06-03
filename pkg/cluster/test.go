@@ -100,15 +100,17 @@ func (c *localCluster) open() error {
 	for _, cluster := range clusters {
 		wg.Add(1)
 		go func(cluster *localCluster) {
-			cluster.addReplica(newReplica(ReplicaID(c.nodeID), func() (*grpc.ClientConn, error) {
-				return grpc.DialContext(context.Background(), "local", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+			cluster.addReplica(newReplica(ReplicaID(c.nodeID), func(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+				opts = append(opts, grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 					return c.lis.Dial()
-				}), grpc.WithInsecure())
+				}))
+				return grpc.DialContext(context.Background(), "local", opts...)
 			}))
-			c.addReplica(newReplica(ReplicaID(cluster.nodeID), func() (*grpc.ClientConn, error) {
-				return grpc.DialContext(context.Background(), "local", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+			c.addReplica(newReplica(ReplicaID(cluster.nodeID), func(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+				opts = append(opts, grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 					return cluster.lis.Dial()
-				}), grpc.WithInsecure())
+				}))
+				return grpc.DialContext(context.Background(), "local", opts...)
 			}))
 			wg.Done()
 		}(cluster)
