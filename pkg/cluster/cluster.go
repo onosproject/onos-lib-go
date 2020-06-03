@@ -74,10 +74,14 @@ func (c *atomixCluster) open() error {
 	go func() {
 		for peers := range ch {
 			c.mu.Lock()
-			for id, peer := range peers {
+			for id, p := range peers {
 				_, ok := c.replicas[ReplicaID(id)]
 				if !ok {
-					c.replicas[ReplicaID(id)] = newReplica(ReplicaID(peer.ID), peer.Connect)
+					c.replicas[ReplicaID(id)] = newReplica(ReplicaID(p.ID), func(p *peer.Peer) func(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+						return func(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+							return p.Connect(peer.WithDialOptions(opts...))
+						}
+					}(p))
 				}
 			}
 			for id := range c.replicas {

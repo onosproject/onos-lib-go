@@ -54,19 +54,23 @@ func StartLocalNode() (*atomix.Node, netutil.Address) {
 // GetClient returns the Atomix client
 func GetClient(config Config) (*client.Client, error) {
 	opts := []client.Option{
-		client.WithMemberID(config.GetMember()),
-		client.WithPeerHost(config.GetHost()),
-		client.WithPeerPort(config.GetPort()),
 		client.WithNamespace(config.GetNamespace()),
 		client.WithScope(config.GetScope()),
 	}
-	for _, s := range serviceRegistry.services {
-		service := func(service cluster.Service) func(peer.ID, *grpc.Server) {
-			return func(id peer.ID, server *grpc.Server) {
-				service(cluster.NodeID(id), server)
-			}
-		}(s)
-		opts = append(opts, client.WithService(service))
+	member := config.GetMember()
+	host := config.GetHost()
+	if member != "" && host != "" {
+		opts = append(opts, client.WithMemberID(config.GetMember()))
+		opts = append(opts, client.WithPeerHost(config.GetHost()))
+		opts = append(opts, client.WithPeerPort(config.GetPort()))
+		for _, s := range serviceRegistry.services {
+			service := func(service cluster.Service) func(peer.ID, *grpc.Server) {
+				return func(id peer.ID, server *grpc.Server) {
+					service(cluster.NodeID(id), server)
+				}
+			}(s)
+			opts = append(opts, client.WithPeerService(service))
+		}
 	}
 	return client.New(config.GetController(), opts...)
 }

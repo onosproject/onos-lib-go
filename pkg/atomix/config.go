@@ -75,7 +75,7 @@ func (c Config) GetMember() string {
 // GetHost gets the Atomix peer host
 func (c Config) GetHost() string {
 	if c.Host == "" {
-		c.Host = env.GetPodName()
+		c.Host = env.GetPodID()
 	}
 	return c.Host
 }

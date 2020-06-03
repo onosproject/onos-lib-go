@@ -19,6 +19,8 @@ github.com/atomix/go-client v0.1.1 h1:uaSuUyCWr6HgffMx1LQe8hNbi+4fvAs3AtVry0fPxh
 github.com/atomix/go-client v0.1.1/go.mod h1:Y3QjXcE6Sbb0QqMs1z9n0X3Mwafx26UYZAYf3qrVg24=
 github.com/atomix/go-client v0.2.0 h1:rJaK7MPid/XmYMtSn3RiIbcNHNBNh37d55+Vd/yqCog=
 github.com/atomix/go-client v0.2.0/go.mod h1:2vnbQIfU7NwfJo+HwB5oBYkK2Me2rPexTpC1vvhveF4=
+github.com/atomix/go-client v0.2.1 h1:vg0vyjTEvvDZhNis0rePw4Hjve3ayFqWOQ6qrKk/XkE=
+github.com/atomix/go-client v0.2.1/go.mod h1:2vnbQIfU7NwfJo+HwB5oBYkK2Me2rPexTpC1vvhveF4=
 github.com/atomix/go-framework v0.1.1 h1:qpUZERvPMUM1ndEbodk9qcgNa9YWqOPOJGTPdJVsagc=
 github.com/atomix/go-framework v0.1.1/go.mod h1:G7+oWIJUlx5Z8ohAzpIon6BAUPUo9VDx7w9AeQ6g3Wo=
 github.com/atomix/go-framework v0.2.0 h1:YppUrCL2D5FmovmK6FjP+XmNnO/IoSyQhLx48inIu8M=

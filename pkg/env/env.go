@@ -32,6 +32,14 @@ func GetPodName() string {
 	return os.Getenv(PodName)
 }
 
+// PodID is the name of the environment variable containing the pod network identifier
+const PodID = "POD_ID"
+
+// GetPodID gets the pod network identifier from the environment
+func GetPodID() string {
+	return os.Getenv(PodID)
+}
+
 // ServiceNamespace is the name of the environment variable containing the service namespace
 const ServiceNamespace = "SERVICE_NAMESPACE"
 

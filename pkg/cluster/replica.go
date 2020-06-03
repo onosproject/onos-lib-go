@@ -19,7 +19,7 @@ import (
 )
 
 // newReplica creates a new replica
-func newReplica(id ReplicaID, connector func() (*grpc.ClientConn, error)) *Replica {
+func newReplica(id ReplicaID, connector func(opts ...grpc.DialOption) (*grpc.ClientConn, error)) *Replica {
 	return &Replica{
 		Node:      newNode(NodeID(id)),
 		ID:        id,
@@ -34,12 +34,16 @@ type ReplicaID NodeID
 type Replica struct {
 	Node
 	ID        ReplicaID
-	connector func() (*grpc.ClientConn, error)
+	connector func(opts ...grpc.DialOption) (*grpc.ClientConn, error)
 }
 
 // Connect connects to the replica
-func (r *Replica) Connect() (*grpc.ClientConn, error) {
-	return r.connector()
+func (r *Replica) Connect(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	options := []grpc.DialOption{
+		grpc.WithInsecure(),
+	}
+	options = append(options, opts...)
+	return r.connector(options...)
 }
 
 // ReplicaSet is a set of replicas
