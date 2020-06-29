@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwt
+package auth
 
 import (
 	"fmt"
 	"os"
 	"strings"
+
+	"google.golang.org/grpc/codes"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -27,9 +29,19 @@ const (
 	SharedSecretKey = "SHARED_SECRET_KEY"
 )
 
-// ParseToken parse a jwt string token and returns a jwt token
-func ParseToken(tokenString string) (*jwt.Token, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+// JwtAuthenticator jwt authenticator
+type JwtAuthenticator struct {
+}
+
+// NewJwtAuthenticator create an instance of jwt authenticator
+func NewJwtAuthenticator() *JwtAuthenticator {
+	return &JwtAuthenticator{}
+}
+
+// ParseToken parse token and Ensure that the JWT conforms to the structure of a JWT.
+func (j *JwtAuthenticator) ParseToken(tokenString string) (*jwt.Token, jwt.MapClaims, error) {
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		// HS256, HS384, or HS512
 		if strings.HasPrefix(token.Method.Alg(), "HS") {
 			key := os.Getenv(SharedSecretKey)
@@ -38,5 +50,21 @@ func ParseToken(tokenString string) (*jwt.Token, error) {
 		return nil, fmt.Errorf("unknown signining algorithm: %s", token.Method.Alg())
 	})
 
-	return token, err
+	return token, claims, err
+
+}
+
+// Authenticate parse a jwt string token and authenticate it
+func (j *JwtAuthenticator) Authenticate(tokenString string) (jwt.MapClaims, error) {
+	token, claims, err := j.ParseToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check the token is valid
+	if !token.Valid {
+		return nil, fmt.Errorf("token is not valid %d", codes.Unauthenticated)
+	}
+
+	return claims, err
 }

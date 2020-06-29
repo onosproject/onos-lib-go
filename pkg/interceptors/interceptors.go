@@ -16,11 +16,8 @@ package interceptors
 
 import (
 	"context"
-	"fmt"
 
-	"google.golang.org/grpc/codes"
-
-	jwtauth "github.com/onosproject/onos-lib-go/pkg/auth/jwt"
+	"github.com/onosproject/onos-lib-go/pkg/auth"
 
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 
@@ -37,22 +34,20 @@ var log = logging.GetLogger("interceptors")
 // AuthenticationInterceptor an interceptor for authentication
 func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 	log.Info("Authenticating the user")
+
 	// Extract token from metadata in the context
 	tokenString, err := grpc_auth.AuthFromMD(ctx, ContextMetadataTokenKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse token to extract a jwt token
-	token, err := jwtauth.ParseToken(tokenString)
+	// Authenticate the jwt token
+	jwtAuth := auth.NewJwtAuthenticator()
+	_, err = jwtAuth.Authenticate(tokenString)
 	if err != nil {
-		return nil, err
+		return ctx, err
 	}
 
-	// Check the token is valid
-	if !token.Valid {
-		return nil, fmt.Errorf("token is not valid %d", codes.Unauthenticated)
-	}
 	return ctx, nil
 
 }
