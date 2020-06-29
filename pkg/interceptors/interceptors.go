@@ -28,12 +28,13 @@ import (
 )
 
 const (
+	// ContextMetadataTokenKey metadata token key
 	ContextMetadataTokenKey = "bearer"
 )
 
 var log = logging.GetLogger("interceptors")
 
-// AuthenticationInterceptor
+// AuthenticationInterceptor an interceptor for authentication
 func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 	log.Info("authentication interceptor")
 	// Extract token from metadata in the context

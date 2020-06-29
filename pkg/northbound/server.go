@@ -45,6 +45,7 @@ type Server struct {
 	services []Service
 }
 
+// SecurityConfig security configuration
 type SecurityConfig struct {
 	AuthenticationEnabled bool
 	AuthorizationEnabled  bool
@@ -139,6 +140,7 @@ func (s *Server) Serve(started func(string)) error {
 
 	if s.cfg.SecurityCfg.AuthorizationEnabled {
 		// TODO Add authorization interceptor
+		log.Info("Enable authorization")
 
 	}
 	server := grpc.NewServer(opts...)

@@ -19,17 +19,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/onosproject/onos-lib-go/pkg/logging"
-
 	"github.com/dgrijalva/jwt-go"
 )
 
-var log = logging.GetLogger("jwt")
-
 const (
+	// HsSecretKey signing secret key for HMAC with SHA-256 algorithm
 	HsSecretKey = "HS_SECRET_KEY"
 )
 
+// ParseToken parse a jwt string token and returns a jwt token
 func ParseToken(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// HS256, HS384, or HS512
