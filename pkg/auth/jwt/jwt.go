@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	// HsSecretKey signing secret key for HMAC with SHA-256 algorithm
-	HsSecretKey = "HS_SECRET_KEY"
+	// SharedSecretKey shared secret key for signing a token
+	SharedSecretKey = "SHARED_SECRET_KEY"
 )
 
 // ParseToken parse a jwt string token and returns a jwt token
@@ -32,7 +32,7 @@ func ParseToken(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// HS256, HS384, or HS512
 		if strings.HasPrefix(token.Method.Alg(), "HS") {
-			key := os.Getenv(HsSecretKey)
+			key := os.Getenv(SharedSecretKey)
 			return []byte(key), nil
 		}
 		return nil, fmt.Errorf("unknown signining algorithm: %s", token.Method.Alg())
