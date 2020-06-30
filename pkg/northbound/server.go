@@ -136,6 +136,10 @@ func (s *Server) Serve(started func(string)) error {
 			grpc_middleware.ChainUnaryServer(
 				grpc_auth.UnaryServerInterceptor(interceptors.AuthenticationInterceptor),
 			)))
+		opts = append(opts, grpc.StreamInterceptor(
+			grpc_middleware.ChainStreamServer(
+				grpc_auth.StreamServerInterceptor(interceptors.AuthenticationInterceptor))))
+
 	}
 
 	if s.cfg.SecurityCfg.AuthorizationEnabled {
