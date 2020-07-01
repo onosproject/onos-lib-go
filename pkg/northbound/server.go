@@ -21,7 +21,11 @@ import (
 	"fmt"
 	"net"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+
 	"github.com/onosproject/onos-lib-go/pkg/certs"
+	"github.com/onosproject/onos-lib-go/pkg/grpcinterceptors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"google.golang.org/grpc/credentials"
 
@@ -41,13 +45,20 @@ type Server struct {
 	services []Service
 }
 
+// SecurityConfig security configuration
+type SecurityConfig struct {
+	AuthenticationEnabled bool
+	AuthorizationEnabled  bool
+}
+
 // ServerConfig comprises a set of server configuration options.
 type ServerConfig struct {
-	CaPath   *string
-	KeyPath  *string
-	CertPath *string
-	Port     int16
-	Insecure bool
+	CaPath      *string
+	KeyPath     *string
+	CertPath    *string
+	Port        int16
+	Insecure    bool
+	SecurityCfg *SecurityConfig
 }
 
 // NewServer initializes gNMI server using the supplied configuration.
@@ -59,13 +70,14 @@ func NewServer(cfg *ServerConfig) *Server {
 }
 
 // NewServerConfig creates a server config created with the specified end-point security details.
-func NewServerConfig(caPath string, keyPath string, certPath string, port int16, secure bool) *ServerConfig {
+func NewServerConfig(caPath string, keyPath string, certPath string, port int16, secure bool, secCfg SecurityConfig) *ServerConfig {
 	return &ServerConfig{
-		Port:     port,
-		Insecure: secure,
-		CaPath:   &caPath,
-		KeyPath:  &keyPath,
-		CertPath: &certPath,
+		Port:        port,
+		Insecure:    secure,
+		CaPath:      &caPath,
+		KeyPath:     &keyPath,
+		CertPath:    &certPath,
+		SecurityCfg: &secCfg,
 	}
 }
 
@@ -118,6 +130,18 @@ func (s *Server) Serve(started func(string)) error {
 		return err
 	}
 	opts := []grpc.ServerOption{grpc.Creds(credentials.NewTLS(tlsCfg))}
+	if s.cfg.SecurityCfg.AuthenticationEnabled {
+		log.Info("Authentication Enabled")
+		opts = append(opts, grpc.UnaryInterceptor(
+			grpc_middleware.ChainUnaryServer(
+				grpc_auth.UnaryServerInterceptor(grpcinterceptors.AuthenticationInterceptor),
+			)))
+		opts = append(opts, grpc.StreamInterceptor(
+			grpc_middleware.ChainStreamServer(
+				grpc_auth.StreamServerInterceptor(grpcinterceptors.AuthenticationInterceptor))))
+
+	}
+
 	server := grpc.NewServer(opts...)
 	for i := range s.services {
 		s.services[i].Register(server)

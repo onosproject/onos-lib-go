@@ -9,7 +9,9 @@ require (
 	github.com/atomix/go-framework v0.2.0
 	github.com/atomix/go-local v0.2.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gogo/protobuf v1.3.1
+	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.8.1
 	github.com/plar/go-adaptive-radix-tree v1.0.1
