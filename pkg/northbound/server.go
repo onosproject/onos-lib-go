@@ -23,9 +23,9 @@ import (
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/onosproject/onos-lib-go/pkg/interceptors"
 
 	"github.com/onosproject/onos-lib-go/pkg/certs"
+	"github.com/onosproject/onos-lib-go/pkg/grpcinterceptors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"google.golang.org/grpc/credentials"
 
@@ -131,22 +131,17 @@ func (s *Server) Serve(started func(string)) error {
 	}
 	opts := []grpc.ServerOption{grpc.Creds(credentials.NewTLS(tlsCfg))}
 	if s.cfg.SecurityCfg.AuthenticationEnabled {
-		log.Info("Enable Authentication")
+		log.Info("Authentication Enabled")
 		opts = append(opts, grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
-				grpc_auth.UnaryServerInterceptor(interceptors.AuthenticationInterceptor),
+				grpc_auth.UnaryServerInterceptor(grpcinterceptors.AuthenticationInterceptor),
 			)))
 		opts = append(opts, grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(
-				grpc_auth.StreamServerInterceptor(interceptors.AuthenticationInterceptor))))
+				grpc_auth.StreamServerInterceptor(grpcinterceptors.AuthenticationInterceptor))))
 
 	}
 
-	if s.cfg.SecurityCfg.AuthorizationEnabled {
-		// TODO Add authorization interceptor
-		log.Info("Enable authorization")
-
-	}
 	server := grpc.NewServer(opts...)
 	for i := range s.services {
 		s.services[i].Register(server)

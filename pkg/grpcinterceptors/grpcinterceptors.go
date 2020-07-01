@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package interceptors
+package grpcinterceptors
 
 import (
 	"context"
@@ -42,7 +42,7 @@ func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 	}
 
 	// Authenticate the jwt token
-	jwtAuth := auth.NewJwtAuthenticator()
+	jwtAuth := new(auth.JwtAuthenticator)
 	_, err = jwtAuth.Authenticate(tokenString)
 	if err != nil {
 		return ctx, err
