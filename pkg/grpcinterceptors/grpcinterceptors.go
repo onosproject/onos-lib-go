@@ -31,6 +31,11 @@ const (
 
 var log = logging.GetLogger("interceptors")
 
+func AuthorizationInterceptor(ctx context.Context) (context.Context, error) {
+	log.Info("Authorizing the user")
+	return nil, nil
+}
+
 // AuthenticationInterceptor an interceptor for authentication
 func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 	log.Info("Authenticating the user")
