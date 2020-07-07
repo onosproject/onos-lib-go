@@ -70,7 +70,19 @@ func NewServer(cfg *ServerConfig) *Server {
 }
 
 // NewServerConfig creates a server config created with the specified end-point security details.
-func NewServerConfig(caPath string, keyPath string, certPath string, port int16, secure bool, secCfg SecurityConfig) *ServerConfig {
+// Deprecated: Use NewServerCfg instead
+func NewServerConfig(caPath string, keyPath string, certPath string, port int16, secure bool) *ServerConfig {
+	return &ServerConfig{
+		Port:     port,
+		Insecure: secure,
+		CaPath:   &caPath,
+		KeyPath:  &keyPath,
+		CertPath: &certPath,
+	}
+}
+
+// NewServerCfg creates a server config created with the specified end-point security details.
+func NewServerCfg(caPath string, keyPath string, certPath string, port int16, secure bool, secCfg SecurityConfig) *ServerConfig {
 	return &ServerConfig{
 		Port:        port,
 		Insecure:    secure,
