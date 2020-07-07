@@ -150,14 +150,13 @@ func (s *Server) Serve(started func(string)) error {
 		opts = append(opts, grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
 				grpc_auth.UnaryServerInterceptor(grpcinterceptors.AuthenticationInterceptor),
-				grpc_auth.UnaryServerInterceptor(grpcinterceptors.AuthorizationInterceptor),
+				grpcinterceptors.AuthorizationUnaryInterceptor(),
 			)))
 		opts = append(opts, grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(
 				grpc_auth.StreamServerInterceptor(grpcinterceptors.AuthenticationInterceptor),
-				grpc_auth.StreamServerInterceptor(grpcinterceptors.AuthorizationInterceptor),
 			)))
-		// Enable authentication
+		// Enable authentication only
 	} else if s.cfg.SecurityCfg.AuthenticationEnabled {
 		log.Info("Authentication enabled")
 		opts = append(opts, grpc.UnaryInterceptor(

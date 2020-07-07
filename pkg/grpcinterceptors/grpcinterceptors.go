@@ -17,6 +17,10 @@ package grpcinterceptors
 import (
 	"context"
 
+	"github.com/dgrijalva/jwt-go"
+
+	"google.golang.org/grpc"
+
 	"github.com/onosproject/onos-lib-go/pkg/auth"
 
 	"github.com/onosproject/onos-lib-go/pkg/logging"
@@ -31,9 +35,45 @@ const (
 
 var log = logging.GetLogger("interceptors")
 
-func AuthorizationInterceptor(ctx context.Context) (context.Context, error) {
-	log.Info("Authorizing the user")
-	return nil, nil
+func authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
+
+	log.Info(info.FullMethod)
+	for key, val := range claims {
+		if key == "roles" {
+			log.Info(key, ":", val)
+		}
+
+	}
+	return nil
+}
+
+// AuthorizationUnaryInterceptor an unary interceptor for authorization
+func AuthorizationUnaryInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		log.Info("Authorizing the user")
+		// Extract token from metadata in the context
+		tokenString, err := grpc_auth.AuthFromMD(ctx, ContextMetadataTokenKey)
+		if err != nil {
+			return nil, err
+		}
+
+		userInfo := ctx.Value(ContextMetadataTokenKey)
+		log.Info(userInfo)
+
+		jwtAuth := new(auth.JwtAuthenticator)
+		claims, err := jwtAuth.ParseAndValidate(tokenString)
+		if err != nil {
+			return ctx, err
+		}
+
+		err = authorize(claims, info)
+		if err != nil {
+			return nil, err
+		}
+
+		return handler(ctx, req)
+
+	}
 }
 
 // AuthenticationInterceptor an interceptor for authentication
