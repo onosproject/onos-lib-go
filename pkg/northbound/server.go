@@ -73,11 +73,12 @@ func NewServer(cfg *ServerConfig) *Server {
 // Deprecated: Use NewServerCfg instead
 func NewServerConfig(caPath string, keyPath string, certPath string, port int16, secure bool) *ServerConfig {
 	return &ServerConfig{
-		Port:     port,
-		Insecure: secure,
-		CaPath:   &caPath,
-		KeyPath:  &keyPath,
-		CertPath: &certPath,
+		Port:        port,
+		Insecure:    secure,
+		CaPath:      &caPath,
+		KeyPath:     &keyPath,
+		CertPath:    &certPath,
+		SecurityCfg: &SecurityConfig{},
 	}
 }
 
