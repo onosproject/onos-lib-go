@@ -43,7 +43,7 @@ func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 
 	// Authenticate the jwt token
 	jwtAuth := new(auth.JwtAuthenticator)
-	_, err = jwtAuth.ParseAndValidate(tokenString)
+	_, err = jwtAuth.Authenticate(tokenString)
 	if err != nil {
 		return ctx, err
 	}
