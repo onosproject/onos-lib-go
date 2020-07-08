@@ -29,6 +29,8 @@ import (
 const (
 	// SharedSecretKey shared secret key for signing a token
 	SharedSecretKey = "SHARED_SECRET_KEY"
+	// RSAPublicKey an RSA public key
+	RSAPublicKey = "RSA_PUBLIC_KEY"
 )
 
 // JwtAuthenticator jwt authenticator
@@ -42,6 +44,14 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapCl
 		if strings.HasPrefix(token.Method.Alg(), "HS") {
 			key := os.Getenv(SharedSecretKey)
 			return []byte(key), nil
+			// RS256, RS384, or RS512
+		} else if strings.HasPrefix(token.Method.Alg(), "RS") {
+			key := os.Getenv(RSAPublicKey)
+			rsaPublicKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(key))
+			if err != nil {
+				return nil, err
+			}
+			return rsaPublicKey, nil
 		}
 		return nil, fmt.Errorf("unknown signining algorithm: %s", token.Method.Alg())
 	})
@@ -50,8 +60,8 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapCl
 
 }
 
-// Authenticate parse a jwt string token and authenticate it
-func (j *JwtAuthenticator) Authenticate(tokenString string) (jwt.MapClaims, error) {
+// ParseAndValidate parse a jwt string token and validate it
+func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.MapClaims, error) {
 	token, claims, err := j.parseToken(tokenString)
 	if err != nil {
 		return nil, err
