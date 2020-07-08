@@ -31,6 +31,10 @@ const (
 	SharedSecretKey = "SHARED_SECRET_KEY"
 	// RSAPublicKey an RSA public key
 	RSAPublicKey = "RSA_PUBLIC_KEY"
+	// HS prefix for HS family algorithms
+	HS = "HS"
+	// RS prefix for RS family algorithms
+	RS = "RS"
 )
 
 // JwtAuthenticator jwt authenticator
@@ -41,11 +45,11 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapCl
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		// HS256, HS384, or HS512
-		if strings.HasPrefix(token.Method.Alg(), "HS") {
+		if strings.HasPrefix(token.Method.Alg(), HS) {
 			key := os.Getenv(SharedSecretKey)
 			return []byte(key), nil
 			// RS256, RS384, or RS512
-		} else if strings.HasPrefix(token.Method.Alg(), "RS") {
+		} else if strings.HasPrefix(token.Method.Alg(), RS) {
 			key := os.Getenv(RSAPublicKey)
 			rsaPublicKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(key))
 			if err != nil {
