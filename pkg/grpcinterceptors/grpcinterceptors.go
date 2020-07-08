@@ -17,9 +17,10 @@ package grpcinterceptors
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/onosproject/onos-lib-go/pkg/auth"
-	"strings"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 )
