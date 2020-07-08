@@ -19,13 +19,14 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	ecoidc "github.com/ericchiang/oidc"
-	"github.com/onosproject/onos-lib-go/pkg/logging"
-	"gopkg.in/square/go-jose.v2"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+
+	ecoidc "github.com/ericchiang/oidc"
+	"github.com/onosproject/onos-lib-go/pkg/logging"
+	"gopkg.in/square/go-jose.v2"
 
 	"google.golang.org/grpc/status"
 
@@ -43,6 +44,9 @@ const (
 	OIDCServerURL = "OIDC_SERVER_URL"
 	// OpenidConfiguration is the discovery point on the OIDC server
 	OpenidConfiguration = ".well-known/openid-configuration"
+
+	// RSAPublicKey an RSA public key
+	RSAPublicKey = "RSA_PUBLIC_KEY"
 	// HS prefix for HS family algorithms
 	HS = "HS"
 	// RS prefix for RS family algorithms
@@ -94,8 +98,8 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapCl
 
 }
 
-// ParseAndValidate parse a jwt string token and validate it
-func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.MapClaims, error) {
+// Authenticate parse a jwt string token and authenticate it
+func (j *JwtAuthenticator) Authenticate(tokenString string) (jwt.MapClaims, error) {
 	token, claims, err := j.parseToken(tokenString)
 	if err != nil {
 		log.Warnf("Error parsing token: %s", tokenString)
