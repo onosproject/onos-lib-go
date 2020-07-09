@@ -13,3 +13,44 @@
 // limitations under the License.
 
 package rbac
+
+import (
+	"github.com/onosproject/onos-lib-go/api/rbac"
+)
+
+// DefaultRole
+type DefaultRole struct {
+	role *rbac.Role
+}
+
+const (
+	SystemAdminRoleName = "system.admin"
+	//SystemViewRoleName  = "system.view"
+)
+
+var (
+	defaultRoles = map[string]*rbac.Role{
+		SystemAdminRoleName: &rbac.Role{
+			Name: SystemAdminRoleName,
+			Groups: []string{
+				"admin",
+			},
+			Rules: []*rbac.Rule{
+				{
+					Services: []string{
+						"rbac",
+					},
+					Verbs: []string{
+						"create",
+					},
+				},
+			},
+		},
+	}
+)
+
+// GetDefaultRoles returns the list of default roles in the system
+func GetDefaultRoles() map[string]*rbac.Role {
+
+	return defaultRoles
+}

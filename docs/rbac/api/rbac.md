@@ -3,83 +3,50 @@
 
 ## Table of Contents
 
-- [api/logging/logging.proto](#api/logging/logging.proto)
-    - [SetDebugModeRequest](#onos.lib.go.logging.SetDebugModeRequest)
-    - [SetDebugModeResponse](#onos.lib.go.logging.SetDebugModeResponse)
-    - [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest)
-    - [SetLevelResponse](#onos.lib.go.logging.SetLevelResponse)
+- [api/rbac/rbac.proto](#api/rbac/rbac.proto)
+    - [Role](#onos.lib.go.rbac.Role)
+    - [Rule](#onos.lib.go.rbac.Rule)
   
-    - [Level](#onos.lib.go.logging.Level)
-    - [ResponseStatus](#onos.lib.go.logging.ResponseStatus)
-  
-    - [logger](#onos.lib.go.logging.logger)
+    - [Rbac](#onos.lib.go.rbac.Rbac)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="api/logging/logging.proto"></a>
+<a name="api/rbac/rbac.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## api/logging/logging.proto
+## api/rbac/rbac.proto
 
 
 
-<a name="onos.lib.go.logging.SetDebugModeRequest"></a>
+<a name="onos.lib.go.rbac.Role"></a>
 
-### SetDebugModeRequest
-SetDebugModeRequest enable/disable debug mode of the logger
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| debug | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="onos.lib.go.logging.SetDebugModeResponse"></a>
-
-### SetDebugModeResponse
-SetDebugModeResponse response for setting debug mode of a logger
+### Role
+Role
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| response_status | [ResponseStatus](#onos.lib.go.logging.ResponseStatus) |  |  |
+| name | [string](#string) |  |  |
+| groups | [string](#string) | repeated |  |
+| rules | [Rule](#onos.lib.go.rbac.Rule) | repeated |  |
 
 
 
 
 
 
-<a name="onos.lib.go.logging.SetLevelRequest"></a>
+<a name="onos.lib.go.rbac.Rule"></a>
 
-### SetLevelRequest
-SetLevelRequest request for setting a logger level
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| logger_name | [string](#string) |  | logger name |
-| level | [Level](#onos.lib.go.logging.Level) |  | logger level |
-
-
-
-
-
-
-<a name="onos.lib.go.logging.SetLevelResponse"></a>
-
-### SetLevelResponse
-SetLevelResponse response for setting a logger level
+### Rule
+Rule
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| response_status | [ResponseStatus](#onos.lib.go.logging.ResponseStatus) |  |  |
+| services | [string](#string) | repeated |  |
+| verbs | [string](#string) | repeated |  |
 
 
 
@@ -87,50 +54,18 @@ SetLevelResponse response for setting a logger level
 
  
 
-
-<a name="onos.lib.go.logging.Level"></a>
-
-### Level
-Logger level
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| DEBUG | 0 | Debug log level |
-| INFO | 1 | Info log level |
-| WARN | 2 | Warn log level |
-| ERROR | 3 | Error log level |
-| DPANIC | 4 | DPanic log level |
-| PANIC | 5 | Panic log level |
-| FATAL | 6 | Fatal log level |
-
-
-
-<a name="onos.lib.go.logging.ResponseStatus"></a>
-
-### ResponseStatus
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| OK | 0 |  |
-| FAILED | 1 |  |
-| PRECONDITION_FAILED | 2 |  |
-
-
  
 
  
 
 
-<a name="onos.lib.go.logging.logger"></a>
+<a name="onos.lib.go.rbac.Rbac"></a>
 
-### logger
-logger service provides rpc functions to controller a logger remotely
+### Rbac
+TODO add required RPC functions for creating, updating, deleting, and retrieving the roles in the system
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| SetLevel | [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest) | [SetLevelResponse](#onos.lib.go.logging.SetLevelResponse) | Sets a logger level |
-| SetDebug | [SetDebugModeRequest](#onos.lib.go.logging.SetDebugModeRequest) | [SetDebugModeResponse](#onos.lib.go.logging.SetDebugModeResponse) | Sets debug mode to debug logging package |
 
  
 

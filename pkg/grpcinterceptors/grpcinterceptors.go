@@ -16,6 +16,9 @@ package grpcinterceptors
 
 import (
 	"context"
+	"strings"
+
+	"github.com/onosproject/onos-lib-go/pkg/rbac"
 
 	"github.com/dgrijalva/jwt-go"
 
@@ -31,19 +34,52 @@ import (
 const (
 	// ContextMetadataTokenKey metadata token key
 	ContextMetadataTokenKey = "bearer"
+	GroupsKey               = "groups"
 )
 
 var log = logging.GetLogger("interceptors")
 
+func getMethodInformation(fullMethod string) (service, verb string) {
+	parts := strings.Split(fullMethod, "/")
+
+	log.Info(len(parts))
+
+	if len(parts) > 1 {
+		splitedParts := strings.Split(parts[1], ".")
+		index := len(splitedParts) - 1
+		service = splitedParts[index]
+	}
+
+	if len(parts) > 2 {
+		verb = strings.ToLower(parts[2])
+	}
+
+	log.Info(service, "-->", verb)
+
+	return service, verb
+}
+
 func authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
 
-	log.Info(info.FullMethod)
-	for key, val := range claims {
-		if key == "roles" {
-			log.Info(key, ":", val)
+	reqService, reqVerb := getMethodInformation(info.FullMethod)
+	claimedGroups := make([]interface{}, len(claims))
+	defaultRoles := rbac.GetDefaultRoles()
+	for key, _ := range claims {
+		// extract claimed groups from the token
+		if key == GroupsKey {
+			claimedGroups = claims[GroupsKey].([]interface{})
+
 		}
 
 	}
+
+	for _, defaultRole := range defaultRoles {
+		roleGroups := defaultRole.Groups
+		if roleGroups == claimedGroups {
+
+		}
+	}
+
 	return nil
 }
 
@@ -56,9 +92,6 @@ func AuthorizationUnaryInterceptor() grpc.UnaryServerInterceptor {
 		if err != nil {
 			return nil, err
 		}
-
-		userInfo := ctx.Value(ContextMetadataTokenKey)
-		log.Info(userInfo)
 
 		jwtAuth := new(auth.JwtAuthenticator)
 		claims, err := jwtAuth.ParseAndValidate(tokenString)
