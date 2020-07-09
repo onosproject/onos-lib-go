@@ -98,8 +98,8 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapCl
 
 }
 
-// Authenticate parse a jwt string token and authenticate it
-func (j *JwtAuthenticator) Authenticate(tokenString string) (jwt.MapClaims, error) {
+// ParseAndValidate parse a jwt string token and validate it
+func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.MapClaims, error) {
 	token, claims, err := j.parseToken(tokenString)
 	if err != nil {
 		log.Warnf("Error parsing token: %s", tokenString)
