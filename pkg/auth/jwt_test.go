@@ -15,10 +15,11 @@
 package auth
 
 import (
-	"github.com/dgrijalva/jwt-go"
-	"gotest.tools/assert"
 	"os"
 	"testing"
+
+	"github.com/dgrijalva/jwt-go"
+	"gotest.tools/assert"
 )
 
 // generated from https://csfieldguide.org.nz/en/interactives/rsa-key-generator/
@@ -46,7 +47,7 @@ l0Q0xuhqyq9DAgglFDixjDxqpzdPy+r6FgNSyozIKa7Qmd8sp7v66s0CAwEAAQ==
 `
 
 // generated from running onos-gui against the Dex IDP - expires 10 Jul 2030
-const sampleTokenOnosGuiAndDex = `eyJhbGciOiJSUzI1NiIsImtpZCI6Ijg5NjcyODQ4NzUzOWI1MmJjZGExZGU2MjljNmZkODI2MzE5M2RiODUifQ.eyJpc3MiOiJodHRwOi8vZGV4OjMyMDAwIiwic3ViIjoiQ2lRd09HRTROamcwWWkxa1lqZzRMVFJpTnpNdE9UQmhPUzB6WTJReE5qWXhaalUwTmpnU0JXeHZZMkZzIiwiYXVkIjoib25vcy1ndWkiLCJleHAiOjE5MDk3MjU2NjMsImlhdCI6MTU5NDM2NTY2Mywibm9uY2UiOiJiM0JFVkVreVJHTi1NbmRDTUMwelFVVmZhVTF2WW1KM1VuVjNURzR4Wm1kWVMyOU5hakJRWnpKeWR6ZHgiLCJhdF9oYXNoIjoiNmhQR3ppNnR4NS16QklnTEhLa3dHQSIsImVtYWlsIjoic2VhbkBvcGVubmV0d29ya2luZy5vcmciLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6InNlYW4ifQ.lLZhT58X8cFxPj1h1d-cjLMt4pt_dtCqYw4rZfLqkUNnnatOajIQv7Dg93QKJizz9HGbFSvz8rUEvkQxhGjNQjueVva97_fig6MTKP7vj2TL5L5XO0XtI39JZlGJYA3kwE1Xw43diMnDRjaU6UHmcMbjUA-aF97WDLWgiMbu-wnbfdfEj_9pT0vytFLPFVlww6EzjvNTfwneUVLFOqU0Hq9ykv6eDugKhilYWBhpWhC-hOTlJNfVn8IU3gIU2whl_YU6--4BpBJli3UKRqbrAzwnkE8-OZA6TVT3uqysuZ93_Sgm_EgXXrNp_yX8nLreTgKZtpP6e5ROK9oRH89aVg`
+const sampleTokenOnosGuiAndDex = `eyJhbGciOiJSUzI1NiIsImtpZCI6Ijg5NjcyODQ4NzUzOWI1MmJjZGExZGU2MjljNmZkODI2MzE5M2RiODUifQ.eyJpc3MiOiJodHRwOi8vZGV4OjMyMDAwIiwic3ViIjoiQ2lRd09HRTROamcwWWkxa1lqZzRMVFJpTnpNdE9UQmhPUzB6WTJReE5qWXhaalUwTmpnU0JXeHZZMkZzIiwiYXVkIjoib25vcy1ndWkiLCJleHAiOjE5MDk3MjU2NjMsImlhdCI6MTU5NDM2NTY2Mywibm9uY2UiOiJiM0JFVkVreVJHTi1NbmRDTUMwelFVVmZhVTF2WW1KM1VuVjNURzR4Wm1kWVMyOU5hakJRWnpKeWR6ZHgiLCJhdF9oYXNoIjoiNmhQR3ppNnR4NS16QklnTEhLa3dHQSIsImVtYWlsIjoic2VhbkBvcGVubmV0d29ya2luZy5vcmciLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6InNlYW4ifQ.Pvcq1mVGirMHvIxtvpt2uwvh-sSty0HBlny9qSI2KjZevkgaX3xgWBTHI1MzIWv9phVzAfaUvZToE6ybYdggJg`
 
 func Test_ParsePublicKeyFromPem(t *testing.T) {
 	assert.Equal(t, 523, len(samplePrivateKey))
@@ -59,7 +60,6 @@ func Test_ParsePublicKeyFromPem(t *testing.T) {
 }
 
 func TestJwtAuthenticator_parseToken(t *testing.T) {
-	t.Skip()
 	err := os.Setenv(RSAPublicKey, samplePublicKey)
 	assert.NilError(t, err, "unexpected error setting env var")
 	authenticator := new(JwtAuthenticator)
