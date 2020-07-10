@@ -16,6 +16,7 @@ package auth
 
 import (
 	"fmt"
+	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"os"
 	"strings"
 
@@ -25,6 +26,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 )
+
+var log = logging.GetLogger("jwt")
 
 const (
 	// SharedSecretKey shared secret key for signing a token
@@ -68,6 +71,8 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapCl
 func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.MapClaims, error) {
 	token, claims, err := j.parseToken(tokenString)
 	if err != nil {
+		log.Warnf("Error parsing token: %s", tokenString)
+		log.Warnf("Error %s", err.Error())
 		return nil, err
 	}
 
