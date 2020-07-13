@@ -145,16 +145,11 @@ func (s *Server) Serve(started func(string)) error {
 	opts := []grpc.ServerOption{grpc.Creds(credentials.NewTLS(tlsCfg))}
 
 	// Enable both authentication and authorization
-	if s.cfg.SecurityCfg.AuthenticationEnabled && s.cfg.SecurityCfg.AuthorizationEnabled {
-		log.Info("Authentication and Authorization are enabled")
+	if s.cfg.SecurityCfg.AuthorizationEnabled {
+		log.Info("Authorization is enabled")
 		opts = append(opts, grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
-				grpc_auth.UnaryServerInterceptor(grpcinterceptors.AuthenticationInterceptor),
 				grpcinterceptors.AuthorizationUnaryInterceptor(),
-			)))
-		opts = append(opts, grpc.StreamInterceptor(
-			grpc_middleware.ChainStreamServer(
-				grpc_auth.StreamServerInterceptor(grpcinterceptors.AuthenticationInterceptor),
 			)))
 		// Enable authentication only
 	} else if s.cfg.SecurityCfg.AuthenticationEnabled {
