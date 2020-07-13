@@ -16,6 +16,7 @@ package grpcinterceptors
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -32,7 +33,8 @@ import (
 const (
 	// ContextMetadataTokenKey metadata token key
 	ContextMetadataTokenKey = "bearer"
-	GroupsKey               = "groups"
+	// GroupsKey groups key in the token claims
+	GroupsKey = "groups"
 )
 
 var log = logging.GetLogger("interceptors")
@@ -57,15 +59,19 @@ func authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
 	// Retrieve service information and rpc method name
 	reqService, reqVerb := getMethodInformation(info.FullMethod)
 	log.Info(reqService, reqVerb)
-	claimedGroups := make([]interface{}, len(claims))
+	var claimedGroups []interface{}
 	//defaultRoles := rbac.GetDefaultRoles()
-	for key, _ := range claims {
+	for key := range claims {
 		// extract claimed groups from the token
 		if key == GroupsKey {
 			claimedGroups = claims[GroupsKey].([]interface{})
-			log.Info(claimedGroups)
 		}
 
+	}
+
+	// If the user does not claim any groups then we cannot authorize the user
+	if claimedGroups == nil {
+		return fmt.Errorf("groups claim cannot be empty")
 	}
 
 	return nil

@@ -18,18 +18,14 @@ import (
 	"github.com/onosproject/onos-lib-go/api/rbac"
 )
 
-// DefaultRole
-type DefaultRole struct {
-	role *rbac.Role
-}
-
 const (
+	// SystemAdminRoleName name of admin role in the system
 	SystemAdminRoleName = "system.admin"
 )
 
 var (
 	defaultRoles = map[string]*rbac.Role{
-		SystemAdminRoleName: &rbac.Role{
+		SystemAdminRoleName: {
 			Metadata: &rbac.Metadata{
 				Name: SystemAdminRoleName,
 			},

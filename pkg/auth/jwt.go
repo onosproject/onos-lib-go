@@ -61,7 +61,6 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapCl
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		// HS256, HS384, or HS512
 		if strings.HasPrefix(token.Method.Alg(), HS) {
-			log.Info("HS")
 			key := os.Getenv(SharedSecretKey)
 			return []byte(key), nil
 			// RS256, RS384, or RS512
