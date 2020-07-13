@@ -18,8 +18,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/onosproject/onos-lib-go/pkg/rbac"
-
 	"github.com/dgrijalva/jwt-go"
 
 	"google.golang.org/grpc"
@@ -42,8 +40,6 @@ var log = logging.GetLogger("interceptors")
 func getMethodInformation(fullMethod string) (service, verb string) {
 	parts := strings.Split(fullMethod, "/")
 
-	log.Info(len(parts))
-
 	if len(parts) > 1 {
 		splitedParts := strings.Split(parts[1], ".")
 		index := len(splitedParts) - 1
@@ -53,31 +49,23 @@ func getMethodInformation(fullMethod string) (service, verb string) {
 	if len(parts) > 2 {
 		verb = strings.ToLower(parts[2])
 	}
-
-	log.Info(service, "-->", verb)
-
 	return service, verb
 }
 
 func authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
 
+	// Retrieve service information and rpc method name
 	reqService, reqVerb := getMethodInformation(info.FullMethod)
+	log.Info(reqService, reqVerb)
 	claimedGroups := make([]interface{}, len(claims))
-	defaultRoles := rbac.GetDefaultRoles()
+	//defaultRoles := rbac.GetDefaultRoles()
 	for key, _ := range claims {
 		// extract claimed groups from the token
 		if key == GroupsKey {
 			claimedGroups = claims[GroupsKey].([]interface{})
-
+			log.Info(claimedGroups)
 		}
 
-	}
-
-	for _, defaultRole := range defaultRoles {
-		roleGroups := defaultRole.Groups
-		if roleGroups == claimedGroups {
-
-		}
 	}
 
 	return nil

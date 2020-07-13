@@ -24,17 +24,21 @@ service Rbac {
 
 }
 
+message Metadata {
+    string name = 1;
+    // TODO add more fields if it is needed
+}
+
 // Role
 message Role {
-    string name = 1;
-    repeated string groups = 2;
+    Metadata metadata = 1;
     repeated Rule rules = 3;
 }
 
 
 // Rule
 message Rule {
-    repeated string services = 1;
-    repeated string verbs = 2;
-
+    repeated string groups = 1;
+    repeated string services = 2;
+    repeated string verbs = 3;
 }

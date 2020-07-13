@@ -4,6 +4,7 @@
 ## Table of Contents
 
 - [api/rbac/rbac.proto](#api/rbac/rbac.proto)
+    - [Metadata](#onos.lib.go.rbac.Metadata)
     - [Role](#onos.lib.go.rbac.Role)
     - [Rule](#onos.lib.go.rbac.Rule)
   
@@ -20,6 +21,21 @@
 
 
 
+<a name="onos.lib.go.rbac.Metadata"></a>
+
+### Metadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | TODO add more fields if it is needed |
+
+
+
+
+
+
 <a name="onos.lib.go.rbac.Role"></a>
 
 ### Role
@@ -28,8 +44,7 @@ Role
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| groups | [string](#string) | repeated |  |
+| metadata | [Metadata](#onos.lib.go.rbac.Metadata) |  |  |
 | rules | [Rule](#onos.lib.go.rbac.Rule) | repeated |  |
 
 
@@ -45,6 +60,7 @@ Rule
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| groups | [string](#string) | repeated |  |
 | services | [string](#string) | repeated |  |
 | verbs | [string](#string) | repeated |  |
 

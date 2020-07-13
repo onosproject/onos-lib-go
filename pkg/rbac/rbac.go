@@ -25,23 +25,24 @@ type DefaultRole struct {
 
 const (
 	SystemAdminRoleName = "system.admin"
-	//SystemViewRoleName  = "system.view"
 )
 
 var (
 	defaultRoles = map[string]*rbac.Role{
 		SystemAdminRoleName: &rbac.Role{
-			Name: SystemAdminRoleName,
-			Groups: []string{
-				"admin",
+			Metadata: &rbac.Metadata{
+				Name: SystemAdminRoleName,
 			},
 			Rules: []*rbac.Rule{
 				{
+					Groups: []string{
+						"admin",
+					},
 					Services: []string{
-						"rbac",
+						"*",
 					},
 					Verbs: []string{
-						"create",
+						"*",
 					},
 				},
 			},
@@ -51,6 +52,5 @@ var (
 
 // GetDefaultRoles returns the list of default roles in the system
 func GetDefaultRoles() map[string]*rbac.Role {
-
 	return defaultRoles
 }
