@@ -15,8 +15,15 @@
 package auth
 
 import (
+	"crypto/x509"
+	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	ecoidc "github.com/ericchiang/oidc"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
+	"gopkg.in/square/go-jose.v2"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 
@@ -32,8 +39,10 @@ var log = logging.GetLogger("jwt")
 const (
 	// SharedSecretKey shared secret key for signing a token
 	SharedSecretKey = "SHARED_SECRET_KEY"
-	// RSAPublicKey an RSA public key
-	RSAPublicKey = "RSA_PUBLIC_KEY"
+	// OIDCServerURL - will be accessed as Environment variable
+	OIDCServerURL = "OIDC_SERVER_URL"
+	// OpenidConfiguration is the discovery point on the OIDC server
+	OpenidConfiguration = ".well-known/openid-configuration"
 	// HS prefix for HS family algorithms
 	HS = "HS"
 	// RS prefix for RS family algorithms
@@ -41,7 +50,9 @@ const (
 )
 
 // JwtAuthenticator jwt authenticator
-type JwtAuthenticator struct{}
+type JwtAuthenticator struct {
+	publicKeys map[string][]byte
+}
 
 // ParseToken parse token and Ensure that the JWT conforms to the structure of a JWT.
 func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapClaims, error) {
@@ -53,8 +64,24 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapCl
 			return []byte(key), nil
 			// RS256, RS384, or RS512
 		} else if strings.HasPrefix(token.Method.Alg(), RS) {
-			key := os.Getenv(RSAPublicKey)
-			rsaPublicKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(key))
+			keyID, ok := token.Header["kid"]
+			if !ok {
+				return nil, fmt.Errorf("header not found 'kid' (key ID)")
+			}
+			keyIDStr := keyID.(string)
+			publicKey, ok := j.publicKeys[keyIDStr]
+			if !ok {
+				// Keys may have been refreshed on the server
+				// Fetch them again and try once more before failing
+				if err := j.refreshJwksKeys(); err != nil {
+					return nil, fmt.Errorf("unable to refresh keys from ID provider %s", err)
+				}
+				// try again after refresh
+				if publicKey, ok = j.publicKeys[keyIDStr]; !ok {
+					return nil, fmt.Errorf("key ID %s not found in keys", keyID)
+				}
+			}
+			rsaPublicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKey)
 			if err != nil {
 				return nil, err
 			}
@@ -82,4 +109,65 @@ func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.MapClaims, 
 	}
 
 	return claims, nil
+}
+
+// Connect back to the OpenIDConnect server to retrieve the keys
+// They are rotated every 6 hours by default - we keep the keys in a cache
+// It's a 2 step process
+// 1) connect to $OIDCServerURL/.well-known/openid-configuration and retrieve the JSON payload
+// 2) lookup the "keys" parameter and get keys from $OIDCServerURL/keys
+// The keys are in a public key format and are converted to RSA Public Keys
+func (j *JwtAuthenticator) refreshJwksKeys() error {
+	oidcURL := os.Getenv(OIDCServerURL)
+
+	client := new(http.Client)
+	resOpenIDConfig, err := client.Get(fmt.Sprintf("%s/%s", oidcURL, OpenidConfiguration))
+	if err != nil {
+		return err
+	}
+	if resOpenIDConfig.Body != nil {
+		defer resOpenIDConfig.Body.Close()
+	}
+	openIDConfigBody, readErr := ioutil.ReadAll(resOpenIDConfig.Body)
+	if readErr != nil {
+		return err
+	}
+	var openIDprovider ecoidc.Provider
+	jsonErr := json.Unmarshal(openIDConfigBody, &openIDprovider)
+	if jsonErr != nil {
+		return err
+	}
+	resOpenIDKeys, err := client.Get(openIDprovider.JWKSURL)
+	if err != nil {
+		return err
+	}
+	if resOpenIDKeys.Body != nil {
+		defer resOpenIDKeys.Body.Close()
+	}
+	bodyOpenIDKeys, readErr := ioutil.ReadAll(resOpenIDKeys.Body)
+	if readErr != nil {
+		return err
+	}
+	var jsonWebKeySet jose.JSONWebKeySet
+	if err := json.Unmarshal(bodyOpenIDKeys, &jsonWebKeySet); err != nil {
+		return err
+	}
+
+	if j.publicKeys == nil {
+		j.publicKeys = make(map[string][]byte)
+	}
+	for _, key := range jsonWebKeySet.Keys {
+		data, err := x509.MarshalPKIXPublicKey(key.Key)
+		if err != nil {
+			return err
+		}
+		block := pem.Block{
+			Type:  "PUBLIC KEY",
+			Bytes: data,
+		}
+		pemBytes := pem.EncodeToMemory(&block)
+		j.publicKeys[key.KeyID] = pemBytes
+	}
+
+	return nil
 }
