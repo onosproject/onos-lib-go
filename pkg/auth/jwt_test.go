@@ -15,57 +15,118 @@
 package auth
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go"
 	"gotest.tools/assert"
 )
 
-// generated from https://csfieldguide.org.nz/en/interactives/rsa-key-generator/
-// with format scheme PKCS #8(base64)
-const samplePrivateKey = `
------BEGIN PRIVATE KEY-----
-MIIBVAIBADANBgkqhkiG9w0BAQEFAASCAT4wggE6AgEAAkEAi49aL5udF81/f+KI
-ip/qi5CwiKimo8SXRDTG6GrKr0MCCCUUOLGMPGqnN0/L6voWA1LKjMgprtCZ3yyn
-u/rqzQIDAQABAkAFYQsa1qahajxF05drsGo74uHLAqUZntQtvtMD1knlo2JPF3mJ
-9JVC/edAm6TIJEsV7x5Y2L3PX00SbhVvvp9BAiEA/zgXqRNlA3jTl8KvYIpUyp6y
-djN7Lywr4pKrMoXdJHkCIQCL/KqkxJo+nzCtGR8p7gQHq8AfpwYsKIka2Q6LhmBb
-9QIhANIglqpoA3T2WA/NBKPRgLpKKtjSzgsqrP8gjr9MI6TRAiBiJReOxbhOx1Vd
-RwuuXg29QxFEH9oYA6N8i0nDUMcmMQIgXgv52LyczFpE03TL67yWKeIb+W5EeKgO
-SOE/mhFvJns=
------END PRIVATE KEY-----
-`
+const dexWellKnownOpenIDConfig = `{
+  "issuer": "http://dex:32000",
+  "authorization_endpoint": "http://dex:32000/auth",
+  "token_endpoint": "http://dex:32000/token",
+  "jwks_uri": "http://dex:32000/keys",
+  "userinfo_endpoint": "http://dex:32000/userinfo",
+  "response_types_supported": [
+    "code"
+  ],
+  "subject_types_supported": [
+    "public"
+  ],
+  "id_token_signing_alg_values_supported": [
+    "RS256"
+  ],
+  "scopes_supported": [
+    "openid",
+    "email",
+    "groups",
+    "profile",
+    "offline_access"
+  ],
+  "token_endpoint_auth_methods_supported": [
+    "client_secret_basic"
+  ],
+  "claims_supported": [
+    "aud",
+    "email",
+    "email_verified",
+    "exp",
+    "iat",
+    "iss",
+    "locale",
+    "name",
+    "sub"
+  ]
+}`
 
-// generated from https://csfieldguide.org.nz/en/interactives/rsa-key-generator/
-// with format scheme PKCS #8(base64)
-const samplePublicKey = `
------BEGIN PUBLIC KEY-----
-MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAIuPWi+bnRfNf3/iiIqf6ouQsIiopqPE
-l0Q0xuhqyq9DAgglFDixjDxqpzdPy+r6FgNSyozIKa7Qmd8sp7v66s0CAwEAAQ==
------END PUBLIC KEY-----
-`
+// Available from a running Dex instance at http://dex:32000/keys
+const dexkeys = `{
+  "keys": [
+    {
+      "use": "sig",
+      "kty": "RSA",
+      "kid": "df362dc374c5bf1a2f1039ed8d6629c90b93a04e",
+      "alg": "RS256",
+      "n": "uWnUNbMHMdi6UH3AKEfslIBoOpg7fFkMG108BhjnY1YVXBPAZ_2QbdY7cA04mPNU4GJgu0FVQeZKsDB9biCTv7QKwDnBqGldBku27V5R9AE3icrDspHjfUSVu-hFSY_hWz_UfHbnfUHknpGp35MO7J2x0A7CvvBcT1LrQBihpY09JBrPXIPfTtygqhsHJ_aejbak_R6HRVvf6iyrHSuanTSKRpXpiFypfP3hsWRy36sO2cEnBYV4t-vNG7Xi8hTPK-hul5DDCpeUu2QpPma1GnTEszOHBdFWNHl5rdrIgkP7RnKmugnbxRAaQChhJrE-SWSR0FrHZsioQx94FqaCAw",
+      "e": "AQAB"
+    },
+    {
+      "use": "sig",
+      "kty": "RSA",
+      "kid": "896728487539b52bcda1de629c6fd8263193db85",
+      "alg": "RS256",
+      "n": "qxcVBYBG42H5m2T4WdKloq7Cyva1YOI4FLWgHUlnQ17yYp7tXVTRtFKGeKC4uprhM2SA_KAbXtvXEq2cDoXpBDk1LwiKU0IUvVoi6kYQiJDYvXalP9H57OmiTXMwpB7ZPnEupBJqBUy8Nw34b7EOCKo3BLkcV_aczl1jkpROi5U0tGmuaBVjpigQ4Q9CdnHeKGRExPjStd-XgTJkXHxfnSt5EW5DWc3HPAR911_DUoXTElaYrZDgW8XDcYUgCuifHikgwahUmKoVIJMCqvvfIZPEYCl_Kp4VUMI46L6K_aRadTs1-gaodP0O-rJWu1Of7YuLwAdl0Hrw4eRZ46crew",
+      "e": "AQAB"
+    },
+    {
+      "use": "sig",
+      "kty": "RSA",
+      "kid": "ad458979046bfdcdad0db2250f10f526366d461d",
+      "alg": "RS256",
+      "n": "3ua3Mea1y9Q67oSS2cVBAfpvlkY0E6_1hyoOLZalVX2Wwnm113l60Blbk8UK3zKlBIfZjF4mwUrz8aj2nrsLOz7Wle-X2Gu9YsjZkdX0aoZsLplGXPnVyt10hkD6LPr-yyvqcJGNBnDot4UjNRoHfU0rsTc0BIR2XmVd9YCmUx7Rfi2GLrDStEX_RLU8aVYXeKlazfbqPhsm43muugzSCNaBF28_wtDjjPT8WTmOv-EyE0lZEv2jJuwFN6mtJzN0pXy2cj9oS-nhv0_pE635qUvrX0h3-8Uq9IwQQFYGaCQcfLRgyYXO3oSgqyw_Tt8anaMpjBOjmPgNSDOFPd47Iw",
+      "e": "AQAB"
+    }
+  ]
+}`
 
-// generated from running onos-gui against the Dex IDP - expires 10 Jul 2030
-const sampleTokenOnosGuiAndDex = `eyJhbGciOiJSUzI1NiIsImtpZCI6Ijg5NjcyODQ4NzUzOWI1MmJjZGExZGU2MjljNmZkODI2MzE5M2RiODUifQ.eyJpc3MiOiJodHRwOi8vZGV4OjMyMDAwIiwic3ViIjoiQ2lRd09HRTROamcwWWkxa1lqZzRMVFJpTnpNdE9UQmhPUzB6WTJReE5qWXhaalUwTmpnU0JXeHZZMkZzIiwiYXVkIjoib25vcy1ndWkiLCJleHAiOjE5MDk3MjU2NjMsImlhdCI6MTU5NDM2NTY2Mywibm9uY2UiOiJiM0JFVkVreVJHTi1NbmRDTUMwelFVVmZhVTF2WW1KM1VuVjNURzR4Wm1kWVMyOU5hakJRWnpKeWR6ZHgiLCJhdF9oYXNoIjoiNmhQR3ppNnR4NS16QklnTEhLa3dHQSIsImVtYWlsIjoic2VhbkBvcGVubmV0d29ya2luZy5vcmciLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6InNlYW4ifQ.Pvcq1mVGirMHvIxtvpt2uwvh-sSty0HBlny9qSI2KjZevkgaX3xgWBTHI1MzIWv9phVzAfaUvZToE6ybYdggJg`
-
-func Test_ParsePublicKeyFromPem(t *testing.T) {
-	assert.Equal(t, 523, len(samplePrivateKey))
-	assert.Equal(t, 183, len(samplePublicKey))
-
-	rsaPublicKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(samplePublicKey))
-	assert.NilError(t, err, "unexpected error parsing public key")
-	assert.Assert(t, rsaPublicKey != nil)
-
-}
+// generated from running onos-gui against the Dex IDP - expires 12 Jul 2030
+const sampleTokenOnosGuiAndDex = `eyJhbGciOiJSUzI1NiIsImtpZCI6ImRmMzYyZGMzNzRjNWJmMWEyZjEwMzllZDhkNjYyOWM5MGI5M2EwNGUifQ.eyJpc3MiOiJodHRwOi8vZGV4OjMyMDAwIiwic3ViIjoiQ2lRd09HRTROamcwWWkxa1lqZzRMVFJpTnpNdE9UQmhPUzB6WTJReE5qWXhaalUwTmpnU0JXeHZZMkZzIiwiYXVkIjoib25vcy1ndWkiLCJleHAiOjE5MDk5Mzg0NDcsImlhdCI6MTU5NDU3ODQ0Nywibm9uY2UiOiJjelJ2TmtoTFVYbFhVSE5EYWpsMmNHSlFjMVZOUld0T2NERmtMbkJ0ZHkxbFJTMVlkM0YzVUVGNE5IZFEiLCJhdF9oYXNoIjoiWXcxQ1M1UmdvYVRVWUNUZWtxUkxBZyIsImVtYWlsIjoic2VhbkBvcGVubmV0d29ya2luZy5vcmciLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6InNlYW4ifQ.OMxzPd9CD7CoZVPRYSXJdLy8QCQjkIyjD7xFKBbDDsOCvIK9MkNHBTgQfrc3gmv8DZaAyzj9abLRS1TPWBwfQl5QJW9unXbjtk4KukXxv0CbKN3NyRV5Nm5YlGm66DIlPMj8udlqyau_xUJXrVC4T13sPo1CVpnAHut6Rr9zwPj3pVLwPXO2dkqHH4c1YM9Lyg8fpMv5eGd3iN6xcRMCcxUFkqffvwS1mCW6BUoBvnbMMZEaNokAC6HcWD8EB_m-Z7nt_xP_C_mnnZGFJNGDU0fRUjdGRxQ6AHYVg1zCS_B8P1IxkIe6tnBRi8309s99Q4MhlDWSoju_fe8pU7iLwQ`
 
 func TestJwtAuthenticator_parseToken(t *testing.T) {
-	err := os.Setenv(RSAPublicKey, samplePublicKey)
-	assert.NilError(t, err, "unexpected error setting env var")
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.String() {
+		case "/" + OpenidConfiguration:
+			fmt.Fprintln(w, strings.ReplaceAll(dexWellKnownOpenIDConfig, "dex:32000", r.Host))
+		case "/keys":
+			fmt.Fprintln(w, dexkeys)
+		default:
+			t.Fatalf("Unexpected URL %s", r.URL.String())
+		}
+	}))
+	defer ts.Close()
+
+	_ = os.Setenv(OIDCServerURL, ts.URL)
+
 	authenticator := new(JwtAuthenticator)
-	token, claims, err := authenticator.parseToken(sampleTokenOnosGuiAndDex)
+
+	claims, err := authenticator.ParseAndValidate(sampleTokenOnosGuiAndDex)
 	assert.NilError(t, err, "unexpected error parsing token")
-	assert.Assert(t, token != nil)
 	assert.Assert(t, claims != nil)
+
+	assert.Assert(t, claims.VerifyIssuedAt(1594578447, true), "error verifying issuedat time")
+	assert.Assert(t, claims.VerifyExpiresAt(1909938447, true), "error verifying expiry time")
+	assert.Assert(t, claims.VerifyIssuer("http://dex:32000", true), "error verifying issuer")
+	assert.Assert(t, claims.VerifyAudience("onos-gui", true), "error verifying audience")
+	name, ok := claims["name"]
+	assert.Assert(t, ok, "error extracting name")
+	assert.Equal(t, "sean", name, "error unexpected name", name)
+	email, ok := claims["email"]
+	assert.Assert(t, ok, "error extracting email")
+	assert.Equal(t, "sean@opennetworking.org", email, "error unexpected email", email)
 
 }
