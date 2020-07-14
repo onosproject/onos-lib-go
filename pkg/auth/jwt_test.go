@@ -93,8 +93,11 @@ const dexkeys = `{
   ]
 }`
 
+const sharedSecretKey = `ZXhhbXBsZS1hcHAtc2VjcmV0`
+
 // generated from running onos-gui against the Dex IDP - expires 12 Jul 2030
 const sampleTokenOnosGuiAndDex = `eyJhbGciOiJSUzI1NiIsImtpZCI6ImRmMzYyZGMzNzRjNWJmMWEyZjEwMzllZDhkNjYyOWM5MGI5M2EwNGUifQ.eyJpc3MiOiJodHRwOi8vZGV4OjMyMDAwIiwic3ViIjoiQ2lRd09HRTROamcwWWkxa1lqZzRMVFJpTnpNdE9UQmhPUzB6WTJReE5qWXhaalUwTmpnU0JXeHZZMkZzIiwiYXVkIjoib25vcy1ndWkiLCJleHAiOjE5MDk5Mzg0NDcsImlhdCI6MTU5NDU3ODQ0Nywibm9uY2UiOiJjelJ2TmtoTFVYbFhVSE5EYWpsMmNHSlFjMVZOUld0T2NERmtMbkJ0ZHkxbFJTMVlkM0YzVUVGNE5IZFEiLCJhdF9oYXNoIjoiWXcxQ1M1UmdvYVRVWUNUZWtxUkxBZyIsImVtYWlsIjoic2VhbkBvcGVubmV0d29ya2luZy5vcmciLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6InNlYW4ifQ.OMxzPd9CD7CoZVPRYSXJdLy8QCQjkIyjD7xFKBbDDsOCvIK9MkNHBTgQfrc3gmv8DZaAyzj9abLRS1TPWBwfQl5QJW9unXbjtk4KukXxv0CbKN3NyRV5Nm5YlGm66DIlPMj8udlqyau_xUJXrVC4T13sPo1CVpnAHut6Rr9zwPj3pVLwPXO2dkqHH4c1YM9Lyg8fpMv5eGd3iN6xcRMCcxUFkqffvwS1mCW6BUoBvnbMMZEaNokAC6HcWD8EB_m-Z7nt_xP_C_mnnZGFJNGDU0fRUjdGRxQ6AHYVg1zCS_B8P1IxkIe6tnBRi8309s99Q4MhlDWSoju_fe8pU7iLwQ`
+const sampleTokenHS256Signature = `eyJhbGciOiJIUzI1NiIsImtpZCI6ImRmMzYyZGMzNzRjNWJmMWEyZjEwMzllZDhkNjYyOWM5MGI5M2EwNGUifQ.eyJpc3MiOiJodHRwOi8vZGV4OjMyMDAwIiwic3ViIjoiQ2lRd09HRTROamcwWWkxa1lqZzRMVFJpTnpNdE9UQmhPUzB6WTJReE5qWXhaalUwTmpnU0JXeHZZMkZzIiwiYXVkIjoib25vcy1ndWkiLCJleHAiOjE5MDk5Mzg0NDcsImlhdCI6MTU5NDU3ODQ0Nywibm9uY2UiOiJjelJ2TmtoTFVYbFhVSE5EYWpsMmNHSlFjMVZOUld0T2NERmtMbkJ0ZHkxbFJTMVlkM0YzVUVGNE5IZFEiLCJhdF9oYXNoIjoiWXcxQ1M1UmdvYVRVWUNUZWtxUkxBZyIsImVtYWlsIjoic2VhbkBvcGVubmV0d29ya2luZy5vcmciLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6InNlYW4ifQ.vAx1WCxsJNEvpfMvTU0IqnWgen1xmS3lOjkorZL5uWU`
 
 func TestJwtAuthenticator_parseToken(t *testing.T) {
 
@@ -118,6 +121,27 @@ func TestJwtAuthenticator_parseToken(t *testing.T) {
 	assert.NilError(t, err, "unexpected error parsing token")
 	assert.Assert(t, claims != nil)
 
+	assert.Assert(t, claims.VerifyIssuedAt(1594578447, true), "error verifying issuedat time")
+	assert.Assert(t, claims.VerifyExpiresAt(1909938447, true), "error verifying expiry time")
+	assert.Assert(t, claims.VerifyIssuer("http://dex:32000", true), "error verifying issuer")
+	assert.Assert(t, claims.VerifyAudience("onos-gui", true), "error verifying audience")
+	name, ok := claims["name"]
+	assert.Assert(t, ok, "error extracting name")
+	assert.Equal(t, "sean", name, "error unexpected name", name)
+	email, ok := claims["email"]
+	assert.Assert(t, ok, "error extracting email")
+	assert.Equal(t, "sean@opennetworking.org", email, "error unexpected email", email)
+
+}
+
+func TestJwtAuthenticator_HSAlgorithm(t *testing.T) {
+	authenticator := new(JwtAuthenticator)
+
+	err := os.Setenv("SHARED_SECRET_KEY", sharedSecretKey)
+	assert.NilError(t, err, "shared secret key is not set")
+
+	claims, err := authenticator.ParseAndValidate(sampleTokenHS256Signature)
+	assert.NilError(t, err, "unexpected error parsing token")
 	assert.Assert(t, claims.VerifyIssuedAt(1594578447, true), "error verifying issuedat time")
 	assert.Assert(t, claims.VerifyExpiresAt(1909938447, true), "error verifying expiry time")
 	assert.Assert(t, claims.VerifyIssuer("http://dex:32000", true), "error verifying issuer")

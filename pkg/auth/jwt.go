@@ -19,13 +19,14 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	ecoidc "github.com/ericchiang/oidc"
-	"github.com/onosproject/onos-lib-go/pkg/logging"
-	"gopkg.in/square/go-jose.v2"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+
+	ecoidc "github.com/ericchiang/oidc"
+	"github.com/onosproject/onos-lib-go/pkg/logging"
+	"gopkg.in/square/go-jose.v2"
 
 	"google.golang.org/grpc/status"
 
