@@ -71,16 +71,16 @@ func matchRule(rule, reqRule string) bool {
 
 		// '*xxx*'
 		if rule[0:1] == "*" && rule[ruleLen-1:ruleLen] == "*" {
-			return strings.Contains(s, match)
+			return strings.Contains(reqRule, match)
 		}
 
 		// '*xxx'
 		if rule[0:1] == "*" {
-			return strings.HasSuffix(s, match)
+			return strings.HasSuffix(reqRule, match)
 		}
 
 		// 'xxx*'
-		return strings.HasPrefix(s, match)
+		return strings.HasPrefix(reqRule, match)
 	}
 
 	// no wildcard stars given in rule
