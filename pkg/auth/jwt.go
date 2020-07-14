@@ -44,9 +44,6 @@ const (
 	OIDCServerURL = "OIDC_SERVER_URL"
 	// OpenidConfiguration is the discovery point on the OIDC server
 	OpenidConfiguration = ".well-known/openid-configuration"
-
-	// RSAPublicKey an RSA public key
-	RSAPublicKey = "RSA_PUBLIC_KEY"
 	// HS prefix for HS family algorithms
 	HS = "HS"
 	// RS prefix for RS family algorithms
