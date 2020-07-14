@@ -14,41 +14,12 @@
 
 package rbac
 
-import (
-	"github.com/onosproject/onos-lib-go/api/rbac"
-)
+import "testing"
 
-const (
-	// SystemAdminRoleName name of admin role in the system
-	SystemAdminRoleName = "system.admin"
-)
+func TestAuthorize(t *testing.T) {
 
-var (
-	defaultRoles = map[string]*rbac.Role{
-		SystemAdminRoleName: {
-			Metadata: &rbac.Metadata{
-				Name: SystemAdminRoleName,
-			},
+}
 
-			Rules: []*rbac.Rule{
-				{
-					Groups: []string{
-						"admin",
-					},
+func TestVerifyRules(t *testing.T) {
 
-					Services: []string{
-						"*",
-					},
-					Verbs: []string{
-						"*",
-					},
-				},
-			},
-		},
-	}
-)
-
-// GetDefaultRoles returns the list of default roles in the system
-func GetDefaultRoles() map[string]*rbac.Role {
-	return defaultRoles
 }

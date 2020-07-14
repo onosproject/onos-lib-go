@@ -16,14 +16,11 @@ package grpcinterceptors
 
 import (
 	"context"
-	"fmt"
-	"strings"
-
-	"github.com/dgrijalva/jwt-go"
 
 	"google.golang.org/grpc"
 
 	"github.com/onosproject/onos-lib-go/pkg/auth"
+	"github.com/onosproject/onos-lib-go/pkg/rbac"
 
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 
@@ -33,49 +30,9 @@ import (
 const (
 	// ContextMetadataTokenKey metadata token key
 	ContextMetadataTokenKey = "bearer"
-	// GroupsKey groups key in the token claims
-	GroupsKey = "groups"
 )
 
 var log = logging.GetLogger("interceptors")
-
-func getMethodInformation(fullMethod string) (service, verb string) {
-	parts := strings.Split(fullMethod, "/")
-
-	if len(parts) > 1 {
-		splitedParts := strings.Split(parts[1], ".")
-		index := len(splitedParts) - 1
-		service = splitedParts[index]
-	}
-
-	if len(parts) > 2 {
-		verb = strings.ToLower(parts[2])
-	}
-	return service, verb
-}
-
-func authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
-
-	// Retrieve service information and rpc method name
-	reqService, reqVerb := getMethodInformation(info.FullMethod)
-	log.Info(reqService, reqVerb)
-	var claimedGroups []interface{}
-	//defaultRoles := rbac.GetDefaultRoles()
-	for key := range claims {
-		// extract claimed groups from the token
-		if key == GroupsKey {
-			claimedGroups = claims[GroupsKey].([]interface{})
-		}
-
-	}
-
-	// If the user does not claim any groups then we cannot authorize the user
-	if claimedGroups == nil {
-		return fmt.Errorf("groups claim cannot be empty")
-	}
-
-	return nil
-}
 
 // AuthorizationUnaryInterceptor an unary interceptor for authorization
 func AuthorizationUnaryInterceptor() grpc.UnaryServerInterceptor {
@@ -93,7 +50,8 @@ func AuthorizationUnaryInterceptor() grpc.UnaryServerInterceptor {
 			return ctx, err
 		}
 
-		err = authorize(claims, info)
+		log.Info(info.FullMethod)
+		err = rbac.Authorize(claims, info)
 		if err != nil {
 			return nil, err
 		}
