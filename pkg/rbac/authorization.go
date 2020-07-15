@@ -47,9 +47,7 @@ func verifyRules(rules []*api.Rule, fullMethod string) error {
 	return fmt.Errorf("no rule found to authorize the user")
 }
 
-// Authorize authorize a user based on given claims
-func Authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
-
+func extractClaimedGroups(claims jwt.MapClaims) ([]string, error) {
 	var claimedGroups []interface{}
 	for key := range claims {
 		// extract claimed groups from the token
@@ -60,12 +58,24 @@ func Authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
 
 	// If the user does not claim any groups then we cannot authorize the user
 	if claimedGroups == nil {
-		return fmt.Errorf("groups claim cannot be empty")
+		return nil, fmt.Errorf("groups claim cannot be empty")
 	}
 
-	var claimedGroupsString []string
+	var claimedGroupsList []string
 	for _, group := range claimedGroups {
-		claimedGroupsString = append(claimedGroupsString, group.(string))
+		claimedGroupsList = append(claimedGroupsList, group.(string))
+	}
+
+	return claimedGroupsList, nil
+}
+
+// Authorize authorize a user based on given claims
+func Authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
+
+	// Extract claimed groups
+	claimedGroupsList, err := extractClaimedGroups(claims)
+	if err != nil {
+		return err
 	}
 
 	// Check the default roles first to authorize the users
@@ -76,14 +86,14 @@ func Authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
 		rules := role.Rules
 		for _, rule := range rules {
 			// TODO handle wildcard for groups
-			commonGroups := intersection(rule.Groups, claimedGroupsString)
+			commonGroups := intersection(rule.Groups, claimedGroupsList)
 			if len(commonGroups) != 0 {
 				candidateRules = append(candidateRules, rule)
 			}
 		}
 	}
 
-	err := verifyRules(candidateRules, info.FullMethod)
+	err = verifyRules(candidateRules, info.FullMethod)
 	if err != nil {
 		return err
 	}

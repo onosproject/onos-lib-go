@@ -50,7 +50,6 @@ func AuthorizationUnaryInterceptor() grpc.UnaryServerInterceptor {
 			return ctx, err
 		}
 
-		log.Info(info.FullMethod)
 		err = rbac.Authorize(claims, info)
 		if err != nil {
 			return nil, err

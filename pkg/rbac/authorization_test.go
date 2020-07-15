@@ -14,12 +14,163 @@
 
 package rbac
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	api "github.com/onosproject/onos-lib-go/api/rbac"
+)
 
 func TestAuthorize(t *testing.T) {
 
 }
 
 func TestVerifyRules(t *testing.T) {
+	tests := []struct {
+		denied     bool
+		fullMethod string
+		rules      []*api.Rule
+	}{
+		{
+			denied:     false,
+			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			rules: []*api.Rule{
+				{
+					Groups: []string{
+						"*",
+					},
+
+					Services: []string{
+						"*",
+					},
+					Verbs: []string{
+						"*",
+					},
+				},
+			},
+		},
+		{
+			denied:     true,
+			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			rules: []*api.Rule{
+				{
+					Groups: []string{
+						"*",
+					},
+
+					Services: []string{
+						"*",
+					},
+					Verbs: []string{
+						"ListRegisteredModels",
+						"RollbackNetworkChange",
+						"ListSnapshots",
+						"CompactChanges",
+					},
+				},
+			},
+		},
+		{
+			denied:     false,
+			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			rules: []*api.Rule{
+				{
+					Groups: []string{
+						"*",
+					},
+
+					Services: []string{
+						"*",
+					},
+					Verbs: []string{
+						"UploadRegisterModel",
+					},
+				},
+			},
+		},
+		{
+			denied:     true,
+			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			rules: []*api.Rule{
+				{
+					Groups: []string{
+						"*",
+					},
+
+					Services: []string{
+						"TopoAdminService",
+					},
+					Verbs: []string{
+						"*",
+					},
+				},
+			},
+		},
+		{
+			denied:     false,
+			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			rules: []*api.Rule{
+				{
+					Groups: []string{
+						"*",
+					},
+
+					Services: []string{
+						"ConfigAdminService",
+					},
+					Verbs: []string{
+						"*",
+					},
+				},
+			},
+		},
+		{
+			denied:     true,
+			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			rules: []*api.Rule{
+				{
+					Groups: []string{
+						"*",
+					},
+
+					Services: []string{
+						"ConfigAdminService",
+					},
+					Verbs: []string{
+						"CompactChanges",
+					},
+				},
+			},
+		},
+		{
+			denied:     false,
+			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			rules: []*api.Rule{
+				{
+					Groups: []string{
+						"*",
+					},
+
+					Services: []string{
+						"ConfigAdminService",
+					},
+					Verbs: []string{
+						"UploadRegisterModel",
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		err := verifyRules(test.rules, test.fullMethod)
+		if test.denied {
+			assert.NotNil(t, err)
+		} else {
+			assert.Nil(t, err)
+		}
+
+	}
 
 }
