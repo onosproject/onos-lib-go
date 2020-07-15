@@ -52,3 +52,13 @@ var (
 func GetDefaultRoles() map[string]*rbac.Role {
 	return defaultRoles
 }
+
+// GetRoles get all of the roles in the system including default roles
+func GetRoles() map[string]*rbac.Role {
+	var roles map[string]*rbac.Role
+	roles = GetDefaultRoles()
+
+	// TODO retrieve roles from the store and update roles
+
+	return roles
+}

@@ -34,17 +34,17 @@ func getMethodInformation(fullMethod string) (service, verb string) {
 	return service, verb
 }
 
-// intersection finds the intersection of two string arrays
-func intersection(a, b []string) (c []string) {
+// intersection finds common groups between two list of groups
+func findCommonGroups(g1, g2 []string) (cg []string) {
 	m := make(map[string]bool)
 
-	for _, item := range a {
+	for _, item := range g1 {
 		m[item] = true
 	}
 
-	for _, item := range b {
+	for _, item := range g2 {
 		if _, ok := m[item]; ok {
-			c = append(c, item)
+			cg = append(cg, item)
 		}
 	}
 	return

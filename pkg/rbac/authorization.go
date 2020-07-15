@@ -69,30 +69,37 @@ func extractClaimedGroups(claims jwt.MapClaims) ([]string, error) {
 	return claimedGroupsList, nil
 }
 
-// Authorize authorize a user based on given claims
-func Authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
-
-	// Extract claimed groups
-	claimedGroupsList, err := extractClaimedGroups(claims)
-	if err != nil {
-		return err
-	}
-
-	// Check the default roles first to authorize the users
-	defaultRoles := GetDefaultRoles()
-
+func findCandidateRules(roles map[string]*api.Role, claimedGroupsList []string) ([]*api.Rule, error) {
 	var candidateRules []*api.Rule
 	for _, role := range defaultRoles {
 		rules := role.Rules
 		for _, rule := range rules {
 			// TODO handle wildcard for groups
-			commonGroups := intersection(rule.Groups, claimedGroupsList)
+			commonGroups := findCommonGroups(rule.Groups, claimedGroupsList)
 			if len(commonGroups) != 0 {
 				candidateRules = append(candidateRules, rule)
 			}
 		}
 	}
 
+}
+
+// Authorize authorize a user based on given claims
+func Authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
+
+	// Extracts claimed groups
+	claimedGroupsList, err := extractClaimedGroups(claims)
+	if err != nil {
+		return err
+	}
+
+	// Checks the default roles first to authorize the users
+	roles := GetRoles()
+
+	// Finds list of candidate rules that should be should be checked for verification
+	candidateRules, err := findCandidateRules(roles, claimedGroupsList)
+
+	// verifies list of candidate rules
 	err = verifyRules(candidateRules, info.FullMethod)
 	if err != nil {
 		return err

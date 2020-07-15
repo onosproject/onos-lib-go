@@ -161,6 +161,24 @@ func TestVerifyRules(t *testing.T) {
 				},
 			},
 		},
+		{
+			denied:     false,
+			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			rules: []*api.Rule{
+				{
+					Groups: []string{
+						"*",
+					},
+
+					Services: []string{
+						"configAdminService",
+					},
+					Verbs: []string{
+						"uploadRegisterModel",
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
