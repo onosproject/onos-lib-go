@@ -35,7 +35,7 @@ var (
 			Rules: []*rbac.Rule{
 				{
 					Groups: []string{
-						"*",
+						AdminGroup,
 					},
 
 					Services: []string{

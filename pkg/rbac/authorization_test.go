@@ -27,7 +27,8 @@ import (
 )
 
 const (
-	fullMethod1 = "/onos.config.admin.ConfigAdminService/UploadRegisterModel"
+	fullMethod1     = "/onos.config.admin.ConfigAdminService/UploadRegisterModel"
+	DevelopersGroup = "developers"
 )
 
 func TestExtractClaimedGroups(t *testing.T) {
@@ -51,7 +52,7 @@ func TestAuthorizeWithDefaultRoles(t *testing.T) {
 		{
 			denied: true,
 			groups: []string{
-				"developers",
+				DevelopersGroup,
 			},
 			fullMethod: fullMethod1,
 		},
