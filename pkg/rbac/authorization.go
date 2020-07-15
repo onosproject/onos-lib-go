@@ -34,9 +34,9 @@ func verifyRules(rules []*api.Rule, fullMethod string) error {
 	reqService, reqVerb := getMethodInformation(fullMethod)
 	for _, rule := range rules {
 		for _, service := range rule.Services {
-			if matchRule(strings.ToLower(service), strings.ToLower(reqService)) {
+			if match(strings.ToLower(service), strings.ToLower(reqService)) {
 				for _, verb := range rule.Verbs {
-					if matchRule(strings.ToLower(verb), reqVerb) {
+					if match(strings.ToLower(verb), reqVerb) {
 						return nil
 					}
 				}
@@ -74,9 +74,8 @@ func findCandidateRules(roles map[string]*api.Role, claimedGroupsList []string) 
 	for _, role := range defaultRoles {
 		rules := role.Rules
 		for _, rule := range rules {
-			// TODO handle wildcard for groups
-			commonGroups := findCommonGroups(rule.Groups, claimedGroupsList)
-			if len(commonGroups) != 0 {
+			matched := matchGroups(rule.Groups, claimedGroupsList)
+			if matched {
 				candidateRules = append(candidateRules, rule)
 			}
 		}

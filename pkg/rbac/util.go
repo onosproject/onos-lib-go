@@ -34,9 +34,9 @@ func getMethodInformation(fullMethod string) (service, verb string) {
 	return service, verb
 }
 
-// intersection finds common groups between two list of groups
-func findCommonGroups(g1, g2 []string) (cg []string) {
-	m := make(map[string]bool)
+// finds common groups between two list of groups
+func matchGroups(groups, reqGroups []string) bool {
+	/*m := make(map[string]bool)
 
 	for _, item := range g1 {
 		m[item] = true
@@ -46,43 +46,59 @@ func findCommonGroups(g1, g2 []string) (cg []string) {
 		if _, ok := m[item]; ok {
 			cg = append(cg, item)
 		}
+	}*/
+
+	var cg []string
+
+	for _, group := range groups {
+		for _, reqGroup := range reqGroups {
+			if match(strings.ToLower(reqGroup), strings.ToLower(group)) {
+				cg = append(cg, group)
+
+			}
+		}
 	}
-	return
+
+	if len(cg) > 0 {
+		return true
+	}
+
+	return false
 }
 
-// matchRule determines if two rules (e.g. a requested rule and a rule in the system)
+// matchRule determines if two rules/groups (e.g. a requested rule and a rule in the system)
 // can be matched
-func matchRule(rule, reqRule string) bool {
+func match(s1, s2 string) bool {
 	// no rule
-	ruleLen := len(rule)
-	if ruleLen == 0 {
+	s1Len := len(s1)
+	if s1Len == 0 {
 		return false
 	}
 
 	// '*xxx' || 'xxx*'
-	if rule[0:1] == "*" || rule[ruleLen-1:ruleLen] == "*" {
+	if s1[0:1] == "*" || s1[s1Len-1:s1Len] == "*" {
 		// get the matching string from the rule
-		match := strings.TrimSpace(strings.Join(strings.Split(rule, "*"), ""))
+		match := strings.TrimSpace(strings.Join(strings.Split(s1, "*"), ""))
 
 		// '*' or '*******'
 		if len(match) == 0 {
 			return true
 		}
 
-		// '*xxx*'
-		if rule[0:1] == "*" && rule[ruleLen-1:ruleLen] == "*" {
-			return strings.Contains(reqRule, match)
+		// '*xyz*'
+		if s1[0:1] == "*" && s1[s1Len-1:s1Len] == "*" {
+			return strings.Contains(s2, match)
 		}
 
-		// '*xxx'
-		if rule[0:1] == "*" {
-			return strings.HasSuffix(reqRule, match)
+		// '*xyz'
+		if s1[0:1] == "*" {
+			return strings.HasSuffix(s2, match)
 		}
 
-		// 'xxx*'
-		return strings.HasPrefix(reqRule, match)
+		// 'xyz*'
+		return strings.HasPrefix(s2, match)
 	}
 
 	// no wildcard stars given in rule
-	return rule == reqRule
+	return s1 == s2
 }
