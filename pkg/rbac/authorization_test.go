@@ -31,10 +31,6 @@ const (
 	DevelopersGroup = "developers"
 )
 
-func TestExtractClaimedGroups(t *testing.T) {
-
-}
-
 func TestAuthorizeWithDefaultRoles(t *testing.T) {
 
 	tests := []struct {
@@ -67,11 +63,14 @@ func TestAuthorizeWithDefaultRoles(t *testing.T) {
 		mapClaims := jwt.MapClaims{}
 		mapClaims[GroupsKey] = testGroups
 
-		info := grpc.UnaryServerInfo{
+		info := &grpc.UnaryServerInfo{
 			FullMethod: test.fullMethod,
 		}
 
-		err := Authorize(mapClaims, &info)
+		authorization := Authorization{}
+		authorization.SetClaims(mapClaims)
+		authorization.SetUnaryServerInfo(info)
+		err := authorization.Authorize()
 		if test.denied {
 			assert.NotNil(t, err)
 		} else {

@@ -29,6 +29,35 @@ const (
 	GroupsKey = "groups"
 )
 
+// Rbac role based access control interface
+type Rbac interface {
+	Authorize() error
+}
+
+// NewAuthorization creates a new Authorization instance
+func NewAuthorization(claims jwt.MapClaims, info *grpc.UnaryServerInfo) Authorization {
+	return Authorization{
+		claims: claims,
+		info:   info,
+	}
+}
+
+// SetClaims set jwt token claims
+func (a *Authorization) SetClaims(claims jwt.MapClaims) {
+	a.claims = claims
+}
+
+// SetUnaryServerInfo sets unary server info
+func (a *Authorization) SetUnaryServerInfo(info *grpc.UnaryServerInfo) {
+	a.info = info
+}
+
+// Authorization authorization claimed information
+type Authorization struct {
+	claims jwt.MapClaims
+	info   *grpc.UnaryServerInfo
+}
+
 func verifyRules(rules []*api.Rule, fullMethod string) error {
 	// Retrieve service information and rpc method name
 	reqService, reqVerb := getMethodInformation(fullMethod)
@@ -86,10 +115,10 @@ func findCandidateRules(roles map[string]*api.Role, claimedGroupsList []string) 
 }
 
 // Authorize authorize a user based on given claims
-func Authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
+func (a *Authorization) Authorize() error {
 
 	// Extracts claimed groups
-	claimedGroupsList, err := extractClaimedGroups(claims)
+	claimedGroupsList, err := extractClaimedGroups(a.claims)
 	if err != nil {
 		return err
 	}
@@ -104,7 +133,7 @@ func Authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
 	}
 
 	// verifies list of candidate rules
-	err = verifyRules(candidateRules, info.FullMethod)
+	err = verifyRules(candidateRules, a.info.FullMethod)
 	if err != nil {
 		return err
 	}

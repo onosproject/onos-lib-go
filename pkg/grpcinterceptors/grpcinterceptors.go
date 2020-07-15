@@ -47,10 +47,11 @@ func AuthorizationUnaryInterceptor() grpc.UnaryServerInterceptor {
 		jwtAuth := new(auth.JwtAuthenticator)
 		claims, err := jwtAuth.ParseAndValidate(tokenString)
 		if err != nil {
-			return ctx, err
+			return nil, err
 		}
 
-		err = rbac.Authorize(claims, info)
+		authorizationInstance := rbac.NewAuthorization(claims, info)
+		err = authorizationInstance.Authorize()
 		if err != nil {
 			return nil, err
 		}
