@@ -17,12 +17,67 @@ package rbac
 import (
 	"testing"
 
+	"google.golang.org/grpc"
+
+	"github.com/dgrijalva/jwt-go"
+
 	"github.com/stretchr/testify/assert"
 
 	api "github.com/onosproject/onos-lib-go/api/rbac"
 )
 
-func TestAuthorize(t *testing.T) {
+const (
+	fullMethod1 = "/onos.config.admin.ConfigAdminService/UploadRegisterModel"
+)
+
+func TestExtractClaimedGroups(t *testing.T) {
+
+}
+
+func TestAuthorizeWithDefaultRoles(t *testing.T) {
+
+	tests := []struct {
+		denied     bool
+		groups     []string
+		fullMethod string
+	}{
+		{
+			denied: false,
+			groups: []string{
+				AdminGroup,
+			},
+			fullMethod: fullMethod1,
+		},
+		{
+			denied: true,
+			groups: []string{
+				"developers",
+			},
+			fullMethod: fullMethod1,
+		},
+	}
+
+	for _, test := range tests {
+		testGroups := make([]interface{}, len(test.groups))
+		for i, v := range test.groups {
+			testGroups[i] = v
+		}
+
+		mapClaims := jwt.MapClaims{}
+		mapClaims[GroupsKey] = testGroups
+
+		info := grpc.UnaryServerInfo{
+			FullMethod: test.fullMethod,
+		}
+
+		err := Authorize(mapClaims, &info)
+		if test.denied {
+			assert.NotNil(t, err)
+		} else {
+			assert.Nil(t, err)
+		}
+
+	}
 
 }
 
@@ -34,7 +89,7 @@ func TestVerifyRules(t *testing.T) {
 	}{
 		{
 			denied:     false,
-			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			fullMethod: fullMethod1,
 			rules: []*api.Rule{
 				{
 					Groups: []string{
@@ -52,7 +107,7 @@ func TestVerifyRules(t *testing.T) {
 		},
 		{
 			denied:     true,
-			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			fullMethod: fullMethod1,
 			rules: []*api.Rule{
 				{
 					Groups: []string{
@@ -73,7 +128,7 @@ func TestVerifyRules(t *testing.T) {
 		},
 		{
 			denied:     false,
-			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			fullMethod: fullMethod1,
 			rules: []*api.Rule{
 				{
 					Groups: []string{
@@ -91,7 +146,7 @@ func TestVerifyRules(t *testing.T) {
 		},
 		{
 			denied:     true,
-			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			fullMethod: fullMethod1,
 			rules: []*api.Rule{
 				{
 					Groups: []string{
@@ -109,7 +164,7 @@ func TestVerifyRules(t *testing.T) {
 		},
 		{
 			denied:     false,
-			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			fullMethod: fullMethod1,
 			rules: []*api.Rule{
 				{
 					Groups: []string{
@@ -127,7 +182,7 @@ func TestVerifyRules(t *testing.T) {
 		},
 		{
 			denied:     true,
-			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			fullMethod: fullMethod1,
 			rules: []*api.Rule{
 				{
 					Groups: []string{
@@ -145,7 +200,7 @@ func TestVerifyRules(t *testing.T) {
 		},
 		{
 			denied:     false,
-			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			fullMethod: fullMethod1,
 			rules: []*api.Rule{
 				{
 					Groups: []string{
@@ -163,7 +218,7 @@ func TestVerifyRules(t *testing.T) {
 		},
 		{
 			denied:     false,
-			fullMethod: "/onos.config.admin.ConfigAdminService/UploadRegisterModel",
+			fullMethod: fullMethod1,
 			rules: []*api.Rule{
 				{
 					Groups: []string{

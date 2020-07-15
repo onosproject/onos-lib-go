@@ -82,6 +82,8 @@ func findCandidateRules(roles map[string]*api.Role, claimedGroupsList []string) 
 		}
 	}
 
+	return candidateRules, nil
+
 }
 
 // Authorize authorize a user based on given claims

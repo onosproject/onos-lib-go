@@ -21,6 +21,7 @@ import (
 const (
 	// SystemAdminRoleName name of admin role in the system
 	SystemAdminRoleName = "system.admin"
+	AdminGroup          = "admin"
 )
 
 var (
@@ -33,7 +34,7 @@ var (
 			Rules: []*rbac.Rule{
 				{
 					Groups: []string{
-						"admin",
+						AdminGroup,
 					},
 
 					Services: []string{
