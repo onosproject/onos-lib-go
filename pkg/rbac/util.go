@@ -46,11 +46,7 @@ func matchGroups(groups, reqGroups []string) bool {
 		}
 	}
 
-	if len(cg) > 0 {
-		return true
-	}
-
-	return false
+	return len(cg) > 0
 }
 
 // matchRule determines if two rules/groups (e.g. a requested rule and a rule in the system)

@@ -99,6 +99,9 @@ func Authorize(claims jwt.MapClaims, info *grpc.UnaryServerInfo) error {
 
 	// Finds list of candidate rules that should be should be checked for verification
 	candidateRules, err := findCandidateRules(roles, claimedGroupsList)
+	if err != nil {
+		return err
+	}
 
 	// verifies list of candidate rules
 	err = verifyRules(candidateRules, info.FullMethod)

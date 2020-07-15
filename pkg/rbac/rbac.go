@@ -21,7 +21,8 @@ import (
 const (
 	// SystemAdminRoleName name of admin role in the system
 	SystemAdminRoleName = "system.admin"
-	AdminGroup          = "admin"
+	// AdminGroup admin group name
+	AdminGroup = "admin"
 )
 
 var (
@@ -56,8 +57,7 @@ func GetDefaultRoles() map[string]*rbac.Role {
 
 // GetRoles get all of the roles in the system including default roles
 func GetRoles() map[string]*rbac.Role {
-	var roles map[string]*rbac.Role
-	roles = GetDefaultRoles()
+	roles := GetDefaultRoles()
 
 	// TODO retrieve roles from the store and update roles
 
