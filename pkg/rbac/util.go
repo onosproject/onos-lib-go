@@ -34,25 +34,12 @@ func getMethodInformation(fullMethod string) (service, verb string) {
 	return service, verb
 }
 
-// finds common groups between two list of groups
+// finds common groups between two given list of groups
 func matchGroups(groups, reqGroups []string) bool {
-	/*m := make(map[string]bool)
-
-	for _, item := range g1 {
-		m[item] = true
-	}
-
-	for _, item := range g2 {
-		if _, ok := m[item]; ok {
-			cg = append(cg, item)
-		}
-	}*/
-
 	var cg []string
-
 	for _, group := range groups {
 		for _, reqGroup := range reqGroups {
-			if match(strings.ToLower(reqGroup), strings.ToLower(group)) {
+			if match(strings.ToLower(group), strings.ToLower(reqGroup)) {
 				cg = append(cg, group)
 
 			}
