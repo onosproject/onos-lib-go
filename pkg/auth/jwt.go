@@ -55,6 +55,15 @@ type JwtAuthenticator struct {
 	publicKeys map[string][]byte
 }
 
+func GetClaimKey(reqKey string, claims jwt.MapClaims) string {
+	for key, value := range claims {
+		if key == reqKey {
+			return value.(string)
+		}
+	}
+	return ""
+}
+
 // ParseToken parse token and Ensure that the JWT conforms to the structure of a JWT.
 func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}

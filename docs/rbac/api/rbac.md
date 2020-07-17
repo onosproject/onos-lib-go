@@ -8,7 +8,7 @@
     - [Role](#onos.lib.go.rbac.Role)
     - [Rule](#onos.lib.go.rbac.Rule)
   
-    - [Rbac](#onos.lib.go.rbac.Rbac)
+    - [RoleService](#onos.lib.go.rbac.RoleService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -75,9 +75,9 @@ Rule
  
 
 
-<a name="onos.lib.go.rbac.Rbac"></a>
+<a name="onos.lib.go.rbac.RoleService"></a>
 
-### Rbac
+### RoleService
 TODO add required RPC functions for creating, updating, deleting, and retrieving the roles in the system
 
 | Method Name | Request Type | Response Type | Description |

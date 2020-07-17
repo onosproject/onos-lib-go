@@ -15,6 +15,7 @@
 package rbac
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -58,9 +59,10 @@ func match(s1, s2 string) bool {
 		return false
 	}
 
-	// '*xxx' || 'xxx*'
-	if s1[0:1] == "*" || s1[s1Len-1:s1Len] == "*" {
-		// get the matching string from the rule
+	m1, _ := regexp.MatchString(`^\*`, s1)
+	m2, _ := regexp.MatchString(`\*$`, s1)
+
+	if m1 || m2 {
 		match := strings.TrimSpace(strings.Join(strings.Split(s1, "*"), ""))
 
 		// '*' or '*******'
@@ -68,18 +70,16 @@ func match(s1, s2 string) bool {
 			return true
 		}
 
-		// '*xyz*'
-		if s1[0:1] == "*" && s1[s1Len-1:s1Len] == "*" {
+		if m1 && m2 {
 			return strings.Contains(s2, match)
 		}
 
-		// '*xyz'
-		if s1[0:1] == "*" {
+		if m1 {
 			return strings.HasSuffix(s2, match)
 		}
 
-		// 'xyz*'
 		return strings.HasPrefix(s2, match)
+
 	}
 
 	// no wildcard stars given in rule

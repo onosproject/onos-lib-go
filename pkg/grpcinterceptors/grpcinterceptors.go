@@ -37,7 +37,6 @@ var log = logging.GetLogger("interceptors")
 // AuthorizationUnaryInterceptor an unary interceptor for authorization
 func AuthorizationUnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		log.Info("Authorizing the user")
 		// Extract token from metadata in the context
 		tokenString, err := grpc_auth.AuthFromMD(ctx, ContextMetadataTokenKey)
 		if err != nil {
@@ -51,6 +50,8 @@ func AuthorizationUnaryInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		authorizationInstance := rbac.NewAuthorization(claims, info)
+		email := auth.GetClaimKey("email", claims)
+		log.Info("Authorizing the user: ", email, ",", info.FullMethod)
 		err = authorizationInstance.Authorize()
 		if err != nil {
 			return nil, err

@@ -35,16 +35,11 @@ type Rbac interface {
 }
 
 // NewAuthorization creates a new Authorization instance
-func NewAuthorization(claims jwt.MapClaims, info *grpc.UnaryServerInfo) Authorization {
-	return Authorization{
+func NewAuthorization(claims jwt.MapClaims, info *grpc.UnaryServerInfo) *Authorization {
+	return &Authorization{
 		claims: claims,
 		info:   info,
 	}
-}
-
-// SetClaims set jwt token claims
-func (a *Authorization) SetClaims(claims jwt.MapClaims) {
-	a.claims = claims
 }
 
 // SetUnaryServerInfo sets unary server info
@@ -73,7 +68,7 @@ func verifyRules(rules []*api.Rule, fullMethod string) error {
 		}
 	}
 
-	return fmt.Errorf("no rule found to authorize the user")
+	return fmt.Errorf("no rule found for method %s", fullMethod)
 }
 
 func extractClaimedGroups(claims jwt.MapClaims) ([]string, error) {
@@ -87,7 +82,7 @@ func extractClaimedGroups(claims jwt.MapClaims) ([]string, error) {
 
 	// If the user does not claim any groups then we cannot authorize the user
 	if claimedGroups == nil {
-		return nil, fmt.Errorf("groups claim cannot be empty")
+		return nil, fmt.Errorf("claimed groups cannot be empty, clamis are: %s", claims)
 	}
 
 	var claimedGroupsList []string
@@ -98,9 +93,9 @@ func extractClaimedGroups(claims jwt.MapClaims) ([]string, error) {
 	return claimedGroupsList, nil
 }
 
-func findCandidateRules(roles map[string]*api.Role, claimedGroupsList []string) ([]*api.Rule, error) {
+func findCandidateRules(roles map[string]*api.Role, claimedGroupsList []string) []*api.Rule {
 	var candidateRules []*api.Rule
-	for _, role := range defaultRoles {
+	for _, role := range roles {
 		rules := role.Rules
 		for _, rule := range rules {
 			matched := matchGroups(rule.Groups, claimedGroupsList)
@@ -110,7 +105,7 @@ func findCandidateRules(roles map[string]*api.Role, claimedGroupsList []string) 
 		}
 	}
 
-	return candidateRules, nil
+	return candidateRules
 
 }
 
@@ -127,9 +122,9 @@ func (a *Authorization) Authorize() error {
 	roles := GetRoles()
 
 	// Finds list of candidate rules that should be should be checked for verification
-	candidateRules, err := findCandidateRules(roles, claimedGroupsList)
-	if err != nil {
-		return err
+	candidateRules := findCandidateRules(roles, claimedGroupsList)
+	if len(candidateRules) == 0 {
+		return fmt.Errorf("no candicate rules found for verfication")
 	}
 
 	// verifies list of candidate rules

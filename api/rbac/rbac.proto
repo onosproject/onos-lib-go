@@ -19,7 +19,7 @@ syntax = "proto3";
 package onos.lib.go.rbac;
 
 
-service Rbac {
+service RoleService {
     // TODO add required RPC functions for creating, updating, deleting, and retrieving the roles in the system
 
 }

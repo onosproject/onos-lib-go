@@ -67,8 +67,7 @@ func TestAuthorizeWithDefaultRoles(t *testing.T) {
 			FullMethod: test.fullMethod,
 		}
 
-		authorization := Authorization{}
-		authorization.SetClaims(mapClaims)
+		authorization := NewAuthorization(mapClaims, nil)
 		authorization.SetUnaryServerInfo(info)
 		err := authorization.Authorize()
 		if test.denied {
