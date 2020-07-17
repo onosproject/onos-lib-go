@@ -55,7 +55,8 @@ type JwtAuthenticator struct {
 	publicKeys map[string][]byte
 }
 
-func GetClaimKey(reqKey string, claims jwt.MapClaims) string {
+// GetClaimValuePerKey get the value of a key in the given claims
+func GetClaimValuePerKey(reqKey string, claims jwt.MapClaims) string {
 	for key, value := range claims {
 		if key == reqKey {
 			return value.(string)

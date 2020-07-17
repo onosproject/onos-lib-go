@@ -30,6 +30,8 @@ import (
 const (
 	// ContextMetadataTokenKey metadata token key
 	ContextMetadataTokenKey = "bearer"
+	// EmailKey email key in the claims
+	EmailKey = "email"
 )
 
 var log = logging.GetLogger("interceptors")
@@ -50,7 +52,7 @@ func AuthorizationUnaryInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		authorizationInstance := rbac.NewAuthorization(claims, info)
-		email := auth.GetClaimKey("email", claims)
+		email := auth.GetClaimValuePerKey(EmailKey, claims)
 		log.Info("Authorizing the user: ", email, ",", info.FullMethod)
 		err = authorizationInstance.Authorize()
 		if err != nil {

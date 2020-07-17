@@ -124,7 +124,7 @@ func (a *Authorization) Authorize() error {
 	// Finds list of candidate rules that should be should be checked for verification
 	candidateRules := findCandidateRules(roles, claimedGroupsList)
 	if len(candidateRules) == 0 {
-		return fmt.Errorf("no candicate rules found for verfication")
+		return fmt.Errorf("no candicate rules found for verification")
 	}
 
 	// verifies list of candidate rules
