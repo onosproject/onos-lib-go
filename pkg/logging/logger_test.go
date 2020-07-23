@@ -15,7 +15,6 @@
 package logging
 
 import (
-	"github.com/onosproject/onos-lib-go/pkg/config"
 	"testing"
 
 	"github.com/plar/go-adaptive-radix-tree"
@@ -25,20 +24,18 @@ import (
 	zc "go.uber.org/zap/zapcore"
 )
 
-type testConfig struct {
-	Logging Config `yaml:"logging,omitempty"`
-}
-
 func TestPreConfiguredLogger(t *testing.T) {
-	c := &testConfig{}
-	err := config.Load(c)
+	c := &Config{}
+	err := Load(c)
 	assert.NoError(t, err)
-	Configure(c.Logging)
-	for logger := range c.Logging.Loggers {
+	Configure(*c)
+	for logger := range c.Loggers {
 		loggers.ForEachPrefix(art.Key(logger), func(node art.Node) bool {
 			return assert.NotNil(t, node.Key())
 		})
 	}
+	logger := GetLogger("test", "stdout")
+	assert.Equal(t, zap.DebugLevel.String(), logger.level.String())
 }
 
 func TestCustomLogger(t *testing.T) {

@@ -1,9 +1,9 @@
 loggers:
-  test-stdout:
-    level: "info"
+  test/stdout:
+    level: "debug"
     encoding: "json"
     sink: "stdout-1"
-  test-kafka:
+  test/kafka:
     level: "info"
     encoding: "json"
     sink: "kafka-1"

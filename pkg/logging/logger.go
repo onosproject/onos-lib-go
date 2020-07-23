@@ -20,7 +20,7 @@ import (
 	"os"
 	"strings"
 
-	art "github.com/plar/go-adaptive-radix-tree"
+	"github.com/plar/go-adaptive-radix-tree"
 
 	"go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
@@ -81,61 +81,68 @@ func AddConfiguredLoggers(config Config) {
 	}
 	sinks := GetSinks(config)
 	for name, logger := range loggerConfs {
+		if logger.Encoding == "" {
+			logger.Encoding = "console"
+		}
+
 		loggerSinkInfo, found := ContainSink(sinks, logger.Sink)
-		if found {
-			switch loggerSinkInfo._type {
-			case Kafka.String():
-				err := zap.RegisterSink("kafka", InitSink)
-				if err != nil {
-					dbg.Println("Kafka Sink cannot be registered %s", err)
-				}
-				var urls []SinkURL
-				var rawQuery bytes.Buffer
-				if loggerSinkInfo.topic != "" {
-					rawQuery.WriteString("topic=")
-					rawQuery.WriteString(loggerSinkInfo.topic)
-					dbg.Println(rawQuery.String())
-				}
+		if !found {
+			loggerSinkInfo = SinkInfo{
+				_type: "stdout",
+			}
+		}
 
-				if loggerSinkInfo.key != "" {
-					rawQuery.WriteString("&")
-					rawQuery.WriteString("key=")
-					rawQuery.WriteString(loggerSinkInfo.key)
-				}
-				urlInfo := SinkURL{
-					URL: url.URL{Scheme: Kafka.String(), Host: loggerSinkInfo.uri, RawQuery: rawQuery.String()},
-				}
-
-				urls = append(urls, urlInfo)
-
-				cfg := LoggerConfig{}
-				cfg.SetEncoding(logger.Encoding).
-					SetLevel(StringToInt(strings.ToUpper(logger.Level))).
-					SetSinkURLs(urls).
-					SetName(name).
-					SetECMsgKey("msg").
-					SetECLevelKey("level").
-					SetECTimeKey("ts").
-					SetECTimeEncoder(zc.ISO8601TimeEncoder).
-					SetECEncodeLevel(zc.CapitalLevelEncoder).
-					Build()
-				cfg.GetLogger()
-
-			case Stdout.String():
-				cfg := LoggerConfig{}
-				cfg.SetEncoding(logger.Encoding).
-					SetLevel(StringToInt(strings.ToUpper(logger.Level))).
-					SetOutputPaths([]string{Stdout.String()}).
-					SetName(name).
-					SetECMsgKey("msg").
-					SetECLevelKey("level").
-					SetECTimeKey("ts").
-					SetECTimeEncoder(zc.ISO8601TimeEncoder).
-					SetECEncodeLevel(zc.CapitalLevelEncoder).
-					Build()
-				cfg.GetLogger()
+		switch loggerSinkInfo._type {
+		case Kafka.String():
+			err := zap.RegisterSink("kafka", InitSink)
+			if err != nil {
+				dbg.Println("Kafka Sink cannot be registered %s", err)
+			}
+			var urls []SinkURL
+			var rawQuery bytes.Buffer
+			if loggerSinkInfo.topic != "" {
+				rawQuery.WriteString("topic=")
+				rawQuery.WriteString(loggerSinkInfo.topic)
+				dbg.Println(rawQuery.String())
 			}
 
+			if loggerSinkInfo.key != "" {
+				rawQuery.WriteString("&")
+				rawQuery.WriteString("key=")
+				rawQuery.WriteString(loggerSinkInfo.key)
+			}
+			urlInfo := SinkURL{
+				URL: url.URL{Scheme: Kafka.String(), Host: loggerSinkInfo.uri, RawQuery: rawQuery.String()},
+			}
+
+			urls = append(urls, urlInfo)
+
+			cfg := LoggerConfig{}
+			cfg.SetEncoding(logger.Encoding).
+				SetLevel(StringToInt(strings.ToUpper(logger.Level))).
+				SetSinkURLs(urls).
+				SetName(name).
+				SetECMsgKey("msg").
+				SetECLevelKey("level").
+				SetECTimeKey("ts").
+				SetECTimeEncoder(zc.ISO8601TimeEncoder).
+				SetECEncodeLevel(zc.CapitalLevelEncoder).
+				Build()
+			cfg.GetLogger()
+
+		case Stdout.String():
+			cfg := LoggerConfig{}
+			cfg.SetEncoding(logger.Encoding).
+				SetLevel(StringToInt(strings.ToUpper(logger.Level))).
+				SetOutputPaths([]string{Stdout.String()}).
+				SetName(name).
+				SetECMsgKey("msg").
+				SetECLevelKey("level").
+				SetECTimeKey("ts").
+				SetECTimeEncoder(zc.ISO8601TimeEncoder).
+				SetECEncodeLevel(zc.CapitalLevelEncoder).
+				Build()
+			cfg.GetLogger()
 		}
 	}
 }
