@@ -16,15 +16,13 @@ package logging
 
 // Config logging configuration
 type Config struct {
-	Loggers []struct {
+	Loggers map[string]struct {
 		Encoding string `yaml:"encoding"`
 		Level    string `yaml:"level"`
-		Name     string `yaml:"name"`
 		Sink     string `yaml:"sink"`
 	} `yaml:"loggers"`
-	Sinks []struct {
+	Sinks map[string]struct {
 		Key   string `yaml:"key"`
-		Name  string `yaml:"name"`
 		Type  string `yaml:"type"`
 		Topic string `yaml:"topic"`
 		URI   string `yaml:"uri"`

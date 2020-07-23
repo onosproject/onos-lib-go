@@ -34,8 +34,8 @@ func TestPreConfiguredLogger(t *testing.T) {
 	err := config.Load(c)
 	assert.NoError(t, err)
 	Configure(c.Logging)
-	for _, configuredLogger := range c.Logging.Loggers {
-		loggers.ForEachPrefix(art.Key(configuredLogger.Name), func(node art.Node) bool {
+	for logger := range c.Logging.Loggers {
+		loggers.ForEachPrefix(art.Key(logger), func(node art.Node) bool {
 			return assert.NotNil(t, node.Key())
 		})
 	}

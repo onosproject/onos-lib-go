@@ -46,12 +46,12 @@ func init() {
 
 	rootLogger = newLogger.Named(defaultLoggerName)
 	root = Log{rootLogger, &defaultEncoder, &defaultWriter, defaultLoggerName, defaultAtomLevel}
-	loggingConf = &loggingConfig{}
+	loggingConf = &Config{}
 	if err := Load(loggingConf); err != nil {
 		dbg.Println(err.Error())
+	} else {
+		Configure(*loggingConf)
 	}
-
-	Configure(loggingConf.Logging)
 }
 
 func getDefaultConfig(name string, level Level) LoggerConfig {
@@ -74,13 +74,13 @@ func getDefaultConfig(name string, level Level) LoggerConfig {
 // AddConfiguredLoggers adds configured loggers
 func AddConfiguredLoggers(config Config) {
 	dbg.Println("Add configured loggers %s", config.Loggers)
-	loggersList := config.Loggers
-	if len(loggersList) == 0 {
+	loggerConfs := config.Loggers
+	if len(loggerConfs) == 0 {
 		dbg.Println("Config file is empty or not loaded properly")
 		return
 	}
 	sinks := GetSinks(config)
-	for _, logger := range loggersList {
+	for name, logger := range loggerConfs {
 		loggerSinkInfo, found := ContainSink(sinks, logger.Sink)
 		if found {
 			switch loggerSinkInfo._type {
@@ -112,7 +112,7 @@ func AddConfiguredLoggers(config Config) {
 				cfg.SetEncoding(logger.Encoding).
 					SetLevel(StringToInt(strings.ToUpper(logger.Level))).
 					SetSinkURLs(urls).
-					SetName(logger.Name).
+					SetName(name).
 					SetECMsgKey("msg").
 					SetECLevelKey("level").
 					SetECTimeKey("ts").
@@ -126,7 +126,7 @@ func AddConfiguredLoggers(config Config) {
 				cfg.SetEncoding(logger.Encoding).
 					SetLevel(StringToInt(strings.ToUpper(logger.Level))).
 					SetOutputPaths([]string{Stdout.String()}).
-					SetName(logger.Name).
+					SetName(name).
 					SetECMsgKey("msg").
 					SetECLevelKey("level").
 					SetECTimeKey("ts").
