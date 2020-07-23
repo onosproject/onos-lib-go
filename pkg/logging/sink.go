@@ -25,11 +25,11 @@ type SinkInfo struct {
 
 // GetSinks get sinks info from the configuration
 func GetSinks(config Config) []SinkInfo {
-	sinksList := config.Sinks
-	sinks := make([]SinkInfo, len(sinksList))
-	for _, sink := range sinksList {
+	sinkConfs := config.Sinks
+	sinks := make([]SinkInfo, len(sinkConfs))
+	for name, sink := range sinkConfs {
 		sinkInfo := SinkInfo{
-			name:  sink.Name,
+			name:  name,
 			_type: sink.Type,
 			topic: sink.Topic,
 			key:   sink.Key,
