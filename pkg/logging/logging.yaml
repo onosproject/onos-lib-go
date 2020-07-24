@@ -1,6 +1,9 @@
 loggers:
   root:
     level: info
+    output:
+      file:
+        sink: file-1
   test/1:
     level: debug
   test/2:
@@ -41,3 +44,8 @@ sinks:
     type: stdout
     encoding: json
     stdout: {}
+  file-1:
+    type: file
+    encoding: json
+    file:
+      path: test.log

@@ -19,7 +19,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 )
@@ -48,16 +47,12 @@ func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*z
 		encoder = zapcore.NewJSONEncoder(zapConfig.EncoderConfig)
 	}
 
-	var writer zapcore.WriteSyncer
+	var path string
 	switch sink.GetType() {
 	case StdoutSinkType:
-		writer = zapcore.Lock(os.Stdout)
+		path = StdoutSinkType.String()
 	case FileSinkType:
-		ws, err := getWriter(sink.GetFileSinkConfig().Path)
-		if err != nil {
-			return nil, err
-		}
-		writer = ws
+		path = sink.GetFileSinkConfig().Path
 	case KafkaSinkType:
 		kafkaConfig := sink.GetKafkaSinkConfig()
 		var rawQuery bytes.Buffer
@@ -72,12 +67,12 @@ func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*z
 			rawQuery.WriteString(kafkaConfig.Key)
 		}
 		kafkaURL := url.URL{Scheme: KafkaSinkType.String(), Host: strings.Join(kafkaConfig.Brokers, ","), RawQuery: rawQuery.String()}
+		path = kafkaURL.String()
+	}
 
-		ws, err := getWriter(kafkaURL.String())
-		if err != nil {
-			return nil, err
-		}
-		writer = ws
+	writer, err := getWriter(path)
+	if err != nil {
+		return nil, err
 	}
 
 	atomLevel := zap.AtomicLevel{}
