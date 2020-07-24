@@ -102,6 +102,7 @@ func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*z
 				return zapcore.NewCore(encoder, writer, &atomLevel)
 			}))
 	return &zapOutput{
+		config: output,
 		logger: zapLogger.Named(logger.Name),
 	}, nil
 }
@@ -157,6 +158,7 @@ type Output interface {
 
 // zapOutput is a logging output implementation
 type zapOutput struct {
+	config OutputConfig
 	logger *zap.Logger
 }
 

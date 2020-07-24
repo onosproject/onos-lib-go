@@ -2,14 +2,16 @@ loggers:
   root:
     level: info
     output:
+      stdout:
+        sink: stdout
       file:
-        sink: file-1
+        sink: file
   test/1:
     level: debug
   test/2:
     level: warn
     output:
-      stdout:
+      stdout-1:
         sink: stdout-1
         level: info
   test/2/3:
@@ -28,7 +30,7 @@ loggers:
       kafka:
         sink: kafka-1
 sinks:
-  default:
+  stdout:
     type: stdout
     encoding: console
     stdout: {}
@@ -44,7 +46,7 @@ sinks:
     type: stdout
     encoding: json
     stdout: {}
-  file-1:
+  file:
     type: file
     encoding: json
     file:

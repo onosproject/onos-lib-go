@@ -55,44 +55,44 @@ func TestLoggerConfig(t *testing.T) {
 	assert.Equal(t, WarnLevel, logger.GetLevel())
 	logger.Debug("should not be printed")
 	logger.Info("should not be printed")
-	logger.Warn("should be printed")
+	logger.Warn("should be printed twice")
 
 	// The "test/2/3" logger should be configured with INFO level
 	logger = GetLogger("test", "2", "3")
 	assert.Equal(t, InfoLevel, logger.GetLevel())
 	logger.Debug("should not be printed")
-	logger.Info("should be printed")
-	logger.Warn("should be printed")
+	logger.Info("should be printed twice")
+	logger.Warn("should be printed twice")
 
 	// The "test/2/4" logger should inherit the WARN level from "test/2"
 	logger = GetLogger("test", "2", "4")
 	assert.Equal(t, WarnLevel, logger.GetLevel())
 	logger.Debug("should not be printed")
 	logger.Info("should not be printed")
-	logger.Warn("should be printed")
+	logger.Warn("should be printed twice")
 
 	// The "test/2" logger level should be changed to DEBUG
 	logger = GetLogger("test/2")
 	logger.SetLevel(DebugLevel)
 	assert.Equal(t, DebugLevel, logger.GetLevel())
-	logger.Debug("should not be printed")
-	logger.Info("should be printed")
-	logger.Warn("should be printed")
+	logger.Debug("should be printed")
+	logger.Info("should be printed twice")
+	logger.Warn("should be printed twice")
 
 	// The "test/2/3" logger should not inherit the change to the "test/2" logger since its level has been explicitly set
 	logger = GetLogger("test/2/3")
 	assert.Equal(t, InfoLevel, logger.GetLevel())
 	logger.Debug("should not be printed")
-	logger.Info("should be printed")
-	logger.Warn("should be printed")
+	logger.Info("should be printed twice")
+	logger.Warn("should be printed twice")
 
 	// The "test/2/4" logger should inherit the change to the "test/2" logger since its level has not been explicitly set
 	// The "test/2/4" logger should not output DEBUG messages since the output level is explicitly set to WARN
 	logger = GetLogger("test/2/4")
 	assert.Equal(t, DebugLevel, logger.GetLevel())
-	logger.Debug("should not be printed")
-	logger.Info("should be printed")
-	logger.Warn("should be printed")
+	logger.Debug("should be printed")
+	logger.Info("should be printed twice")
+	logger.Warn("should be printed twice")
 
 	// The "test/3" logger should be configured with INFO level
 	// The "test/3" logger should write to multiple outputs

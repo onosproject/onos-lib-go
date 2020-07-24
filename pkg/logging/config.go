@@ -52,8 +52,7 @@ const (
 )
 
 const (
-	rootLoggerName  = "root"
-	defaultSinkName = "default"
+	rootLoggerName = "root"
 )
 
 // Config logging configuration
@@ -66,6 +65,9 @@ type Config struct {
 func (c Config) GetRootLogger() LoggerConfig {
 	root, ok := c.Loggers[rootLoggerName]
 	if ok {
+		if root.Output == nil {
+			root.Output = map[string]OutputConfig{}
+		}
 		return root
 	}
 	return LoggerConfig{Output: map[string]OutputConfig{}}
@@ -77,6 +79,9 @@ func (c Config) GetLoggers() []LoggerConfig {
 	for name, logger := range c.Loggers {
 		if name != rootLoggerName {
 			logger.Name = name
+			if logger.Output == nil {
+				logger.Output = map[string]OutputConfig{}
+			}
 			loggers = append(loggers, logger)
 		}
 	}
@@ -92,44 +97,26 @@ func (c Config) GetLogger(name string) (LoggerConfig, bool) {
 	logger, ok := c.Loggers[name]
 	if ok {
 		logger.Name = name
+		if logger.Output == nil {
+			logger.Output = map[string]OutputConfig{}
+		}
 		return logger, true
 	}
-	return LoggerConfig{}, false
-}
-
-// GetDefaultSink returns the default sink
-func (c Config) GetDefaultSink() SinkConfig {
-	sink, ok := c.Sinks[defaultSinkName]
-	if !ok {
-		sinkType := StdoutSinkType
-		sinkEncoding := ConsoleEncoding
-		sink = SinkConfig{
-			Name:     StdoutSinkType.String(),
-			Type:     &sinkType,
-			Encoding: &sinkEncoding,
-		}
-	}
-	return sink
+	return LoggerConfig{Output: map[string]OutputConfig{}}, false
 }
 
 // GetSinks returns the configured sinks
 func (c Config) GetSinks() []SinkConfig {
 	sinks := make([]SinkConfig, 0, len(c.Sinks))
 	for name, sink := range c.Sinks {
-		if name != defaultSinkName {
-			sink.Name = name
-			sinks = append(sinks, sink)
-		}
+		sink.Name = name
+		sinks = append(sinks, sink)
 	}
 	return sinks
 }
 
 // GetSink returns a sink by name
 func (c Config) GetSink(name string) (SinkConfig, bool) {
-	if name == defaultSinkName {
-		return SinkConfig{}, false
-	}
-
 	sink, ok := c.Sinks[name]
 	if ok {
 		sink.Name = name
@@ -142,7 +129,7 @@ func (c Config) GetSink(name string) (SinkConfig, bool) {
 type LoggerConfig struct {
 	Name   string                  `yaml:"name"`
 	Level  *string                 `yaml:"level,omitempty"`
-	Output map[string]OutputConfig `yaml:"output,omitempty"`
+	Output map[string]OutputConfig `yaml:"output"`
 }
 
 // GetLevel returns the logger level
@@ -157,21 +144,38 @@ func (c LoggerConfig) GetLevel() Level {
 // GetOutputs returns the logger outputs
 func (c LoggerConfig) GetOutputs() []OutputConfig {
 	outputs := c.Output
-	if outputs == nil {
-		return []OutputConfig{}
-	}
-
 	outputsList := make([]OutputConfig, 0, len(outputs))
-	for _, output := range outputs {
+	for name, output := range outputs {
+		output.Name = name
 		outputsList = append(outputsList, output)
 	}
 	return outputsList
 }
 
+// GetOutput returns an output by name
+func (c LoggerConfig) GetOutput(name string) (OutputConfig, bool) {
+	output, ok := c.Output[name]
+	if ok {
+		output.Name = name
+		return output, true
+	}
+	return OutputConfig{}, false
+}
+
 // OutputConfig is the configuration for a sink output
 type OutputConfig struct {
-	Sink  string  `yaml:"sink"`
+	Name  string  `yaml:"name"`
+	Sink  *string `yaml:"sink"`
 	Level *string `yaml:"level,omitempty"`
+}
+
+// GetSink returns the output sink
+func (c OutputConfig) GetSink() string {
+	sink := c.Sink
+	if sink != nil {
+		return *sink
+	}
+	return ""
 }
 
 // GetLevel returns the output level

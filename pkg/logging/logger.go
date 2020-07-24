@@ -74,33 +74,24 @@ type Logger interface {
 }
 
 func newZapLogger(config Config, loggerConfig LoggerConfig) (*zapLogger, error) {
-	var outputs []Output
+	var outputs []*zapOutput
 	outputConfigs := loggerConfig.GetOutputs()
-	if len(outputConfigs) > 0 {
-		outputs = make([]Output, len(outputConfigs))
-		for i, outputConfig := range outputConfigs {
-			var sinkConfig SinkConfig
-			if outputConfig.Sink == "" {
-				sinkConfig = config.GetDefaultSink()
-			} else {
-				sink, ok := config.GetSink(outputConfig.Sink)
-				if !ok {
-					panic(fmt.Sprintf("unknown sink %s", outputConfig.Sink))
-				}
-				sinkConfig = sink
-			}
-			output, err := newZapOutput(loggerConfig, outputConfig, sinkConfig)
-			if err != nil {
-				return nil, err
-			}
-			outputs[i] = output
+	outputs = make([]*zapOutput, len(outputConfigs))
+	for i, outputConfig := range outputConfigs {
+		var sinkConfig SinkConfig
+		if outputConfig.Sink == nil {
+			return nil, fmt.Errorf("output sink not configured for output %s", outputConfig.Name)
 		}
-	} else {
-		output, err := newZapOutput(loggerConfig, OutputConfig{Sink: config.GetDefaultSink().Name}, config.GetDefaultSink())
+		sink, ok := config.GetSink(*outputConfig.Sink)
+		if !ok {
+			panic(fmt.Sprintf("unknown sink %s", *outputConfig.Sink))
+		}
+		sinkConfig = sink
+		output, err := newZapOutput(loggerConfig, outputConfig, sinkConfig)
 		if err != nil {
 			return nil, err
 		}
-		outputs = []Output{output}
+		outputs[i] = output
 	}
 
 	var level *Level
@@ -123,7 +114,7 @@ type zapLogger struct {
 	config       Config
 	loggerConfig LoggerConfig
 	children     map[string]*zapLogger
-	outputs      []Output
+	outputs      []*zapOutput
 	defaultLevel Level
 	level        *Level
 }
@@ -135,7 +126,10 @@ func (l *zapLogger) Name() string {
 func (l *zapLogger) getChild(name string) (*zapLogger, error) {
 	child, ok := l.children[name]
 	if !ok {
+		// Compute the name of the child logger
 		qualifiedName := strings.Trim(fmt.Sprintf("%s%s%s", l.loggerConfig.Name, nameSep, name), nameSep)
+
+		// Initialize the child logger's configuration if one is not set.
 		loggerConfig, ok := l.config.GetLogger(qualifiedName)
 		if !ok {
 			loggerConfig = l.loggerConfig
@@ -143,10 +137,29 @@ func (l *zapLogger) getChild(name string) (*zapLogger, error) {
 			loggerConfig.Level = nil
 		}
 
+		// Populate the child logger configuration with outputs inherited from this logger.
+		for _, output := range l.outputs {
+			outputConfig, ok := loggerConfig.GetOutput(output.config.Name)
+			if !ok {
+				loggerConfig.Output[output.config.Name] = output.config
+			} else {
+				if outputConfig.Sink == nil {
+					outputConfig.Sink = output.config.Sink
+				}
+				if outputConfig.Level == nil {
+					outputConfig.Level = output.config.Level
+				}
+				loggerConfig.Output[outputConfig.Name] = outputConfig
+			}
+		}
+
+		// Create the child logger.
 		logger, err := newZapLogger(l.config, loggerConfig)
 		if err != nil {
 			return nil, err
 		}
+
+		// Set the default log level on the child.
 		logger.setDefaultLevel(l.GetLevel())
 		l.children[name] = logger
 		child = logger
