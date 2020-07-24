@@ -82,8 +82,13 @@ func (c Config) GetLogger(name string) (LoggerConfig, bool) {
 	if name == rootLoggerName {
 		return LoggerConfig{}, false
 	}
+
 	logger, ok := c.Loggers[name]
-	return logger, ok
+	if ok {
+		logger.Name = name
+		return logger, true
+	}
+	return LoggerConfig{}, false
 }
 
 // GetDefaultSink returns the default sink
@@ -118,8 +123,13 @@ func (c Config) GetSink(name string) (SinkConfig, bool) {
 	if name == defaultSinkName {
 		return SinkConfig{}, false
 	}
+
 	sink, ok := c.Sinks[name]
-	return sink, ok
+	if ok {
+		sink.Name = name
+		return sink, true
+	}
+	return SinkConfig{}, false
 }
 
 // LoggerConfig is the configuration for a logger

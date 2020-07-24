@@ -22,24 +22,59 @@ import (
 func TestLoggerConfig(t *testing.T) {
 	logger := GetLogger()
 	assert.Equal(t, InfoLevel, logger.GetLevel())
+	logger.Debug("should not be printed")
+	logger.Info("should be printed")
 
 	logger = GetLogger("test")
 	assert.Equal(t, InfoLevel, logger.GetLevel())
+	logger.Debug("should not be printed")
+	logger.Info("should be printed")
 
 	logger = GetLogger("test", "1")
 	assert.Equal(t, DebugLevel, logger.GetLevel())
+	logger.Debug("should be printed")
+	logger.Info("should be printed")
 
 	logger = GetLogger("test", "1", "2")
 	assert.Equal(t, DebugLevel, logger.GetLevel())
+	logger.Debug("should be printed")
+	logger.Info("should be printed")
 
 	logger = GetLogger("test")
 	assert.Equal(t, InfoLevel, logger.GetLevel())
+	logger.Debug("should not be printed")
+	logger.Info("should be printed")
 
 	logger = GetLogger("test", "2")
 	assert.Equal(t, WarnLevel, logger.GetLevel())
+	logger.Debug("should not be printed")
+	logger.Info("should not be printed")
+	logger.Warn("should be printed")
 
 	logger = GetLogger("test", "2", "3")
 	assert.Equal(t, WarnLevel, logger.GetLevel())
+	logger.Debug("should not be printed")
+	logger.Info("should not be printed")
+	logger.Warn("should be printed")
+
+	logger = GetLogger("test/2")
+	logger.SetLevel(DebugLevel)
+	assert.Equal(t, DebugLevel, logger.GetLevel())
+	logger.Debug("should not be printed")
+	logger.Info("should be printed")
+	logger.Warn("should be printed")
+
+	logger = GetLogger("test/2/3")
+	assert.Equal(t, DebugLevel, logger.GetLevel())
+	logger.Debug("should not be printed")
+	logger.Info("should be printed")
+	logger.Warn("should be printed")
+
+	logger = GetLogger("test/3")
+	assert.Equal(t, InfoLevel, logger.GetLevel())
+	logger.Debug("should not be printed")
+	logger.Info("should be printed")
+	logger.Warn("should be printed twice")
 
 	//logger = GetLogger("test", "kafka")
 	//assert.Equal(t, InfoLevel, logger.GetLevel())

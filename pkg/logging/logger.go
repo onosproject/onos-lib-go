@@ -21,6 +21,8 @@ import (
 
 var root *zapLogger
 
+const nameSep = "/"
+
 func init() {
 	config := Config{}
 	if err := load(&config); err != nil {
@@ -42,6 +44,10 @@ func configure(config Config) error {
 
 // GetLogger gets a logger by name
 func GetLogger(names ...string) Logger {
+	if len(names) == 1 {
+		names = strings.Split(names[0], nameSep)
+	}
+
 	logger := root
 	for _, name := range names {
 		child, err := logger.getChild(name)
@@ -55,35 +61,15 @@ func GetLogger(names ...string) Logger {
 
 // Logger represents an abstract logging interface.
 type Logger interface {
-	Debug(...interface{})
-	Debugf(template string, args ...interface{})
-	Debugw(msg string, keysAndValues ...interface{})
+	Output
 
-	Info(...interface{})
-	Infof(template string, args ...interface{})
-	Infow(msg string, keysAndValues ...interface{})
+	// Name returns the logger name
+	Name() string
 
-	Error(...interface{})
-	Errorf(template string, args ...interface{})
-	Errorw(msg string, keysAndValues ...interface{})
-
-	Fatal(...interface{})
-	Fatalf(template string, args ...interface{})
-	Fatalw(msg string, keysAndValues ...interface{})
-
-	Panic(...interface{})
-	Panicf(template string, args ...interface{})
-	Panicw(msg string, keysAndValues ...interface{})
-
-	DPanic(...interface{})
-	DPanicf(template string, args ...interface{})
-	DPanicw(msg string, keysAndValues ...interface{})
-
-	Warn(...interface{})
-	Warnf(template string, args ...interface{})
-	Warnw(msg string, keysAndValues ...interface{})
-
+	// GetLevel returns the logger's level
 	GetLevel() Level
+
+	// SetLevel sets the logger's level
 	SetLevel(level Level)
 }
 
@@ -93,12 +79,15 @@ func newZapLogger(config Config, loggerConfig LoggerConfig) (*zapLogger, error) 
 	if len(outputConfigs) > 0 {
 		outputs = make([]Output, len(outputConfigs))
 		for i, outputConfig := range outputConfigs {
+			var sinkConfig SinkConfig
 			if outputConfig.Sink == "" {
-				outputConfig.Sink = config.GetDefaultSink().Name
-			}
-			sinkConfig, ok := config.GetSink(outputConfig.Sink)
-			if !ok {
-				panic(fmt.Sprintf("unknown sink %s", outputConfig.Sink))
+				sinkConfig = config.GetDefaultSink()
+			} else {
+				sink, ok := config.GetSink(outputConfig.Sink)
+				if !ok {
+					panic(fmt.Sprintf("unknown sink %s", outputConfig.Sink))
+				}
+				sinkConfig = sink
 			}
 			output, err := newZapOutput(loggerConfig, outputConfig, sinkConfig)
 			if err != nil {
@@ -139,14 +128,19 @@ type zapLogger struct {
 	level        *Level
 }
 
+func (l *zapLogger) Name() string {
+	return l.loggerConfig.Name
+}
+
 func (l *zapLogger) getChild(name string) (*zapLogger, error) {
 	child, ok := l.children[name]
 	if !ok {
-		qualifiedName := strings.Trim(fmt.Sprintf("%s/%s", l.loggerConfig.Name, name), "/")
+		qualifiedName := strings.Trim(fmt.Sprintf("%s%s%s", l.loggerConfig.Name, nameSep, name), nameSep)
 		loggerConfig, ok := l.config.GetLogger(qualifiedName)
 		if !ok {
 			loggerConfig = l.loggerConfig
 			loggerConfig.Name = qualifiedName
+			loggerConfig.Level = nil
 		}
 
 		logger, err := newZapLogger(l.config, loggerConfig)

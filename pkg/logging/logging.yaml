@@ -8,6 +8,15 @@ loggers:
     output:
       stdout:
         sink: stdout-1
+        level: info
+  test/3:
+    level: info
+    output:
+      stdout:
+        level: info
+      stdout-1:
+        sink: stdout-1
+        level: warn
   test/kafka:
     level: info
     output:
