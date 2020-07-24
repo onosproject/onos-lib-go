@@ -16,6 +16,7 @@ package logging
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/onosproject/onos-lib-go/api/logging"
 	"github.com/onosproject/onos-lib-go/pkg/logging/service"
@@ -46,12 +47,6 @@ type Server struct {
 
 // SetDebug enable/disable debug mode for logging package
 func (s *Server) SetDebug(ctx context.Context, req *logging.SetDebugModeRequest) (*logging.SetDebugModeResponse, error) {
-	if req.Debug {
-		dbg = true
-	} else {
-		dbg = false
-	}
-
 	return &logging.SetDebugModeResponse{
 		ResponseStatus: logging.ResponseStatus_OK,
 	}, nil
@@ -68,16 +63,12 @@ func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*l
 		}, errors.New("precondition for set level request is failed")
 	}
 
-	logger, found := FindLogger(name)
-	if !found {
-		return &logging.SetLevelResponse{
-			ResponseStatus: logging.ResponseStatus_PRECONDITION_FAILED,
-		}, errors.New("the logger does not exist")
-	}
+	names := strings.Split(name, "/")
+	logger := GetLogger(names...)
+
 	switch level {
 	case logging.Level_INFO:
 		logger.SetLevel(InfoLevel)
-
 	case logging.Level_DEBUG:
 		logger.SetLevel(DebugLevel)
 	case logging.Level_WARN:
