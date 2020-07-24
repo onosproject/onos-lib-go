@@ -51,6 +51,8 @@ func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*z
 	switch sink.GetType() {
 	case StdoutSinkType:
 		path = StdoutSinkType.String()
+	case StderrSinkType:
+		path = StderrSinkType.String()
 	case FileSinkType:
 		path = sink.GetFileSinkConfig().Path
 	case KafkaSinkType:

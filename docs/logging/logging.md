@@ -11,58 +11,103 @@ hierarchical logging by default. The main objectives are:
 
 To implement a named hierarchical leveled logger, we need to store 
 the loggers in appropriate date structure that we can utilize the 
-hierarchical names in finding and updating of a logger at runtime. 
-This package uses [Adaptive Radix Tree] data structure to implement a  hierarchical 
-logger using [Zap]. The library provides a 
-logger interface that implements
- [Zap] SugaredLogger but the standard Zap Logger functions are also accessible by default. 
+hierarchical names in finding and updating of a logger at runtime. The library provides a logger
+interface that implements [Zap] SugaredLogger but the standard Zap Logger functions are also accessible by default. 
 
 ## Usage
-
-There are two methods that a user can use to add a logger to a package or go program:
 
 Create a logger using the default configuration as follows: 
    
 ```bash
-log, := logging.GetLogger("controller", "device")
+log := logging.GetLogger("controller", "device")
 ``` 
 
-Create a logger using a custom configuration as follows:
-    
-```bash
-cfg := logging.Configuration{}
-cfg.SetEncoding("json").
-   		SetLevel(logging.WarnLevel).
-   		SetOutputPaths([]string{"stdout"}).
-   		SetName("controller", "device", "change").
-   		SetErrorOutputPaths([]string{"stderr"}).
-   		SetECMsgKey("Msg").
-   		SetECLevelKey("Level").
-   		SetECTimeKey("Ts").
-   		SetECTimeEncoder(zc.ISO8601TimeEncoder).
-   		SetECEncodeLevel(zc.CapitalLevelEncoder).
-   		Build()
-log := cfg.GetLogger() 
-``` 
-  
-### Change Log Level at Runtime
+To configure the logger, create a `logging.yaml` configuration file. The `logging.yaml` file defines `sinks` and `loggers`.
 
-There are two different ways to change log level of a logger at runtime:
+### Sinks
 
-1- By providing the new log level and the name of a logger to the *SetLevel* function in the logging package, e.g.:
+Sinks define where and how logs are written. The logging framework supports several types of sinks:
 
-```bash
-newLogger := logging.SetLevel(logging.FatalLevel, "controller")
+* `stdout` - writes logs to stdout
+* `stderr` - writes logs to stderr
+* `file` - writes logs to a file
+* `kafka` - writes logs to a Kafka topic
+
+The logging configuration may define multiple sinks. Sinks are defined as a mapping of names to their configurations:
+
+```yaml
+sinks:
+  stdout:
+    type: stdout
+    encoding: console
+    stdout: {}
+  file:
+    type: file
+    encoding: json
+    file:
+      path: app.log
 ```
 
-2- Using *SetLevel* function of each logger, e.g.
+Each sink may be configured with an `encoding` defining how logs should be formatted when written to the sink. Current
+supported encodings include:
+
+* `console` writes logs a columnar format
+* `json` writes logs in JSON format
+
+Additionally, each sink type supports custom configuration options, e.g. `path` for `file` sinks or `topic` for `kafka` sinks.
+
+### Loggers
+
+Specific loggers can be configured via the logging configuration file. Loggers are organized in a hierarchy wherein descendants
+inherit configurations from their ancestors.
+
+The root logging configuration provides a default configuration for all loggers:
+
+```yaml
+loggers:
+  root:
+    level: info
+    output:
+      stdout:
+        sink: stdout
+      file:
+        sink: file
+        level: debug
+```
+
+Specific loggers and their descendants can be configured with additional logger configurations:
+
+```yaml
+loggers:
+  root:
+    level: info
+    output:
+      stdout:
+        sink: stdout
+      file:
+        sink: file
+        level: debug
+  foo:
+    level: warn
+  foo/bar/baz:
+    level: debug
+    output:
+      stdout:
+        level: info
+```
+
+Loggers define a set of `output` configurations, allowing loggers to write to multiple sinks. Loggers inherit outputs 
+from their ancestors and may override fields of inherited output configurations.
+
+### Change Log Level at Runtime
+
+The log level for a specific logger can be changed at runtime:
 
 ```bash
 log.SetLevel(logging.WarnLevel)
 ```
 
-
-
+When the log level is changed, the level will be propagated to any descendants that have no explicit log level configured.
 
 [logging]: https://github.com/onosproject/onos-lib-go/tree/master/pkg/logging
 [Zap]: https://godoc.org/go.uber.org/zap

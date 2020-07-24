@@ -31,6 +31,8 @@ func (t SinkType) String() string {
 const (
 	// StdoutSinkType is the sink type for stdout
 	StdoutSinkType SinkType = "stdout"
+	// StderrSinkType is the sink type for stderr
+	StderrSinkType SinkType = "stderr"
 	// FileSinkType is the type for a file sink
 	FileSinkType SinkType = "file"
 	// KafkaSinkType is the sink type for the Kafka sink
@@ -193,6 +195,7 @@ type SinkConfig struct {
 	Type     *SinkType         `yaml:"type,omitempty"`
 	Encoding *SinkEncoding     `yaml:"encoding,omitempty"`
 	Stdout   *StdoutSinkConfig `yaml:"stdout,omitempty"`
+	Stderr   *StderrSinkConfig `yaml:"stderr,omitempty"`
 	File     *FileSinkConfig   `yaml:"file,omitempty"`
 	Kafka    *KafkaSinkConfig  `yaml:"kafka,omitempty"`
 }
@@ -224,6 +227,15 @@ func (c SinkConfig) GetStdoutSinkConfig() StdoutSinkConfig {
 	return StdoutSinkConfig{}
 }
 
+// GetStderrSinkConfig returns the stderr sink configuration
+func (c SinkConfig) GetStderrSinkConfig() StderrSinkConfig {
+	config := c.Stderr
+	if config != nil {
+		return *config
+	}
+	return StderrSinkConfig{}
+}
+
 // GetFileSinkConfig returns the file sink configuration
 func (c SinkConfig) GetFileSinkConfig() FileSinkConfig {
 	config := c.File
@@ -244,6 +256,10 @@ func (c SinkConfig) GetKafkaSinkConfig() KafkaSinkConfig {
 
 // StdoutSinkConfig is the configuration for an stdout sink
 type StdoutSinkConfig struct {
+}
+
+// StderrSinkConfig is the configuration for an stderr sink
+type StderrSinkConfig struct {
 }
 
 // FileSinkConfig is the configuration for a file sink
