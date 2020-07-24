@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 )
 
 func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*zapOutput, error) {
@@ -51,6 +52,12 @@ func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*z
 	switch sink.GetType() {
 	case StdoutSinkType:
 		writer = zapcore.Lock(os.Stdout)
+	case FileSinkType:
+		ws, err := getWriter(sink.GetFileSinkConfig().Path)
+		if err != nil {
+			return nil, err
+		}
+		writer = ws
 	case KafkaSinkType:
 		kafkaConfig := sink.GetKafkaSinkConfig()
 		var rawQuery bytes.Buffer
@@ -66,7 +73,7 @@ func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*z
 		}
 		kafkaURL := url.URL{Scheme: KafkaSinkType.String(), Host: strings.Join(kafkaConfig.Brokers, ","), RawQuery: rawQuery.String()}
 
-		ws, _, err := zap.Open(kafkaURL.String())
+		ws, err := getWriter(kafkaURL.String())
 		if err != nil {
 			return nil, err
 		}
@@ -102,6 +109,24 @@ func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*z
 	return &zapOutput{
 		logger: zapLogger.Named(logger.Name),
 	}, nil
+}
+
+var writers = make(map[string]zapcore.WriteSyncer)
+var writersMu = &sync.Mutex{}
+
+func getWriter(url string) (zapcore.WriteSyncer, error) {
+	writersMu.Lock()
+	defer writersMu.Unlock()
+	writer, ok := writers[url]
+	if !ok {
+		ws, _, err := zap.Open(url)
+		if err != nil {
+			return nil, err
+		}
+		writer = ws
+		writers[url] = writer
+	}
+	return writer, nil
 }
 
 // Output is a logging output
