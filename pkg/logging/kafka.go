@@ -22,34 +22,22 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	// Sinks :
-	Sinks = map[string]Sink{}
-)
+func init() {
+	err := zap.RegisterSink("kafka", kafkaSinkFactory)
+	if err != nil {
+		panic(err)
+	}
+}
 
-// Sink a kafka sink
-type Sink struct {
+// kafkaSink is a Kafka sink
+type kafkaSink struct {
 	producer kafka.SyncProducer
 	topic    string
 	key      string
 }
 
-func getSink(brokers []string, topic string, key string, config *kafka.Config) (Sink, error) {
-	producer, err := kafka.NewSyncProducer(brokers, config)
-	if err != nil {
-		dbg.Println("Cannot get sink %s", err)
-		return Sink{}, err
-	}
-	sink := Sink{
-		producer: producer,
-		topic:    topic,
-		key:      key,
-	}
-	return sink, nil
-}
-
-// InitSink  initialize a kafka sink instance
-func InitSink(u *url.URL) (zap.Sink, error) {
+// kafkaSinkFactory is a factory for the Kafka sink
+func kafkaSinkFactory(u *url.URL) (zap.Sink, error) {
 	topic := "kafka_default_topic"
 	key := "kafka_default_key"
 	m, _ := url.ParseQuery(u.RawQuery)
@@ -61,17 +49,25 @@ func InitSink(u *url.URL) (zap.Sink, error) {
 		key = m["key"][0]
 	}
 
-	brokers := []string{u.Host}
+	brokers := strings.Split(u.Host, ",")
 	config := kafka.NewConfig()
 	config.Producer.Return.Successes = true
-	dbg.Println("topic and key: %s %s", topic, key)
-	sink, err := getSink(brokers, topic, key, config)
-	return sink, err
+
+	producer, err := kafka.NewSyncProducer(brokers, config)
+	if err != nil {
+		return kafkaSink{}, err
+	}
+
+	return kafkaSink{
+		producer: producer,
+		topic:    topic,
+		key:      key,
+	}, nil
 }
 
 // Write implements zap.Sink Write function
-func (s Sink) Write(b []byte) (n int, err error) {
-	var errors Errors
+func (s kafkaSink) Write(b []byte) (int, error) {
+	var returnErr error
 	for _, topic := range strings.Split(s.topic, ",") {
 		if s.key != "" {
 			_, _, err := s.producer.SendMessage(&kafka.ProducerMessage{
@@ -80,29 +76,28 @@ func (s Sink) Write(b []byte) (n int, err error) {
 				Value: kafka.ByteEncoder(b),
 			})
 			if err != nil {
-				errors = append(errors, err)
+				returnErr = err
 			}
 		} else {
-			dbg.Println("Write:%s", topic)
 			_, _, err := s.producer.SendMessage(&kafka.ProducerMessage{
 				Topic: topic,
 				Value: kafka.ByteEncoder(b),
 			})
 			if err != nil {
-				errors = append(errors, err)
+				returnErr = err
 			}
 		}
 
 	}
-	return len(b), errors
+	return len(b), returnErr
 }
 
 // Sync implement zap.Sink func Sync
-func (s Sink) Sync() error {
+func (s kafkaSink) Sync() error {
 	return nil
 }
 
 // Close implements zap.Sink Close function
-func (s Sink) Close() error {
+func (s kafkaSink) Close() error {
 	return nil
 }

@@ -1,17 +1,32 @@
 loggers:
-  test/stdout:
-    level: "debug"
-    encoding: "json"
-    sink: "stdout-1"
+  root:
+    level: info
+  test/1:
+    level: debug
+  test/2:
+    level: warn
+    output:
+      stdout:
+        sink: stdout-1
   test/kafka:
-    level: "info"
-    encoding: "json"
-    sink: "kafka-1"
+    level: info
+    output:
+      kafka:
+        sink: kafka-1
 sinks:
+  default:
+    type: stdout
+    encoding: console
+    stdout: {}
   kafka-1:
-    uri: "127.0.0.1:9092"
-    topic: "traces"
-    key: "test"
-    type: "kafka"
+    type: kafka
+    encoding: json
+    kafka:
+      brokers:
+        - "127.0.0.1:9092"
+      topic: "traces"
+      key: "test"
   stdout-1:
-    type: "stdout"
+    type: stdout
+    encoding: json
+    stdout: {}

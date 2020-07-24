@@ -15,27 +15,40 @@
 package logging
 
 import (
-	"bytes"
-	"fmt"
-	"strings"
-
 	zp "go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
+	"strings"
 )
 
-// Debug :
-type Debug bool
+// Level :
+type Level int
 
-// Println :
-func (d Debug) Println(s string, args ...interface{}) {
-	if d {
-		fmt.Printf("DEBUG:")
-		fmt.Printf(s, args...)
-		fmt.Println()
-	}
+const (
+	// DebugLevel logs a message at debug level
+	DebugLevel Level = iota
+	// InfoLevel logs a message at info level
+	InfoLevel
+	// WarnLevel logs a message at warning level
+	WarnLevel
+	// ErrorLevel logs a message at error level
+	ErrorLevel
+	// FatalLevel logs a message, then calls os.Exit(1).
+	FatalLevel
+	// PanicLevel logs a message, then panics.
+	PanicLevel
+	// DPanicLevel logs at PanicLevel; otherwise, it logs at ErrorLevel
+	DPanicLevel
+
+	// EmptyLevel :
+	EmptyLevel
+)
+
+// String :
+func (l Level) String() string {
+	return [...]string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL", "PANIC", "DPANIC", ""}[l]
 }
 
-func intToAtomicLevel(l Level) zp.AtomicLevel {
+func levelToAtomicLevel(l Level) zp.AtomicLevel {
 	switch l {
 	case DebugLevel:
 		return zp.NewAtomicLevelAt(zc.DebugLevel)
@@ -55,30 +68,8 @@ func intToAtomicLevel(l Level) zp.AtomicLevel {
 	return zp.NewAtomicLevelAt(zc.ErrorLevel)
 }
 
-func levelToInt(l zc.Level) Level {
-	switch l {
-	case zc.DebugLevel:
-		return DebugLevel
-	case zc.InfoLevel:
-		return InfoLevel
-	case zc.WarnLevel:
-		return WarnLevel
-	case zc.ErrorLevel:
-		return ErrorLevel
-	case zc.FatalLevel:
-		return FatalLevel
-	case zc.PanicLevel:
-		return PanicLevel
-	case zc.DPanicLevel:
-		return DPanicLevel
-
-	}
-	return ErrorLevel
-}
-
-// StringToInt :
-func StringToInt(l string) Level {
-	switch l {
+func levelStringToLevel(l string) Level {
+	switch strings.ToUpper(l) {
 	case DebugLevel.String():
 		return DebugLevel
 	case InfoLevel.String():
@@ -95,33 +86,4 @@ func StringToInt(l string) Level {
 		return DPanicLevel
 	}
 	return ErrorLevel
-}
-
-// Errors concatenates multiple error into one error buf
-type Errors []error
-
-func (e Errors) Error() string {
-	var errBuf bytes.Buffer
-	for _, err := range e {
-		errBuf.WriteString(err.Error())
-		errBuf.WriteByte('\n')
-	}
-	return errBuf.String()
-}
-
-func buildTreeName(names ...string) string {
-	var treeName string
-	var values []string
-	values = append(values, names...)
-	treeName = strings.Join(values, "/")
-	return treeName
-}
-
-func findParentsNames(name string) []string {
-	var results []string
-	names := strings.Split(name, "/")
-	for i := 1; i < len(names); i++ {
-		results = append(results, strings.Join(names[:len(names)-i], "/"))
-	}
-	return results
 }
