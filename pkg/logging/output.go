@@ -93,7 +93,7 @@ func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*z
 		atomLevel = zap.NewAtomicLevelAt(zapcore.FatalLevel)
 	}
 
-	zapLogger, err := zapConfig.Build(zap.AddCallerSkip(1))
+	zapLogger, err := zapConfig.Build(zap.AddCallerSkip(2))
 	if err != nil {
 		return nil, err
 	}
