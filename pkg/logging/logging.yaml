@@ -9,6 +9,8 @@ loggers:
       stdout:
         sink: stdout-1
         level: info
+  test/2/3:
+    level: info
   test/3:
     level: info
     output:
