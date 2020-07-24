@@ -29,8 +29,10 @@ func (t SinkType) String() string {
 }
 
 const (
+	// StdoutSinkType is the sink type for stdout
 	StdoutSinkType SinkType = "stdout"
-	KafkaSinkType  SinkType = "kafka"
+	// KafkaSinkType is the sink type for the Kafka sink
+	KafkaSinkType SinkType = "kafka"
 )
 
 // SinkEncoding is the encoding for a sink
@@ -41,8 +43,10 @@ func (e SinkEncoding) String() string {
 }
 
 const (
+	// ConsoleEncoding is an encoding for outputs to the console
 	ConsoleEncoding SinkEncoding = "console"
-	JSONEncoding    SinkEncoding = "json"
+	// JSONEncoding is an encoding for JSON outputs
+	JSONEncoding SinkEncoding = "json"
 )
 
 const (
@@ -162,7 +166,7 @@ func (c LoggerConfig) GetOutputs() []OutputConfig {
 	return outputsList
 }
 
-// SinkRefConfig is the configuration for a sink instance
+// OutputConfig is the configuration for a sink output
 type OutputConfig struct {
 	Sink  string  `yaml:"sink"`
 	Level *string `yaml:"level,omitempty"`
@@ -252,7 +256,7 @@ func load(config *Config) error {
 	viper.SetConfigType("yaml")
 
 	if err := viper.ReadInConfig(); err != nil {
-		return err
+		return nil
 	}
 
 	err = viper.Unmarshal(config)
