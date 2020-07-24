@@ -1,0 +1,23 @@
+{"level":"INFO","timestamp":"2020-07-24T20:55:52.385Z","caller":"logging/logger.go:217","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-24T20:55:52.385Z","logger":"test","caller":"logging/logger.go:217","message":"should be printed"}
+{"level":"DEBUG","timestamp":"2020-07-24T20:55:52.385Z","logger":"test/1","caller":"logging/logger.go:193","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-24T20:55:52.385Z","logger":"test/1","caller":"logging/logger.go:217","message":"should be printed"}
+{"level":"DEBUG","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/1/2","caller":"logging/logger.go:193","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/1/2","caller":"logging/logger.go:217","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-24T20:55:52.386Z","logger":"test","caller":"logging/logger.go:217","message":"should be printed"}
+{"level":"WARN","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2","caller":"logging/logger.go:337","message":"should be printed twice"}
+{"level":"INFO","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2/3","caller":"logging/logger.go:217","message":"should be printed twice"}
+{"level":"WARN","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2/3","caller":"logging/logger.go:337","message":"should be printed twice"}
+{"level":"WARN","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2/4","caller":"logging/logger.go:337","message":"should be printed twice"}
+{"level":"DEBUG","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2","caller":"logging/logger.go:193","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2","caller":"logging/logger.go:217","message":"should be printed twice"}
+{"level":"WARN","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2","caller":"logging/logger.go:337","message":"should be printed twice"}
+{"level":"INFO","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2/3","caller":"logging/logger.go:217","message":"should be printed twice"}
+{"level":"WARN","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2/3","caller":"logging/logger.go:337","message":"should be printed twice"}
+{"level":"DEBUG","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2/4","caller":"logging/logger.go:193","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2/4","caller":"logging/logger.go:217","message":"should be printed twice"}
+{"level":"WARN","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/2/4","caller":"logging/logger.go:337","message":"should be printed twice"}
+{"level":"INFO","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/3","caller":"logging/logger.go:217","message":"should be printed"}
+{"level":"WARN","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/3","caller":"logging/logger.go:337","message":"should be printed twice"}
+{"level":"INFO","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/3/4","caller":"logging/logger.go:217","message":"should be printed"}
+{"level":"WARN","timestamp":"2020-07-24T20:55:52.386Z","logger":"test/3/4","caller":"logging/logger.go:337","message":"should be printed twice"}
