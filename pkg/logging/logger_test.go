@@ -16,10 +16,20 @@ package logging
 
 import (
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"testing"
 )
 
 func TestLoggerConfig(t *testing.T) {
+	config := Config{}
+	bytes, err := ioutil.ReadFile("test.yaml")
+	assert.NoError(t, err)
+	err = yaml.Unmarshal(bytes, &config)
+	assert.NoError(t, err)
+	err = configure(config)
+	assert.NoError(t, err)
+
 	// The root logger should be configured with INFO level
 	logger := GetLogger()
 	assert.Equal(t, InfoLevel, logger.GetLevel())
