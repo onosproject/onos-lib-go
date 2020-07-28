@@ -12,10 +12,8 @@
     - [Level](#onos.lib.go.logging.Level)
     - [ResponseStatus](#onos.lib.go.logging.ResponseStatus)
   
-  
     - [logger](#onos.lib.go.logging.logger)
   
-
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -132,7 +130,6 @@ logger service provides rpc functions to controller a logger remotely
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | SetLevel | [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest) | [SetLevelResponse](#onos.lib.go.logging.SetLevelResponse) | Sets a logger level |
-| SetDebug | [SetDebugModeRequest](#onos.lib.go.logging.SetDebugModeRequest) | [SetDebugModeResponse](#onos.lib.go.logging.SetDebugModeResponse) | Sets debug mode to debug logging package |
 
  
 

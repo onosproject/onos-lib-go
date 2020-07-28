@@ -31,10 +31,10 @@ func Init() {
 	// noop for now
 }
 
-// GetCommand returns the root command for the topo service
+// GetCommand returns the root command for the logging service
 func GetCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "log {set} [args]",
+		Use:   "log {set/get} level [args]",
 		Short: "logging api commands",
 	}
 

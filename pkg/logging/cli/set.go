@@ -16,6 +16,7 @@ package cli
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	api "github.com/onosproject/onos-lib-go/api/logging"
@@ -26,68 +27,20 @@ import (
 
 func getSetCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "set {level, debug} [args]",
-		Short: "Sets a logger level or enable debug mode for logging package",
+		Use:   "set",
+		Short: "Sets a logger attribute (e.g. level)",
 	}
 	cmd.AddCommand(getSetLevelCommand())
-	cmd.AddCommand(getSetDebugCommand())
 	return cmd
-}
-
-func getSetDebugCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "debug [args]",
-		Short: "enable/disable debug mode for logging package",
-		Args:  cobra.ExactArgs(1),
-		RunE:  runSetDebugCommand,
-	}
-	return cmd
-}
-
-func runSetDebugCommand(cmd *cobra.Command, args []string) error {
-	conn, err := cli.GetConnection(cmd)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = conn.Close()
-	}()
-
-	debugMode := args[0]
-	client := api.NewLoggerClient(conn)
-
-	if debugMode == "enable" {
-		req := api.SetDebugModeRequest{
-			Debug: true,
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-
-		_, err = client.SetDebug(ctx, &req)
-		return err
-
-	} else if debugMode == "disable" {
-		req := api.SetDebugModeRequest{
-			Debug: false,
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-
-		_, err = client.SetDebug(ctx, &req)
-		return err
-
-	}
-	return nil
 }
 
 func getSetLevelCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "level [args]",
-		Short: "Sets a level to a logger",
-		Args:  cobra.ExactArgs(1),
+		Use:   "<level> <logger_name>",
+		Short: "Sets a logger level",
+		Args:  cobra.ExactArgs(2),
 		RunE:  runSetLevelCommand,
 	}
-	cmd.Flags().StringP("level", "l", "INFO", "the logger level")
 
 	return cmd
 }
@@ -105,10 +58,17 @@ func runSetLevelCommand(cmd *cobra.Command, args []string) error {
 	if name == "" {
 		return errors.New("The logger name should be provided")
 	}
-	level, err := cmd.Flags().GetString("level")
+
+	level := args[1]
+	if level == "" {
+		return errors.New("The logger level should be provided")
+	}
+
+	level = strings.ToUpper(level)
 	if err != nil {
 		return err
 	}
+
 	var apiLevel api.Level
 	switch level {
 	case api.Level_INFO.String():
