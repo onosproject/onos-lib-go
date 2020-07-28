@@ -45,6 +45,43 @@ func (s Service) Register(r *grpc.Server) {
 type Server struct {
 }
 
+// GetLevel implements GetLevel rpc function to get a logger level
+func (s *Server) GetLevel(ctx context.Context, req *logging.GetLevelRequest) (*logging.GetLevelResponse, error) {
+	name := req.GetLoggerName()
+	if name == "" {
+		return &logging.GetLevelResponse{}, errors.New("precondition for get level request is failed")
+	}
+
+	names := strings.Split(name, "/")
+	logger := GetLogger(names...)
+
+	level := logger.GetLevel()
+
+	var loggerLevel logging.Level
+	switch level {
+	case InfoLevel:
+		loggerLevel = logging.Level_INFO
+	case DebugLevel:
+		loggerLevel = logging.Level_DEBUG
+	case WarnLevel:
+		loggerLevel = logging.Level_WARN
+	case ErrorLevel:
+		loggerLevel = logging.Level_ERROR
+	case PanicLevel:
+		loggerLevel = logging.Level_PANIC
+	case DPanicLevel:
+		loggerLevel = logging.Level_DPANIC
+	case FatalLevel:
+		loggerLevel = logging.Level_FATAL
+
+	}
+
+	return &logging.GetLevelResponse{
+		Level: loggerLevel,
+	}, nil
+
+}
+
 // SetLevel implements SetLevel rpc function to set a logger level
 func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*logging.SetLevelResponse, error) {
 	name := req.GetLoggerName()

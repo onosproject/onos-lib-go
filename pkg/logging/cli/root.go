@@ -39,6 +39,7 @@ func GetCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(getSetCommand())
+	cmd.AddCommand(getGetCommand())
 
 	return cmd
 }
