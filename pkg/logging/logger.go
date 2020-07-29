@@ -44,10 +44,6 @@ func configure(config Config) error {
 
 // FindLogger finds a logger based on a given name
 func FindLogger(names ...string) Logger {
-	if len(names) == 1 {
-		names = strings.Split(names[0], nameSep)
-	}
-
 	logger := root
 	for _, name := range names {
 		child, ok := logger.children[name]
@@ -75,6 +71,7 @@ func GetLogger(names ...string) Logger {
 		}
 		logger = child
 	}
+
 	return logger
 }
 
