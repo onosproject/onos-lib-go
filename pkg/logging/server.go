@@ -47,6 +47,7 @@ type Server struct {
 
 // GetLevel implements GetLevel rpc function to get a logger level
 func (s *Server) GetLevel(ctx context.Context, req *logging.GetLevelRequest) (*logging.GetLevelResponse, error) {
+
 	name := req.GetLoggerName()
 	if name == "" {
 		return &logging.GetLevelResponse{}, errors.New("precondition for get level request is failed")

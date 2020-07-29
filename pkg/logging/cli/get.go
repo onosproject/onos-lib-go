@@ -17,8 +17,6 @@ package cli
 import (
 	"context"
 	"errors"
-	"fmt"
-	"text/tabwriter"
 	"time"
 
 	api "github.com/onosproject/onos-lib-go/api/logging"
@@ -55,8 +53,6 @@ func runGetLevelCommand(cmd *cobra.Command, args []string) error {
 		err = conn.Close()
 	}()
 
-	outputWriter := cli.GetOutput()
-
 	name := args[0]
 	if name == "" {
 		return errors.New("the logger name should be provided")
@@ -75,10 +71,7 @@ func runGetLevelCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	writer := new(tabwriter.Writer)
-	writer.Init(outputWriter, 0, 0, 3, ' ', tabwriter.FilterHTML)
-
-	_ = fmt.Sprintf("%s logger level is %s\n", name, response.Level.String())
+	cli.Output("%s logger level is %s\n", name, response.Level.String())
 
 	return err
 }

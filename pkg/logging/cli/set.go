@@ -38,7 +38,7 @@ func getSetLevelCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "level logger_name>",
 		Short: "Sets a logger level",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE:  runSetLevelCommand,
 	}
 
@@ -96,6 +96,10 @@ func runSetLevelCommand(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	_, err = client.SetLevel(ctx, &req)
+	response, err := client.SetLevel(ctx, &req)
+	if err != nil {
+		return err
+	}
+	cli.Output("Set level response:%s\n", response.ResponseStatus.String())
 	return err
 }
