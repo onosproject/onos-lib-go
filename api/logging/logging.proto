@@ -55,8 +55,18 @@ service logger {
     // Sets a logger level
     rpc SetLevel(SetLevelRequest) returns (SetLevelResponse);
 
-    // Sets debug mode to debug logging package
-    rpc SetDebug(SetDebugModeRequest) returns (SetDebugModeResponse);
+    // Gets a logger level
+    rpc GetLevel(GetLevelRequest) returns(GetLevelResponse);
+
+}
+
+message GetLevelRequest {
+    // logger name
+    string logger_name = 1;
+}
+
+message GetLevelResponse {
+    Level level = 1;
 
 }
 

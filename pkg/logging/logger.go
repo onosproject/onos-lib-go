@@ -58,6 +58,7 @@ func GetLogger(names ...string) Logger {
 		}
 		logger = child
 	}
+
 	return logger
 }
 

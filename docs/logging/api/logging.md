@@ -4,6 +4,8 @@
 ## Table of Contents
 
 - [api/logging/logging.proto](#api/logging/logging.proto)
+    - [GetLevelRequest](#onos.lib.go.logging.GetLevelRequest)
+    - [GetLevelResponse](#onos.lib.go.logging.GetLevelResponse)
     - [SetDebugModeRequest](#onos.lib.go.logging.SetDebugModeRequest)
     - [SetDebugModeResponse](#onos.lib.go.logging.SetDebugModeResponse)
     - [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest)
@@ -12,10 +14,8 @@
     - [Level](#onos.lib.go.logging.Level)
     - [ResponseStatus](#onos.lib.go.logging.ResponseStatus)
   
-  
     - [logger](#onos.lib.go.logging.logger)
   
-
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -24,6 +24,36 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## api/logging/logging.proto
+
+
+
+<a name="onos.lib.go.logging.GetLevelRequest"></a>
+
+### GetLevelRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| logger_name | [string](#string) |  | logger name |
+
+
+
+
+
+
+<a name="onos.lib.go.logging.GetLevelResponse"></a>
+
+### GetLevelResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| level | [Level](#onos.lib.go.logging.Level) |  |  |
+
+
+
 
 
 
@@ -132,7 +162,7 @@ logger service provides rpc functions to controller a logger remotely
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | SetLevel | [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest) | [SetLevelResponse](#onos.lib.go.logging.SetLevelResponse) | Sets a logger level |
-| SetDebug | [SetDebugModeRequest](#onos.lib.go.logging.SetDebugModeRequest) | [SetDebugModeResponse](#onos.lib.go.logging.SetDebugModeResponse) | Sets debug mode to debug logging package |
+| GetLevel | [GetLevelRequest](#onos.lib.go.logging.GetLevelRequest) | [GetLevelResponse](#onos.lib.go.logging.GetLevelResponse) | Gets a logger level |
 
  
 

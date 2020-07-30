@@ -16,36 +16,35 @@ package cli
 
 import (
 	"context"
-	"strings"
+	"errors"
 	"time"
 
 	api "github.com/onosproject/onos-lib-go/api/logging"
 	"github.com/onosproject/onos-lib-go/pkg/cli"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
-func getSetCommand() *cobra.Command {
+func getGetCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "set",
-		Short: "Sets a logger attribute (e.g. level)",
+		Use:   "get",
+		Short: "Gets a logger attribute (e.g. level)",
 	}
-	cmd.AddCommand(getSetLevelCommand())
+	cmd.AddCommand(getGetLevelCommand())
 	return cmd
 }
 
-func getSetLevelCommand() *cobra.Command {
+func getGetLevelCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "level logger_name",
-		Short: "Sets a logger level",
-		Args:  cobra.ExactArgs(2),
-		RunE:  runSetLevelCommand,
+		Short: "Gets a logger level",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runGetLevelCommand,
 	}
 
 	return cmd
 }
 
-func runSetLevelCommand(cmd *cobra.Command, args []string) error {
+func runGetLevelCommand(cmd *cobra.Command, args []string) error {
 	conn, err := cli.GetConnection(cmd)
 	if err != nil {
 		return err
@@ -56,50 +55,23 @@ func runSetLevelCommand(cmd *cobra.Command, args []string) error {
 
 	name := args[0]
 	if name == "" {
-		return errors.New("The logger name should be provided")
-	}
-
-	level := args[1]
-	if level == "" {
-		return errors.New("The logger level should be provided")
-	}
-
-	level = strings.ToUpper(level)
-	if err != nil {
-		return err
-	}
-
-	var apiLevel api.Level
-	switch level {
-	case api.Level_INFO.String():
-		apiLevel = api.Level_INFO
-	case api.Level_DEBUG.String():
-		apiLevel = api.Level_DEBUG
-	case api.Level_ERROR.String():
-		apiLevel = api.Level_ERROR
-	case api.Level_PANIC.String():
-		apiLevel = api.Level_PANIC
-	case api.Level_DPANIC.String():
-		apiLevel = api.Level_DPANIC
-	case api.Level_FATAL.String():
-		apiLevel = api.Level_FATAL
-	case api.Level_WARN.String():
-		apiLevel = api.Level_WARN
-
+		return errors.New("the logger name should be provided")
 	}
 
 	client := api.NewLoggerClient(conn)
-	req := api.SetLevelRequest{
+	req := api.GetLevelRequest{
 		LoggerName: name,
-		Level:      apiLevel,
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	response, err := client.SetLevel(ctx, &req)
+	response, err := client.GetLevel(ctx, &req)
+
 	if err != nil {
 		return err
 	}
-	cli.Output("Set level response:%s\n", response.ResponseStatus.String())
+
+	cli.Output("%s logger level is %s\n", name, response.Level.String())
+
 	return err
 }
