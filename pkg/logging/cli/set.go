@@ -36,7 +36,7 @@ func getSetCommand() *cobra.Command {
 
 func getSetLevelCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "level logger_name>",
+		Use:   "level logger_name",
 		Short: "Sets a logger level",
 		Args:  cobra.ExactArgs(2),
 		RunE:  runSetLevelCommand,
