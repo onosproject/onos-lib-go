@@ -54,11 +54,7 @@ func (s *Server) GetLevel(ctx context.Context, req *logging.GetLevelRequest) (*l
 	}
 
 	names := strings.Split(name, "/")
-	logger := FindLogger(names...)
-	if logger == nil {
-		return &logging.GetLevelResponse{}, errors.New("the logger does not exist")
-	}
-
+	logger := GetLogger(names...)
 	level := logger.GetLevel()
 
 	var loggerLevel logging.Level
@@ -97,12 +93,7 @@ func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*l
 	}
 
 	names := strings.Split(name, "/")
-	logger := FindLogger(names...)
-	if logger == nil {
-		return &logging.SetLevelResponse{
-			ResponseStatus: logging.ResponseStatus_FAILED,
-		}, errors.New("the logger does not exist")
-	}
+	logger := GetLogger(names...)
 
 	switch level {
 	case logging.Level_INFO:
