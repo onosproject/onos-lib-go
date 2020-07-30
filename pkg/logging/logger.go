@@ -177,13 +177,17 @@ func (l *zapLogger) GetLevel() Level {
 
 func (l *zapLogger) SetLevel(level Level) {
 	l.level = &level
-	l.setDefaultLevel(level)
+	for _, child := range l.children {
+		child.setDefaultLevel(level)
+	}
 }
 
 func (l *zapLogger) setDefaultLevel(level Level) {
 	l.defaultLevel = level
-	for _, child := range l.children {
-		child.setDefaultLevel(level)
+	if l.level == nil {
+		for _, child := range l.children {
+			child.setDefaultLevel(level)
+		}
 	}
 }
 
