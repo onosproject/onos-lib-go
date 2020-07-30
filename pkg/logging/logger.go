@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 var root *zapLogger
@@ -101,13 +102,14 @@ func newZapLogger(config Config, loggerConfig LoggerConfig) (*zapLogger, error) 
 		level = &loggerLevel
 	}
 
-	return &zapLogger{
+	logger := &zapLogger{
 		config:       config,
 		loggerConfig: loggerConfig,
 		children:     make(map[string]*zapLogger),
 		outputs:      outputs,
-		level:        level,
-	}, nil
+	}
+	logger.level.Store(level)
+	return logger, nil
 }
 
 // zapLogger is the default Logger implementation
@@ -116,9 +118,9 @@ type zapLogger struct {
 	loggerConfig LoggerConfig
 	children     map[string]*zapLogger
 	outputs      []*zapOutput
-	defaultLevel Level
-	level        *Level
 	mu           sync.RWMutex
+	defaultLevel atomic.Value
+	level        atomic.Value
 }
 
 func (l *zapLogger) Name() string {
@@ -181,28 +183,28 @@ func (l *zapLogger) getChild(name string) (*zapLogger, error) {
 }
 
 func (l *zapLogger) GetLevel() Level {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-	if l.level != nil {
-		return *l.level
+	level := l.level.Load().(*Level)
+	if level != nil {
+		return *level
 	}
-	return l.defaultLevel
+
+	defaultLevel := l.defaultLevel.Load().(*Level)
+	if defaultLevel != nil {
+		return *defaultLevel
+	}
+	return EmptyLevel
 }
 
 func (l *zapLogger) SetLevel(level Level) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.level = &level
+	l.level.Store(&level)
 	for _, child := range l.children {
 		child.setDefaultLevel(level)
 	}
 }
 
 func (l *zapLogger) setDefaultLevel(level Level) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.defaultLevel = level
-	if l.level == nil {
+	l.defaultLevel.Store(&level)
+	if l.level.Load().(*Level) == nil {
 		for _, child := range l.children {
 			child.setDefaultLevel(level)
 		}
