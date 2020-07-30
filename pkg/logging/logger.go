@@ -17,6 +17,8 @@ package logging
 import (
 	"fmt"
 	"strings"
+	"sync"
+	"sync/atomic"
 )
 
 var root *zapLogger
@@ -95,18 +97,21 @@ func newZapLogger(config Config, loggerConfig LoggerConfig) (*zapLogger, error) 
 	}
 
 	var level *Level
+	var defaultLevel *Level
 	if loggerConfig.Level != nil {
 		loggerLevel := loggerConfig.GetLevel()
 		level = &loggerLevel
 	}
 
-	return &zapLogger{
+	logger := &zapLogger{
 		config:       config,
 		loggerConfig: loggerConfig,
 		children:     make(map[string]*zapLogger),
 		outputs:      outputs,
-		level:        level,
-	}, nil
+	}
+	logger.level.Store(level)
+	logger.defaultLevel.Store(defaultLevel)
+	return logger, nil
 }
 
 // zapLogger is the default Logger implementation
@@ -115,8 +120,9 @@ type zapLogger struct {
 	loggerConfig LoggerConfig
 	children     map[string]*zapLogger
 	outputs      []*zapOutput
-	defaultLevel Level
-	level        *Level
+	mu           sync.RWMutex
+	level        atomic.Value
+	defaultLevel atomic.Value
 }
 
 func (l *zapLogger) Name() string {
@@ -124,67 +130,83 @@ func (l *zapLogger) Name() string {
 }
 
 func (l *zapLogger) getChild(name string) (*zapLogger, error) {
+	l.mu.RLock()
 	child, ok := l.children[name]
-	if !ok {
-		// Compute the name of the child logger
-		qualifiedName := strings.Trim(fmt.Sprintf("%s%s%s", l.loggerConfig.Name, nameSep, name), nameSep)
-
-		// Initialize the child logger's configuration if one is not set.
-		loggerConfig, ok := l.config.GetLogger(qualifiedName)
-		if !ok {
-			loggerConfig = l.loggerConfig
-			loggerConfig.Name = qualifiedName
-			loggerConfig.Level = nil
-		}
-
-		// Populate the child logger configuration with outputs inherited from this logger.
-		for _, output := range l.outputs {
-			outputConfig, ok := loggerConfig.GetOutput(output.config.Name)
-			if !ok {
-				loggerConfig.Output[output.config.Name] = output.config
-			} else {
-				if outputConfig.Sink == nil {
-					outputConfig.Sink = output.config.Sink
-				}
-				if outputConfig.Level == nil {
-					outputConfig.Level = output.config.Level
-				}
-				loggerConfig.Output[outputConfig.Name] = outputConfig
-			}
-		}
-
-		// Create the child logger.
-		logger, err := newZapLogger(l.config, loggerConfig)
-		if err != nil {
-			return nil, err
-		}
-
-		// Set the default log level on the child.
-		logger.setDefaultLevel(l.GetLevel())
-		l.children[name] = logger
-		child = logger
+	l.mu.RUnlock()
+	if ok {
+		return child, nil
 	}
-	return child, nil
+
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	child, ok = l.children[name]
+	if ok {
+		return child, nil
+	}
+
+	// Compute the name of the child logger
+	qualifiedName := strings.Trim(fmt.Sprintf("%s%s%s", l.loggerConfig.Name, nameSep, name), nameSep)
+
+	// Initialize the child logger's configuration if one is not set.
+	loggerConfig, ok := l.config.GetLogger(qualifiedName)
+	if !ok {
+		loggerConfig = l.loggerConfig
+		loggerConfig.Name = qualifiedName
+		loggerConfig.Level = nil
+	}
+
+	// Populate the child logger configuration with outputs inherited from this logger.
+	for _, output := range l.outputs {
+		outputConfig, ok := loggerConfig.GetOutput(output.config.Name)
+		if !ok {
+			loggerConfig.Output[output.config.Name] = output.config
+		} else {
+			if outputConfig.Sink == nil {
+				outputConfig.Sink = output.config.Sink
+			}
+			if outputConfig.Level == nil {
+				outputConfig.Level = output.config.Level
+			}
+			loggerConfig.Output[outputConfig.Name] = outputConfig
+		}
+	}
+
+	// Create the child logger.
+	logger, err := newZapLogger(l.config, loggerConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set the default log level on the child.
+	logger.setDefaultLevel(l.GetLevel())
+	l.children[name] = logger
+	return logger, nil
 }
 
 func (l *zapLogger) GetLevel() Level {
-	level := l.level
+	level := l.level.Load().(*Level)
 	if level != nil {
 		return *level
 	}
-	return l.defaultLevel
+
+	defaultLevel := l.defaultLevel.Load().(*Level)
+	if defaultLevel != nil {
+		return *defaultLevel
+	}
+	return EmptyLevel
 }
 
 func (l *zapLogger) SetLevel(level Level) {
-	l.level = &level
+	l.level.Store(&level)
 	for _, child := range l.children {
 		child.setDefaultLevel(level)
 	}
 }
 
 func (l *zapLogger) setDefaultLevel(level Level) {
-	l.defaultLevel = level
-	if l.level == nil {
+	l.defaultLevel.Store(&level)
+	if l.level.Load().(*Level) == nil {
 		for _, child := range l.children {
 			child.setDefaultLevel(level)
 		}
