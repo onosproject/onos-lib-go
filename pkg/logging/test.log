@@ -21,3 +21,26 @@
 {"level":"WARN","timestamp":"2020-07-24T21:48:32.082Z","logger":"test/3","caller":"logging/logger_test.go:113","message":"should be printed twice"}
 {"level":"INFO","timestamp":"2020-07-24T21:48:32.082Z","logger":"test/3/4","caller":"logging/logger_test.go:120","message":"should be printed"}
 {"level":"WARN","timestamp":"2020-07-24T21:48:32.082Z","logger":"test/3/4","caller":"logging/logger_test.go:121","message":"should be printed twice"}
+{"level":"INFO","timestamp":"2020-07-30T09:58:15.300-0700","caller":"logging/logger_test.go:37","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test","caller":"logging/logger_test.go:43","message":"should be printed"}
+{"level":"DEBUG","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/1","caller":"logging/logger_test.go:48","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/1","caller":"logging/logger_test.go:49","message":"should be printed"}
+{"level":"DEBUG","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/1/2","caller":"logging/logger_test.go:54","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/1/2","caller":"logging/logger_test.go:55","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test","caller":"logging/logger_test.go:61","message":"should be printed"}
+{"level":"WARN","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2","caller":"logging/logger_test.go:68","message":"should be printed twice"}
+{"level":"INFO","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2/3","caller":"logging/logger_test.go:74","message":"should be printed twice"}
+{"level":"WARN","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2/3","caller":"logging/logger_test.go:75","message":"should be printed twice"}
+{"level":"WARN","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2/4","caller":"logging/logger_test.go:82","message":"should be printed twice"}
+{"level":"DEBUG","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2","caller":"logging/logger_test.go:88","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2","caller":"logging/logger_test.go:89","message":"should be printed twice"}
+{"level":"WARN","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2","caller":"logging/logger_test.go:90","message":"should be printed twice"}
+{"level":"INFO","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2/3","caller":"logging/logger_test.go:96","message":"should be printed twice"}
+{"level":"WARN","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2/3","caller":"logging/logger_test.go:97","message":"should be printed twice"}
+{"level":"DEBUG","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2/4","caller":"logging/logger_test.go:103","message":"should be printed"}
+{"level":"INFO","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2/4","caller":"logging/logger_test.go:104","message":"should be printed twice"}
+{"level":"WARN","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/2/4","caller":"logging/logger_test.go:105","message":"should be printed twice"}
+{"level":"INFO","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/3","caller":"logging/logger_test.go:112","message":"should be printed"}
+{"level":"WARN","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/3","caller":"logging/logger_test.go:113","message":"should be printed twice"}
+{"level":"INFO","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/3/4","caller":"logging/logger_test.go:120","message":"should be printed"}
+{"level":"WARN","timestamp":"2020-07-30T09:58:15.300-0700","logger":"test/3/4","caller":"logging/logger_test.go:121","message":"should be printed twice"}
