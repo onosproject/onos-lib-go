@@ -45,6 +45,11 @@ func (s Service) Register(r *grpc.Server) {
 type Server struct {
 }
 
+func splitLoggerName(name string) []string {
+	names := strings.Split(name, nameSep)
+	return names
+}
+
 // GetLevel implements GetLevel rpc function to get a logger level
 func (s *Server) GetLevel(ctx context.Context, req *logging.GetLevelRequest) (*logging.GetLevelResponse, error) {
 
@@ -53,7 +58,7 @@ func (s *Server) GetLevel(ctx context.Context, req *logging.GetLevelRequest) (*l
 		return &logging.GetLevelResponse{}, errors.New("precondition for get level request is failed")
 	}
 
-	names := strings.Split(name, "/")
+	names := splitLoggerName(name)
 	logger := GetLogger(names...)
 	level := logger.GetLevel()
 
@@ -92,7 +97,7 @@ func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*l
 		}, errors.New("precondition for set level request is failed")
 	}
 
-	names := strings.Split(name, "/")
+	names := splitLoggerName(name)
 	logger := GetLogger(names...)
 
 	switch level {
