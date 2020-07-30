@@ -97,6 +97,7 @@ func newZapLogger(config Config, loggerConfig LoggerConfig) (*zapLogger, error) 
 	}
 
 	var level *Level
+	var defaultLevel *Level
 	if loggerConfig.Level != nil {
 		loggerLevel := loggerConfig.GetLevel()
 		level = &loggerLevel
@@ -109,6 +110,7 @@ func newZapLogger(config Config, loggerConfig LoggerConfig) (*zapLogger, error) 
 		outputs:      outputs,
 	}
 	logger.level.Store(level)
+	logger.defaultLevel.Store(defaultLevel)
 	return logger, nil
 }
 
@@ -119,8 +121,8 @@ type zapLogger struct {
 	children     map[string]*zapLogger
 	outputs      []*zapOutput
 	mu           sync.RWMutex
-	defaultLevel atomic.Value
 	level        atomic.Value
+	defaultLevel atomic.Value
 }
 
 func (l *zapLogger) Name() string {
