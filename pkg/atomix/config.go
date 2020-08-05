@@ -43,6 +43,13 @@ const (
 	DatabaseTypeRelational DatabaseType = "relational"
 )
 
+var databaseTypeCompat = map[DatabaseType]DatabaseType{
+	DatabaseTypeConfig:     DatabaseTypeConsensus,
+	DatabaseTypeEvent:      DatabaseTypeTimeSeries,
+	DatabaseTypeConsensus:  DatabaseTypeConfig,
+	DatabaseTypeTimeSeries: DatabaseTypeEvent,
+}
+
 // Config is the Atomix configuration
 type Config struct {
 	// Controller is the Atomix controller address
@@ -117,5 +124,13 @@ func (c Config) GetScope() string {
 
 // GetDatabase gets the database name for the given database type
 func (c Config) GetDatabase(databaseType DatabaseType) string {
-	return c.Databases[databaseType]
+	db, ok := c.Databases[databaseType]
+	if ok {
+		return db
+	}
+	dbType, ok := databaseTypeCompat[databaseType]
+	if ok {
+		return c.Databases[dbType]
+	}
+	return ""
 }
