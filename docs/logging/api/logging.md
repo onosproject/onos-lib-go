@@ -6,8 +6,6 @@
 - [api/logging/logging.proto](#api/logging/logging.proto)
     - [GetLevelRequest](#onos.lib.go.logging.GetLevelRequest)
     - [GetLevelResponse](#onos.lib.go.logging.GetLevelResponse)
-    - [SetDebugModeRequest](#onos.lib.go.logging.SetDebugModeRequest)
-    - [SetDebugModeResponse](#onos.lib.go.logging.SetDebugModeResponse)
     - [SetLevelRequest](#onos.lib.go.logging.SetLevelRequest)
     - [SetLevelResponse](#onos.lib.go.logging.SetLevelResponse)
   
@@ -51,36 +49,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | level | [Level](#onos.lib.go.logging.Level) |  |  |
-
-
-
-
-
-
-<a name="onos.lib.go.logging.SetDebugModeRequest"></a>
-
-### SetDebugModeRequest
-SetDebugModeRequest enable/disable debug mode of the logger
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| debug | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="onos.lib.go.logging.SetDebugModeResponse"></a>
-
-### SetDebugModeResponse
-SetDebugModeResponse response for setting debug mode of a logger
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| response_status | [ResponseStatus](#onos.lib.go.logging.ResponseStatus) |  |  |
 
 
 
