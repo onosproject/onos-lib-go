@@ -84,13 +84,4 @@ message SetLevelResponse {
     ResponseStatus response_status = 1;
 }
 
-// SetDebugModeRequest enable/disable debug mode of the logger
-message SetDebugModeRequest {
-    bool debug = 1;
-}
-
-// SetDebugModeResponse response for setting debug mode of a logger
-message SetDebugModeResponse {
-    ResponseStatus response_status = 1;
-}
 
