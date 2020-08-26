@@ -61,7 +61,6 @@ func GetClient(config Config) (*client.Client, error) {
 	member := config.GetMember()
 	host := config.GetHost()
 	if host != "" {
-		opts = append(opts, client.WithMemberID(config.GetMember()))
 		opts = append(opts, client.WithPeerHost(config.GetHost()))
 		opts = append(opts, client.WithPeerPort(config.GetPort()))
 		for _, s := range serviceRegistry.services {
