@@ -60,7 +60,7 @@ func GetClient(config Config) (*client.Client, error) {
 	}
 	member := config.GetMember()
 	host := config.GetHost()
-	if member != "" && host != "" {
+	if host != "" {
 		opts = append(opts, client.WithMemberID(config.GetMember()))
 		opts = append(opts, client.WithPeerHost(config.GetHost()))
 		opts = append(opts, client.WithPeerPort(config.GetPort()))
@@ -72,16 +72,9 @@ func GetClient(config Config) (*client.Client, error) {
 			}(s)
 			opts = append(opts, client.WithPeerService(service))
 		}
-	} else if member != "" && host == "" {
+	}
+	if member != "" {
 		opts = append(opts, client.WithMemberID(config.GetMember()))
-		for _, s := range serviceRegistry.services {
-			service := func(service cluster.Service) func(peer.ID, *grpc.Server) {
-				return func(id peer.ID, server *grpc.Server) {
-					service(cluster.NodeID(id), server)
-				}
-			}(s)
-			opts = append(opts, client.WithPeerService(service))
-		}
 	}
 	return client.New(config.GetController(), opts...)
 }
