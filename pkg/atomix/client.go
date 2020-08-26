@@ -17,6 +17,9 @@ package atomix
 import (
 	"context"
 	"fmt"
+	"net"
+	"time"
+
 	"github.com/atomix/api/proto/atomix/database"
 	"github.com/atomix/go-client/pkg/client"
 	"github.com/atomix/go-client/pkg/client/peer"
@@ -26,8 +29,6 @@ import (
 	"github.com/atomix/go-local/pkg/atomix/local"
 	"github.com/onosproject/onos-lib-go/pkg/cluster"
 	"google.golang.org/grpc"
-	"net"
-	"time"
 )
 
 const basePort = 45000
@@ -63,6 +64,16 @@ func GetClient(config Config) (*client.Client, error) {
 		opts = append(opts, client.WithMemberID(config.GetMember()))
 		opts = append(opts, client.WithPeerHost(config.GetHost()))
 		opts = append(opts, client.WithPeerPort(config.GetPort()))
+		for _, s := range serviceRegistry.services {
+			service := func(service cluster.Service) func(peer.ID, *grpc.Server) {
+				return func(id peer.ID, server *grpc.Server) {
+					service(cluster.NodeID(id), server)
+				}
+			}(s)
+			opts = append(opts, client.WithPeerService(service))
+		}
+	} else if member != "" && host == "" {
+		opts = append(opts, client.WithMemberID(config.GetMember()))
 		for _, s := range serviceRegistry.services {
 			service := func(service cluster.Service) func(peer.ID, *grpc.Server) {
 				return func(id peer.ID, server *grpc.Server) {
