@@ -74,7 +74,10 @@ func GetClient(config Config) (*client.Client, error) {
 	}
 	if member != "" {
 		opts = append(opts, client.WithMemberID(config.GetMember()))
+	} else if host != "" {
+		opts = append(opts, client.WithMemberID(config.GetHost()))
 	}
+
 	return client.New(config.GetController(), opts...)
 }
 
