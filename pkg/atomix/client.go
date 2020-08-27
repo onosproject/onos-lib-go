@@ -17,9 +17,6 @@ package atomix
 import (
 	"context"
 	"fmt"
-	"net"
-	"time"
-
 	"github.com/atomix/api/proto/atomix/database"
 	"github.com/atomix/go-client/pkg/client"
 	"github.com/atomix/go-client/pkg/client/peer"
@@ -29,6 +26,7 @@ import (
 	"github.com/atomix/go-local/pkg/atomix/local"
 	"github.com/onosproject/onos-lib-go/pkg/cluster"
 	"google.golang.org/grpc"
+	"net"
 )
 
 const basePort = 45000
@@ -87,7 +85,5 @@ func GetDatabase(config Config, database string) (*client.Database, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	return client.GetDatabase(ctx, database)
+	return client.GetDatabase(context.Background(), database)
 }
