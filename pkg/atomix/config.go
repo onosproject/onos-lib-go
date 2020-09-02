@@ -25,16 +25,16 @@ const defaultPort = 5678
 type DatabaseType string
 
 const (
-	// DatabaseTypeConfig indicates a configuration database
-	DatabaseTypeConfig DatabaseType = "config"
+	// DatabaseTypeConsensus indicates a consensus database
+	DatabaseTypeConsensus DatabaseType = "consensus"
 	// DatabaseTypeCache indicates a cache database
 	DatabaseTypeCache DatabaseType = "cache"
 	// DatabaseTypeEvent indicates an event database
 	DatabaseTypeEvent DatabaseType = "event"
 
-	// DatabaseTypeConsensus indicates a consensus database
-	// Deprecated: Use DatabaseTypeConfig instead
-	DatabaseTypeConsensus DatabaseType = "consensus"
+	// DatabaseTypeConfig indicates a configuration database
+	// Deprecated: Use DatabaseTypeConsensus instead
+	DatabaseTypeConfig DatabaseType = "config"
 	// DatabaseTypeTimeSeries indicates a time series database
 	// Deprecated: Use DatabaseTypeEvent instead
 	DatabaseTypeTimeSeries DatabaseType = "timeSeries"
