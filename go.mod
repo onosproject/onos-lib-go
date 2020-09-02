@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/Shopify/sarama v1.26.1
 	github.com/atomix/api v0.2.0
-	github.com/atomix/go-client v0.2.2
+	github.com/atomix/go-client v0.2.3
 	github.com/atomix/go-framework v0.2.0
 	github.com/atomix/go-local v0.2.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -21,7 +21,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	go.uber.org/zap v1.13.0
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
-	google.golang.org/grpc v1.27.1
+	google.golang.org/grpc v1.31.1
 	gopkg.in/square/go-jose.v1 v1.1.2 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.2.8
