@@ -19,10 +19,11 @@ import (
 )
 
 // newReplica creates a new replica
-func newReplica(id ReplicaID, connector func(opts ...grpc.DialOption) (*grpc.ClientConn, error)) *Replica {
+func newReplica(id ReplicaID, local bool, connector func(opts ...grpc.DialOption) (*grpc.ClientConn, error)) *Replica {
 	return &Replica{
 		Node:      newNode(NodeID(id)),
 		ID:        id,
+		local:     local,
 		connector: connector,
 	}
 }
@@ -34,7 +35,13 @@ type ReplicaID NodeID
 type Replica struct {
 	Node
 	ID        ReplicaID
+	local     bool
 	connector func(opts ...grpc.DialOption) (*grpc.ClientConn, error)
+}
+
+// IsLocal returns a bool indicating whether the replica is local
+func (r *Replica) IsLocal() bool {
+	return r.local
 }
 
 // Connect connects to the replica
