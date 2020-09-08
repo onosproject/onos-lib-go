@@ -245,7 +245,7 @@ func (s *retryingClientStream) SendMsg(m interface{}) error {
 			return backoff.Permanent(err)
 		}
 		return nil
-	}, backoff.NewExponentialBackOff())
+	}, backoff.WithContext(backoff.NewExponentialBackOff(), s.ctx))
 	if err == nil {
 		s.buffer.append(m)
 		return nil
@@ -272,7 +272,7 @@ func (s *retryingClientStream) RecvMsg(m interface{}) error {
 				return backoff.Permanent(err)
 			}
 			return nil
-		}, backoff.NewExponentialBackOff())
+		}, backoff.WithContext(backoff.NewExponentialBackOff(), s.ctx))
 	}
 	return nil
 }
@@ -308,7 +308,7 @@ func (s *retryingClientStream) retryStream() error {
 
 		s.setStream(stream)
 		return nil
-	}, backoff.NewConstantBackOff(s.duration))
+	}, backoff.WithContext(backoff.NewConstantBackOff(s.duration), s.ctx))
 }
 
 func isRetryable(err error) bool {
