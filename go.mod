@@ -5,9 +5,9 @@ go 1.14
 require (
 	github.com/Shopify/sarama v1.26.1
 	github.com/atomix/api v0.2.0
-	github.com/atomix/go-client v0.2.3
-	github.com/atomix/go-framework v0.2.0
-	github.com/atomix/go-local v0.2.0
+	github.com/atomix/go-client v0.2.4
+	github.com/atomix/go-framework v0.3.0
+	github.com/atomix/go-local v0.3.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ericchiang/oidc v0.0.0-20160908143337-11f62933e071
