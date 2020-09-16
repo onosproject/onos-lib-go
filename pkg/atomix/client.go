@@ -17,12 +17,21 @@ package atomix
 import (
 	"context"
 	"fmt"
-	"github.com/atomix/api/proto/atomix/database"
 	"github.com/atomix/go-client/pkg/client"
 	"github.com/atomix/go-client/pkg/client/peer"
 	netutil "github.com/atomix/go-client/pkg/client/util/net"
 	"github.com/atomix/go-framework/pkg/atomix"
-	"github.com/atomix/go-framework/pkg/atomix/registry"
+	"github.com/atomix/go-framework/pkg/atomix/counter"
+	"github.com/atomix/go-framework/pkg/atomix/election"
+	"github.com/atomix/go-framework/pkg/atomix/indexedmap"
+	"github.com/atomix/go-framework/pkg/atomix/leader"
+	"github.com/atomix/go-framework/pkg/atomix/list"
+	"github.com/atomix/go-framework/pkg/atomix/lock"
+	"github.com/atomix/go-framework/pkg/atomix/log"
+	"github.com/atomix/go-framework/pkg/atomix/map"
+	"github.com/atomix/go-framework/pkg/atomix/primitive"
+	"github.com/atomix/go-framework/pkg/atomix/set"
+	"github.com/atomix/go-framework/pkg/atomix/value"
 	"github.com/atomix/go-local/pkg/atomix/local"
 	"github.com/onosproject/onos-lib-go/pkg/cluster"
 	"google.golang.org/grpc"
@@ -39,11 +48,17 @@ func StartLocalNode() (*atomix.Node, netutil.Address) {
 		if err != nil {
 			continue
 		}
-		node := local.NewNode(lis, registry.Registry, []database.PartitionId{
-			{
-				Partition: 1,
-			},
-		})
+		node := local.NewNode(lis, []primitive.PartitionID{1})
+		counter.RegisterPrimitive(node)
+		election.RegisterPrimitive(node)
+		indexedmap.RegisterPrimitive(node)
+		lock.RegisterPrimitive(node)
+		log.RegisterPrimitive(node)
+		leader.RegisterPrimitive(node)
+		list.RegisterPrimitive(node)
+		_map.RegisterPrimitive(node)
+		set.RegisterPrimitive(node)
+		value.RegisterPrimitive(node)
 		_ = node.Start()
 		return node, address
 	}
