@@ -46,20 +46,7 @@ func configure(config Config) error {
 
 // GetLogger gets a logger by name
 func GetLogger(names ...string) Logger {
-	if len(names) == 1 {
-		names = strings.Split(names[0], nameSep)
-	}
-
-	logger := root
-	for _, name := range names {
-		child, err := logger.getChild(name)
-		if err != nil {
-			panic(err)
-		}
-		logger = child
-	}
-
-	return logger
+	return root.GetLogger(names...)
 }
 
 // Logger represents an abstract logging interface.
@@ -68,6 +55,9 @@ type Logger interface {
 
 	// Name returns the logger name
 	Name() string
+
+	// GetLogger gets a descendant of this Logger
+	GetLogger(names ...string) Logger
 
 	// GetLevel returns the logger's level
 	GetLevel() Level
@@ -128,6 +118,22 @@ type zapLogger struct {
 
 func (l *zapLogger) Name() string {
 	return l.loggerConfig.Name
+}
+
+func (l *zapLogger) GetLogger(names ...string) Logger {
+	if len(names) == 1 {
+		names = strings.Split(names[0], nameSep)
+	}
+
+	logger := l
+	for _, name := range names {
+		child, err := logger.getChild(name)
+		if err != nil {
+			panic(err)
+		}
+		logger = child
+	}
+	return logger
 }
 
 func (l *zapLogger) getChild(name string) (*zapLogger, error) {
