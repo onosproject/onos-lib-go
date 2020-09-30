@@ -131,6 +131,7 @@ func newZapLogger(config Config, loggerConfig LoggerConfig) (*zapLogger, error) 
 		loggerConfig: loggerConfig,
 		children:     make(map[string]*zapLogger),
 		outputs:      outputs,
+		mu:           &sync.RWMutex{},
 	}
 	logger.level.Store(level)
 	logger.defaultLevel.Store(defaultLevel)
@@ -143,7 +144,7 @@ type zapLogger struct {
 	loggerConfig LoggerConfig
 	children     map[string]*zapLogger
 	outputs      []*zapOutput
-	mu           sync.RWMutex
+	mu           *sync.RWMutex
 	level        atomic.Value
 	defaultLevel atomic.Value
 }

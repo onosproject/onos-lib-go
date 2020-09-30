@@ -164,7 +164,8 @@ func (o *zapOutput) getZapFields(fields ...Field) []zap.Field {
 	return zapFields
 }
 
-func (o *zapOutput) Debug(msg string, fields ...Field) {o.logger.Sugar().Info()
+func (o *zapOutput) Debug(msg string, fields ...Field) {
+	o.logger.Sugar().Info()
 	o.logger.Debug(msg, o.getZapFields(fields...)...)
 }
 
