@@ -34,25 +34,25 @@ func TestLoggerConfig(t *testing.T) {
 	logger := GetLogger()
 	assert.Equal(t, InfoLevel, logger.GetLevel())
 	logger.Debug("should not be printed")
-	logger.Info("should be printed")
+	logger.Infof("should be %s", "printed")
 
 	// The "test" logger should inherit the INFO level from the root logger
-	logger = GetLogger("test")
+	logger = GetLogger("test").WithFields(Bool("printed", true))
 	assert.Equal(t, InfoLevel, logger.GetLevel())
-	logger.Debug("should not be printed")
-	logger.Info("should be printed")
+	logger.Debugf("should %s be", "not")
+	logger.Info("should be")
 
 	// The "test/1" logger should be configured with DEBUG level
 	logger = GetLogger("test", "1")
 	assert.Equal(t, DebugLevel, logger.GetLevel())
-	logger.Debug("should be printed")
-	logger.Info("should be printed")
+	logger.Debugw("should be", Bool("printed", true))
+	logger.Infow("should be", Bool("printed", true))
 
 	// The "test/1/2" logger should inherit the DEBUG level from "test/1"
-	logger = GetLogger("test", "1", "2")
+	logger = GetLogger("test", "1", "2").WithFields(Bool("printed", true))
 	assert.Equal(t, DebugLevel, logger.GetLevel())
-	logger.Debug("should be printed")
-	logger.Info("should be printed")
+	logger.Debugw("printed", String("should", "be"))
+	logger.Infow("printed", String("should", "be"))
 
 	// The "test" logger should still inherit the INFO level from the root logger
 	logger = GetLogger("test")
@@ -64,14 +64,14 @@ func TestLoggerConfig(t *testing.T) {
 	logger = GetLogger("test", "2")
 	assert.Equal(t, WarnLevel, logger.GetLevel())
 	logger.Debug("should not be printed")
-	logger.Info("should not be printed")
-	logger.Warn("should be printed twice")
+	logger.Infow("should not be", Bool("printed", true))
+	logger.Warnw("should be printed", Int("times", 2))
 
 	// The "test/2/3" logger should be configured with INFO level
 	logger = GetLogger("test", "2", "3")
 	assert.Equal(t, InfoLevel, logger.GetLevel())
 	logger.Debug("should not be printed")
-	logger.Info("should be printed twice")
+	logger.Infow("should be printed", Int("times", 2))
 	logger.Warn("should be printed twice")
 
 	// The "test/2/4" logger should inherit the WARN level from "test/2"
@@ -85,8 +85,8 @@ func TestLoggerConfig(t *testing.T) {
 	logger = GetLogger("test/2")
 	logger.SetLevel(DebugLevel)
 	assert.Equal(t, DebugLevel, logger.GetLevel())
-	logger.Debug("should be printed")
-	logger.Info("should be printed twice")
+	logger.Debugw("should be", Bool("printed", true))
+	logger.Infow("should be printed", Int("times", 2))
 	logger.Warn("should be printed twice")
 
 	// The "test/2/3" logger should not inherit the change to the "test/2" logger since its level has been explicitly set

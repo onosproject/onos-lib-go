@@ -51,8 +51,6 @@ func GetLogger(names ...string) Logger {
 
 // Logger represents an abstract logging interface.
 type Logger interface {
-	Output
-
 	// Name returns the logger name
 	Name() string
 
@@ -64,6 +62,40 @@ type Logger interface {
 
 	// SetLevel sets the logger's level
 	SetLevel(level Level)
+
+	// WithFields adds fields to the logger
+	WithFields(fields ...Field) Logger
+
+	// Sync flushes the logger
+	Sync() error
+
+	Debug(...interface{})
+	Debugf(template string, args ...interface{})
+	Debugw(msg string, fields ...Field)
+
+	Info(...interface{})
+	Infof(template string, args ...interface{})
+	Infow(msg string, fields ...Field)
+
+	Error(...interface{})
+	Errorf(template string, args ...interface{})
+	Errorw(msg string, fields ...Field)
+
+	Fatal(...interface{})
+	Fatalf(template string, args ...interface{})
+	Fatalw(msg string, fields ...Field)
+
+	Panic(...interface{})
+	Panicf(template string, args ...interface{})
+	Panicw(msg string, fields ...Field)
+
+	DPanic(...interface{})
+	DPanicf(template string, args ...interface{})
+	DPanicw(msg string, fields ...Field)
+
+	Warn(...interface{})
+	Warnf(template string, args ...interface{})
+	Warnw(msg string, fields ...Field)
 }
 
 func newZapLogger(config Config, loggerConfig LoggerConfig) (*zapLogger, error) {
@@ -220,172 +252,171 @@ func (l *zapLogger) setDefaultLevel(level Level) {
 	}
 }
 
-func (l *zapLogger) Debug(args ...interface{}) {
-	if l.GetLevel() <= DebugLevel {
-		for _, output := range l.outputs {
-			output.Debug(args...)
-		}
+func (l *zapLogger) WithFields(fields ...Field) Logger {
+	outputs := make([]*zapOutput, len(l.outputs))
+	for i, output := range l.outputs {
+		outputs[i] = output.WithFields(fields...).(*zapOutput)
 	}
+	return &zapLogger{
+		config:       l.config,
+		loggerConfig: l.loggerConfig,
+		children:     l.children,
+		outputs:      outputs,
+		mu:           l.mu,
+		level:        l.level,
+		defaultLevel: l.defaultLevel,
+	}
+}
+
+func (l *zapLogger) Sync() error {
+	var err error
+	for _, output := range l.outputs {
+		err = output.Sync()
+	}
+	return err
+}
+
+func (l *zapLogger) log(level Level, template string, args []interface{}, fields []Field, logger func(output Output, msg string, fields []Field)) {
+	if l.GetLevel() > level {
+		return
+	}
+
+	msg := template
+	if msg == "" && len(args) > 0 {
+		msg = fmt.Sprint(args...)
+	} else if msg != "" && len(args) > 0 {
+		msg = fmt.Sprintf(template, args...)
+	}
+
+	for _, output := range l.outputs {
+		logger(output, msg, fields)
+	}
+}
+
+func (l *zapLogger) Debug(args ...interface{}) {
+	l.log(DebugLevel, "", args, nil, func(output Output, msg string, fields []Field) {
+		output.Debug(msg, fields...)
+	})
 }
 
 func (l *zapLogger) Debugf(template string, args ...interface{}) {
-	if l.GetLevel() <= DebugLevel {
-		for _, output := range l.outputs {
-			output.Debugf(template, args...)
-		}
-	}
+	l.log(DebugLevel, template, args, nil, func(output Output, msg string, fields []Field) {
+		output.Debug(msg, fields...)
+	})
 }
 
-func (l *zapLogger) Debugw(msg string, keysAndValues ...interface{}) {
-	if l.GetLevel() <= DebugLevel {
-		for _, output := range l.outputs {
-			output.Debugw(msg, keysAndValues...)
-		}
-	}
+func (l *zapLogger) Debugw(msg string, fields ...Field) {
+	l.log(DebugLevel, "", nil, fields, func(output Output, _ string, fields []Field) {
+		output.Debug(msg, fields...)
+	})
 }
 
 func (l *zapLogger) Info(args ...interface{}) {
-	if l.GetLevel() <= InfoLevel {
-		for _, output := range l.outputs {
-			output.Info(args...)
-		}
-	}
+	l.log(InfoLevel, "", args, nil, func(output Output, msg string, fields []Field) {
+		output.Info(msg, fields...)
+	})
 }
 
 func (l *zapLogger) Infof(template string, args ...interface{}) {
-	if l.GetLevel() <= InfoLevel {
-		for _, output := range l.outputs {
-			output.Infof(template, args...)
-		}
-	}
+	l.log(InfoLevel, template, args, nil, func(output Output, msg string, fields []Field) {
+		output.Info(msg, fields...)
+	})
 }
 
-func (l *zapLogger) Infow(msg string, keysAndValues ...interface{}) {
-	if l.GetLevel() <= InfoLevel {
-		for _, output := range l.outputs {
-			output.Infow(msg, keysAndValues...)
-		}
-	}
-}
-
-func (l *zapLogger) Error(args ...interface{}) {
-	if l.GetLevel() <= ErrorLevel {
-		for _, output := range l.outputs {
-			output.Error(args...)
-		}
-	}
-}
-
-func (l *zapLogger) Errorf(template string, args ...interface{}) {
-	if l.GetLevel() <= ErrorLevel {
-		for _, output := range l.outputs {
-			output.Errorf(template, args...)
-		}
-	}
-}
-
-func (l *zapLogger) Errorw(msg string, keysAndValues ...interface{}) {
-	if l.GetLevel() <= ErrorLevel {
-		for _, output := range l.outputs {
-			output.Errorw(msg, keysAndValues...)
-		}
-	}
-}
-
-func (l *zapLogger) Fatal(args ...interface{}) {
-	if l.GetLevel() <= FatalLevel {
-		for _, output := range l.outputs {
-			output.Fatal(args...)
-		}
-	}
-}
-
-func (l *zapLogger) Fatalf(template string, args ...interface{}) {
-	if l.GetLevel() <= FatalLevel {
-		for _, output := range l.outputs {
-			output.Fatalf(template, args...)
-		}
-	}
-}
-
-func (l *zapLogger) Fatalw(msg string, keysAndValues ...interface{}) {
-	if l.GetLevel() <= FatalLevel {
-		for _, output := range l.outputs {
-			output.Fatalw(msg, keysAndValues...)
-		}
-	}
-}
-
-func (l *zapLogger) Panic(args ...interface{}) {
-	if l.GetLevel() <= PanicLevel {
-		for _, output := range l.outputs {
-			output.Panic(args...)
-		}
-	}
-}
-
-func (l *zapLogger) Panicf(template string, args ...interface{}) {
-	if l.GetLevel() <= PanicLevel {
-		for _, output := range l.outputs {
-			output.Panicf(template, args...)
-		}
-	}
-}
-
-func (l *zapLogger) Panicw(msg string, keysAndValues ...interface{}) {
-	if l.GetLevel() <= PanicLevel {
-		for _, output := range l.outputs {
-			output.Panicw(msg, keysAndValues...)
-		}
-	}
-}
-
-func (l *zapLogger) DPanic(args ...interface{}) {
-	if l.GetLevel() <= DPanicLevel {
-		for _, output := range l.outputs {
-			output.DPanic(args...)
-		}
-	}
-}
-
-func (l *zapLogger) DPanicf(template string, args ...interface{}) {
-	if l.GetLevel() <= DPanicLevel {
-		for _, output := range l.outputs {
-			output.DPanicf(template, args...)
-		}
-	}
-}
-
-func (l *zapLogger) DPanicw(msg string, keysAndValues ...interface{}) {
-	if l.GetLevel() <= DPanicLevel {
-		for _, output := range l.outputs {
-			output.DPanicw(msg, keysAndValues...)
-		}
-	}
+func (l *zapLogger) Infow(msg string, fields ...Field) {
+	l.log(InfoLevel, "", nil, fields, func(output Output, _ string, fields []Field) {
+		output.Info(msg, fields...)
+	})
 }
 
 func (l *zapLogger) Warn(args ...interface{}) {
-	if l.GetLevel() <= WarnLevel {
-		for _, output := range l.outputs {
-			output.Warn(args...)
-		}
-	}
+	l.log(WarnLevel, "", args, nil, func(output Output, msg string, fields []Field) {
+		output.Warn(msg, fields...)
+	})
 }
 
 func (l *zapLogger) Warnf(template string, args ...interface{}) {
-	if l.GetLevel() <= WarnLevel {
-		for _, output := range l.outputs {
-			output.Warnf(template, args...)
-		}
-	}
+	l.log(WarnLevel, template, args, nil, func(output Output, msg string, fields []Field) {
+		output.Warn(msg, fields...)
+	})
 }
 
-func (l *zapLogger) Warnw(msg string, keysAndValues ...interface{}) {
-	if l.GetLevel() <= WarnLevel {
-		for _, output := range l.outputs {
-			output.Warnw(msg, keysAndValues...)
-		}
-	}
+func (l *zapLogger) Warnw(msg string, fields ...Field) {
+	l.log(WarnLevel, "", nil, fields, func(output Output, _ string, fields []Field) {
+		output.Warn(msg, fields...)
+	})
+}
+
+func (l *zapLogger) Error(args ...interface{}) {
+	l.log(ErrorLevel, "", args, nil, func(output Output, msg string, fields []Field) {
+		output.Error(msg, fields...)
+	})
+}
+
+func (l *zapLogger) Errorf(template string, args ...interface{}) {
+	l.log(ErrorLevel, template, args, nil, func(output Output, msg string, fields []Field) {
+		output.Error(msg, fields...)
+	})
+}
+
+func (l *zapLogger) Errorw(msg string, fields ...Field) {
+	l.log(ErrorLevel, "", nil, fields, func(output Output, _ string, fields []Field) {
+		output.Error(msg, fields...)
+	})
+}
+
+func (l *zapLogger) Fatal(args ...interface{}) {
+	l.log(FatalLevel, "", args, nil, func(output Output, msg string, fields []Field) {
+		output.Fatal(msg, fields...)
+	})
+}
+
+func (l *zapLogger) Fatalf(template string, args ...interface{}) {
+	l.log(FatalLevel, template, args, nil, func(output Output, msg string, fields []Field) {
+		output.Fatal(msg, fields...)
+	})
+}
+
+func (l *zapLogger) Fatalw(msg string, fields ...Field) {
+	l.log(FatalLevel, "", nil, fields, func(output Output, _ string, fields []Field) {
+		output.Fatal(msg, fields...)
+	})
+}
+
+func (l *zapLogger) Panic(args ...interface{}) {
+	l.log(PanicLevel, "", args, nil, func(output Output, msg string, fields []Field) {
+		output.Panic(msg, fields...)
+	})
+}
+
+func (l *zapLogger) Panicf(template string, args ...interface{}) {
+	l.log(PanicLevel, template, args, nil, func(output Output, msg string, fields []Field) {
+		output.Panic(msg, fields...)
+	})
+}
+
+func (l *zapLogger) Panicw(msg string, fields ...Field) {
+	l.log(PanicLevel, "", nil, fields, func(output Output, _ string, fields []Field) {
+		output.Panic(msg, fields...)
+	})
+}
+
+func (l *zapLogger) DPanic(args ...interface{}) {
+	l.log(DPanicLevel, "", args, nil, func(output Output, msg string, fields []Field) {
+		output.DPanic(msg, fields...)
+	})
+}
+
+func (l *zapLogger) DPanicf(template string, args ...interface{}) {
+	l.log(DPanicLevel, template, args, nil, func(output Output, msg string, fields []Field) {
+		output.DPanic(msg, fields...)
+	})
+}
+
+func (l *zapLogger) DPanicw(msg string, fields ...Field) {
+	l.log(DPanicLevel, "", nil, fields, func(output Output, _ string, fields []Field) {
+		output.DPanic(msg, fields...)
+	})
 }
 
 var _ Logger = &zapLogger{}
