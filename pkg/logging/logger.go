@@ -57,8 +57,8 @@ type Logger interface {
 	// GetLogger gets a descendant of this Logger
 	GetLogger(names ...string) Logger
 
-	// GetLevel returns the logger's level
-	GetLevel() Level
+	// Level returns the logger's level
+	Level() Level
 
 	// SetLevel sets the logger's level
 	SetLevel(level Level)
@@ -219,12 +219,12 @@ func (l *zapLogger) getChild(name string) (*zapLogger, error) {
 	}
 
 	// Set the default log level on the child.
-	logger.setDefaultLevel(l.GetLevel())
+	logger.setDefaultLevel(l.Level())
 	l.children[name] = logger
 	return logger, nil
 }
 
-func (l *zapLogger) GetLevel() Level {
+func (l *zapLogger) Level() Level {
 	level := l.level.Load().(*Level)
 	if level != nil {
 		return *level
@@ -278,7 +278,7 @@ func (l *zapLogger) Sync() error {
 }
 
 func (l *zapLogger) log(level Level, template string, args []interface{}, fields []Field, logger func(output Output, msg string, fields []Field)) {
-	if l.GetLevel() > level {
+	if l.Level() > level {
 		return
 	}
 
