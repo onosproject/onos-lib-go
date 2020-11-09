@@ -11,6 +11,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ericchiang/oidc v0.0.0-20160908143337-11f62933e071
 	github.com/gogo/protobuf v1.3.1
+	github.com/golang/mock v1.4.4 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.8.1
