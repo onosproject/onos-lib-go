@@ -210,10 +210,18 @@ func NewInternal(msg string) error {
 	return New(Internal, msg)
 }
 
+// TypeOf returns the type of the given error
+func TypeOf(err error) Type {
+	if typed, ok := err.(*TypedError); ok {
+		return typed.Type
+	}
+	return Unknown
+}
+
 // IsType checks whether the given error is of the given type
 func IsType(err error, t Type) bool {
-	if status, ok := err.(*TypedError); ok {
-		return status.Type == t
+	if typed, ok := err.(*TypedError); ok {
+		return typed.Type == t
 	}
 	return false
 }
