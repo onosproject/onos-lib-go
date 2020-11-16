@@ -65,6 +65,7 @@ func NewController(name string) *Controller {
 		partitioner: &UnaryPartitioner{},
 		watchers:    make([]Watcher, 0),
 		partitions:  make(map[PartitionKey]chan ID),
+		stopCh:      make(chan bool),
 	}
 }
 
@@ -93,6 +94,7 @@ type Controller struct {
 	watchers    []Watcher
 	reconciler  Reconciler
 	partitions  map[PartitionKey]chan ID
+	stopCh      chan bool
 }
 
 // Activate sets an activator for the controller
@@ -143,18 +145,26 @@ func (c *Controller) Start() error {
 	}
 	go func() {
 		active := false
-		for activate := range ch {
-			if activate {
-				if !active {
-					log.Infof("Activating controller %s", c.name)
-					c.activate()
-					active = true
+
+		for {
+			select {
+			case activate := <-ch:
+				if activate {
+					if !active {
+						log.Infof("Activating controller %s", c.name)
+						c.activate()
+						active = true
+					}
+				} else {
+					if active {
+						log.Infof("Deactivating controller %s", c.name)
+						c.deactivate()
+						active = false
+					}
 				}
-			} else {
+			case <-c.stopCh:
 				if active {
-					log.Infof("Deactivating controller %s", c.name)
 					c.deactivate()
-					active = false
 				}
 			}
 		}
@@ -164,6 +174,7 @@ func (c *Controller) Start() error {
 
 // Stop stops the controller
 func (c *Controller) Stop() {
+	c.stopCh <- true
 	c.activator.Stop()
 }
 
