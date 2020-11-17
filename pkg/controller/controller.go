@@ -157,6 +157,10 @@ func (c *Controller) Start() error {
 					active = false
 				}
 			}
+			if active {
+				log.Infof("Deactivating controller %s", c.name)
+				c.deactivate()
+			}
 		}
 	}()
 	return nil
