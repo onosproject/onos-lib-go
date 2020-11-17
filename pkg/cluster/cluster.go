@@ -82,9 +82,9 @@ func (c *atomixCluster) open() error {
 					if member != nil {
 						local = member.ID == id
 					}
-					c.replicas[ReplicaID(id)] = newReplica(ReplicaID(p.ID), local, func(p *peer.Peer) func(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-						return func(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-							return p.Connect(peer.WithDialOptions(opts...))
+					c.replicas[ReplicaID(id)] = newReplica(ReplicaID(p.ID), local, func(p *peer.Peer) func(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+						return func(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+							return p.Connect(ctx, peer.WithDialOptions(opts...))
 						}
 					}(p))
 				}

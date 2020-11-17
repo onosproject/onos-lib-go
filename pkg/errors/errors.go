@@ -16,6 +16,7 @@ package errors
 
 import (
 	"fmt"
+	"github.com/atomix/go-client/pkg/client/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -139,6 +140,42 @@ func FromStatus(status *status.Status) error {
 	}
 }
 
+// FromAtomix creates a typed error from an Atomix error
+func FromAtomix(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	switch errors.TypeOf(err) {
+	case errors.Unknown:
+		return New(Unknown, err.Error())
+	case errors.Canceled:
+		return New(Canceled, err.Error())
+	case errors.NotFound:
+		return New(NotFound, err.Error())
+	case errors.AlreadyExists:
+		return New(AlreadyExists, err.Error())
+	case errors.Unauthorized:
+		return New(Unauthorized, err.Error())
+	case errors.Forbidden:
+		return New(Forbidden, err.Error())
+	case errors.Conflict:
+		return New(Conflict, err.Error())
+	case errors.Invalid:
+		return New(Invalid, err.Error())
+	case errors.Unavailable:
+		return New(Unavailable, err.Error())
+	case errors.NotSupported:
+		return New(NotSupported, err.Error())
+	case errors.Timeout:
+		return New(Timeout, err.Error())
+	case errors.Internal:
+		return New(Internal, err.Error())
+	default:
+		return New(Unknown, err.Error())
+	}
+}
+
 // New creates a new typed error
 func New(t Type, msg string, args ...interface{}) error {
 	if len(args) > 0 {
@@ -151,63 +188,63 @@ func New(t Type, msg string, args ...interface{}) error {
 }
 
 // NewUnknown returns a new Unknown error
-func NewUnknown(msg string) error {
-	return New(Unknown, msg)
+func NewUnknown(msg string, args ...interface{}) error {
+	return New(Unknown, msg, args...)
 }
 
 // NewCanceled returns a new Canceled error
-func NewCanceled(msg string) error {
-	return New(Canceled, msg)
+func NewCanceled(msg string, args ...interface{}) error {
+	return New(Canceled, msg, args...)
 }
 
 // NewNotFound returns a new NotFound error
-func NewNotFound(msg string) error {
-	return New(NotFound, msg)
+func NewNotFound(msg string, args ...interface{}) error {
+	return New(NotFound, msg, args...)
 }
 
 // NewAlreadyExists returns a new AlreadyExists error
-func NewAlreadyExists(msg string) error {
-	return New(AlreadyExists, msg)
+func NewAlreadyExists(msg string, args ...interface{}) error {
+	return New(AlreadyExists, msg, args...)
 }
 
 // NewUnauthorized returns a new Unauthorized error
-func NewUnauthorized(msg string) error {
-	return New(Unauthorized, msg)
+func NewUnauthorized(msg string, args ...interface{}) error {
+	return New(Unauthorized, msg, args...)
 }
 
 // NewForbidden returns a new Forbidden error
-func NewForbidden(msg string) error {
-	return New(Forbidden, msg)
+func NewForbidden(msg string, args ...interface{}) error {
+	return New(Forbidden, msg, args...)
 }
 
 // NewConflict returns a new Conflict error
-func NewConflict(msg string) error {
-	return New(Conflict, msg)
+func NewConflict(msg string, args ...interface{}) error {
+	return New(Conflict, msg, args...)
 }
 
 // NewInvalid returns a new Invalid error
-func NewInvalid(msg string) error {
-	return New(Invalid, msg)
+func NewInvalid(msg string, args ...interface{}) error {
+	return New(Invalid, msg, args...)
 }
 
 // NewUnavailable returns a new Unavailable error
-func NewUnavailable(msg string) error {
-	return New(Unavailable, msg)
+func NewUnavailable(msg string, args ...interface{}) error {
+	return New(Unavailable, msg, args...)
 }
 
 // NewNotSupported returns a new NotSupported error
-func NewNotSupported(msg string) error {
-	return New(NotSupported, msg)
+func NewNotSupported(msg string, args ...interface{}) error {
+	return New(NotSupported, msg, args...)
 }
 
 // NewTimeout returns a new Timeout error
-func NewTimeout(msg string) error {
-	return New(Timeout, msg)
+func NewTimeout(msg string, args ...interface{}) error {
+	return New(Timeout, msg, args...)
 }
 
 // NewInternal returns a new Internal error
-func NewInternal(msg string) error {
-	return New(Internal, msg)
+func NewInternal(msg string, args ...interface{}) error {
+	return New(Internal, msg, args...)
 }
 
 // TypeOf returns the type of the given error
