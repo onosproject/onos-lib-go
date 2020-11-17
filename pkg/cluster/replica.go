@@ -15,11 +15,12 @@
 package cluster
 
 import (
+	"context"
 	"google.golang.org/grpc"
 )
 
 // newReplica creates a new replica
-func newReplica(id ReplicaID, local bool, connector func(opts ...grpc.DialOption) (*grpc.ClientConn, error)) *Replica {
+func newReplica(id ReplicaID, local bool, connector func(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error)) *Replica {
 	return &Replica{
 		Node:      newNode(NodeID(id)),
 		ID:        id,
@@ -36,7 +37,7 @@ type Replica struct {
 	Node
 	ID        ReplicaID
 	local     bool
-	connector func(opts ...grpc.DialOption) (*grpc.ClientConn, error)
+	connector func(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error)
 }
 
 // IsLocal returns a bool indicating whether the replica is local
@@ -45,12 +46,12 @@ func (r *Replica) IsLocal() bool {
 }
 
 // Connect connects to the replica
-func (r *Replica) Connect(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func (r *Replica) Connect(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	options := []grpc.DialOption{
 		grpc.WithInsecure(),
 	}
 	options = append(options, opts...)
-	return r.connector(options...)
+	return r.connector(ctx, options...)
 }
 
 // ReplicaSet is a set of replicas

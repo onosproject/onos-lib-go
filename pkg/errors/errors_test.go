@@ -16,6 +16,7 @@ package errors
 
 import (
 	"errors"
+	atomixerrors "github.com/atomix/go-client/pkg/client/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -131,4 +132,32 @@ func TestStatusToError(t *testing.T) {
 	assert.Equal(t, "DeadlineExceeded", FromStatus(status.New(codes.DeadlineExceeded, "DeadlineExceeded")).Error())
 	assert.True(t, IsInternal(FromStatus(status.New(codes.Internal, ""))))
 	assert.Equal(t, "Internal", FromStatus(status.New(codes.Internal, "Internal")).Error())
+}
+
+func TestAtomixToError(t *testing.T) {
+	assert.Nil(t, FromAtomix(nil))
+	assert.True(t, IsUnknown(FromAtomix(atomixerrors.NewUnknown("Unknown"))))
+	assert.Equal(t, "Unknown", FromAtomix(atomixerrors.NewUnknown("Unknown")).Error())
+	assert.True(t, IsCanceled(FromAtomix(atomixerrors.NewCanceled("Canceled"))))
+	assert.Equal(t, "Canceled", FromAtomix(atomixerrors.NewCanceled("Canceled")).Error())
+	assert.True(t, IsNotFound(FromAtomix(atomixerrors.NewNotFound("NotFound"))))
+	assert.Equal(t, "NotFound", FromAtomix(atomixerrors.NewNotFound("NotFound")).Error())
+	assert.True(t, IsAlreadyExists(FromAtomix(atomixerrors.NewAlreadyExists("AlreadyExists"))))
+	assert.Equal(t, "AlreadyExists", FromAtomix(atomixerrors.NewAlreadyExists("AlreadyExists")).Error())
+	assert.True(t, IsUnauthorized(FromAtomix(atomixerrors.NewUnauthorized("Unauthorized"))))
+	assert.Equal(t, "Unauthorized", FromAtomix(atomixerrors.NewUnauthorized("Unauthorized")).Error())
+	assert.True(t, IsForbidden(FromAtomix(atomixerrors.NewForbidden("Forbidden"))))
+	assert.Equal(t, "Forbidden", FromAtomix(atomixerrors.NewForbidden("Forbidden")).Error())
+	assert.True(t, IsConflict(FromAtomix(atomixerrors.NewConflict("Conflict"))))
+	assert.Equal(t, "Conflict", FromAtomix(atomixerrors.NewConflict("Conflict")).Error())
+	assert.True(t, IsInvalid(FromAtomix(atomixerrors.NewInvalid("Invalid"))))
+	assert.Equal(t, "Invalid", FromAtomix(atomixerrors.NewInvalid("Invalid")).Error())
+	assert.True(t, IsUnavailable(FromAtomix(atomixerrors.NewUnavailable("Unavailable"))))
+	assert.Equal(t, "Unavailable", FromAtomix(atomixerrors.NewUnavailable("Unavailable")).Error())
+	assert.True(t, IsNotSupported(FromAtomix(atomixerrors.NewNotSupported("NotSupported"))))
+	assert.Equal(t, "NotSupported", FromAtomix(atomixerrors.NewNotSupported("NotSupported")).Error())
+	assert.True(t, IsTimeout(FromAtomix(atomixerrors.NewTimeout("Timeout"))))
+	assert.Equal(t, "Timeout", FromAtomix(atomixerrors.NewTimeout("Timeout")).Error())
+	assert.True(t, IsInternal(FromAtomix(atomixerrors.NewInternal("Internal"))))
+	assert.Equal(t, "Internal", FromAtomix(atomixerrors.NewInternal("Internal")).Error())
 }
