@@ -27,10 +27,12 @@ type Activator interface {
 
 // UnconditionalActivator activates controllers on all nodes at all times
 type UnconditionalActivator struct {
+	ch chan<- bool
 }
 
 // Start starts the activator
 func (a *UnconditionalActivator) Start(ch chan<- bool) error {
+	a.ch = ch
 	go func() {
 		ch <- true
 	}()
@@ -39,7 +41,9 @@ func (a *UnconditionalActivator) Start(ch chan<- bool) error {
 
 // Stop stops the activator
 func (a *UnconditionalActivator) Stop() {
-
+	if a.ch != nil {
+		close(a.ch)
+	}
 }
 
 var _ Activator = &UnconditionalActivator{}

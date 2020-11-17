@@ -60,6 +60,7 @@ func TestController(t *testing.T) {
 			wg.Done()
 			return nil
 		})
+	watcher.EXPECT().Stop()
 
 	partitions := 3
 	partitioner := NewMockWorkPartitioner(ctrl)
