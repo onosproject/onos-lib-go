@@ -134,6 +134,34 @@ func TestStatusToError(t *testing.T) {
 	assert.Equal(t, "Internal", FromStatus(status.New(codes.Internal, "Internal")).Error())
 }
 
+func TestGRPCToError(t *testing.T) {
+	assert.Nil(t, FromGRPC(status.New(codes.OK, "").Err()))
+	assert.True(t, IsUnknown(FromGRPC(status.New(codes.Unknown, "").Err())))
+	assert.Equal(t, "Unknown", FromGRPC(status.New(codes.Unknown, "Unknown").Err()).Error())
+	assert.True(t, IsCanceled(FromGRPC(status.New(codes.Canceled, "").Err())))
+	assert.Equal(t, "Canceled", FromGRPC(status.New(codes.Canceled, "Canceled").Err()).Error())
+	assert.True(t, IsNotFound(FromGRPC(status.New(codes.NotFound, "").Err())))
+	assert.Equal(t, "NotFound", FromGRPC(status.New(codes.NotFound, "NotFound").Err()).Error())
+	assert.True(t, IsAlreadyExists(FromGRPC(status.New(codes.AlreadyExists, "").Err())))
+	assert.Equal(t, "AlreadyExists", FromGRPC(status.New(codes.AlreadyExists, "AlreadyExists").Err()).Error())
+	assert.True(t, IsUnauthorized(FromGRPC(status.New(codes.Unauthenticated, "").Err())))
+	assert.Equal(t, "Unauthenticated", FromGRPC(status.New(codes.Unauthenticated, "Unauthenticated").Err()).Error())
+	assert.True(t, IsForbidden(FromGRPC(status.New(codes.PermissionDenied, "").Err())))
+	assert.Equal(t, "PermissionDenied", FromGRPC(status.New(codes.PermissionDenied, "PermissionDenied").Err()).Error())
+	assert.True(t, IsConflict(FromGRPC(status.New(codes.FailedPrecondition, "").Err())))
+	assert.Equal(t, "FailedPrecondition", FromGRPC(status.New(codes.FailedPrecondition, "FailedPrecondition").Err()).Error())
+	assert.True(t, IsInvalid(FromGRPC(status.New(codes.InvalidArgument, "").Err())))
+	assert.Equal(t, "InvalidArgument", FromGRPC(status.New(codes.InvalidArgument, "InvalidArgument").Err()).Error())
+	assert.True(t, IsUnavailable(FromGRPC(status.New(codes.Unavailable, "").Err())))
+	assert.Equal(t, "Unavailable", FromGRPC(status.New(codes.Unavailable, "Unavailable").Err()).Error())
+	assert.True(t, IsNotSupported(FromGRPC(status.New(codes.Unimplemented, "").Err())))
+	assert.Equal(t, "Unimplemented", FromGRPC(status.New(codes.Unimplemented, "Unimplemented").Err()).Error())
+	assert.True(t, IsTimeout(FromGRPC(status.New(codes.DeadlineExceeded, "").Err())))
+	assert.Equal(t, "DeadlineExceeded", FromGRPC(status.New(codes.DeadlineExceeded, "DeadlineExceeded").Err()).Error())
+	assert.True(t, IsInternal(FromGRPC(status.New(codes.Internal, "").Err())))
+	assert.Equal(t, "Internal", FromGRPC(status.New(codes.Internal, "Internal").Err()).Error())
+}
+
 func TestAtomixToError(t *testing.T) {
 	assert.Nil(t, FromAtomix(nil))
 	assert.True(t, IsUnknown(FromAtomix(atomixerrors.NewUnknown("Unknown"))))
