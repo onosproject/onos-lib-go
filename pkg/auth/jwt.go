@@ -106,7 +106,7 @@ func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.MapClaims, 
 
 	// Check the token is valid
 	if !token.Valid {
-		return nil, status.Error(codes.Unauthenticated, "token is not valid")
+		return nil, status.Errorf(codes.Unauthenticated, "token is not valid %v", token)
 	}
 
 	return claims, nil
