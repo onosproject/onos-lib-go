@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/onosproject/onos-lib-go/pkg/auth"
-	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"strings"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -30,12 +29,8 @@ const (
 	ContextMetadataTokenKey = "bearer"
 )
 
-var log = logging.GetLogger("interceptors")
-
 // AuthenticationInterceptor an interceptor for authentication
 func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
-	log.Info("Authenticating the user")
-
 	// Extract token from metadata in the context
 	tokenString, err := grpc_auth.AuthFromMD(ctx, ContextMetadataTokenKey)
 	if err != nil {
