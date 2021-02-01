@@ -88,7 +88,7 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapCl
 			}
 			return rsaPublicKey, nil
 		}
-		return nil, status.Errorf(codes.Unauthenticated,"unknown signing algorithm: %s", token.Method.Alg())
+		return nil, status.Errorf(codes.Unauthenticated, "unknown signing algorithm: %s", token.Method.Alg())
 	})
 
 	return token, claims, err
