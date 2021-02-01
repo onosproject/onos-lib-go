@@ -67,7 +67,7 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapCl
 		} else if strings.HasPrefix(token.Method.Alg(), RS) {
 			keyID, ok := token.Header["kid"]
 			if !ok {
-				return nil, status.Errorf(codes.Unauthenticated,"token header not found 'kid' (key ID)")
+				return nil, status.Errorf(codes.Unauthenticated, "token header not found 'kid' (key ID)")
 			}
 			keyIDStr := keyID.(string)
 			publicKey, ok := j.publicKeys[keyIDStr]
