@@ -9,8 +9,8 @@ test: # @HELP run the unit tests and source code validation  producing a golang 
 test: deps license_check linters
 	go test -race github.com/onosproject/onos-lib-go/pkg/...
 
-jenkins-test: build-tools # @HELP run the unit tests and source code validation producing a junit style report for Jenkins
-jenkins-test: build deps license_check linters
+jenkins-test:  # @HELP run the unit tests and source code validation producing a junit style report for Jenkins
+jenkins-test: build-tools build deps license_check linters
 	TEST_PACKAGES=github.com/onosproject/onos-lib-go/pkg/... ./../build-tools/build/jenkins/make-unit
 
 coverage: # @HELP generate unit test coverage data
@@ -28,6 +28,9 @@ linters: golang-ci # @HELP examines Go source code and reports coding problems
 build-tools: # @HELP install the ONOS build tools if needed
 	@if [ ! -d "../build-tools" ]; then cd .. && git clone https://github.com/onosproject/build-tools.git; fi
 
+jenkins-tools: # @HELP installs tooling needed for Jenkins
+	cd .. && go get -u github.com/jstemmer/go-junit-report && go get github.com/t-yuki/gocover-cobertura
+
 golang-ci: # @HELP install golang-ci if not present
 	golangci-lint --version || curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b `go env GOPATH`/bin v1.36.0
 
@@ -42,6 +45,9 @@ protos: # @HELP compile the protobuf files (using protoc-go Docker)
 
 publish: # @HELP publish version on github and dockerhub
 	./../build-tools/publish-version ${VERSION}
+
+jenkins-publish: build-tools jenkins-tools # @HELP Jenkins calls this to publish artifacts
+	../build-tools/release-merge-commit
 
 all: test
 
