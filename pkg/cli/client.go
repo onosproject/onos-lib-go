@@ -75,7 +75,7 @@ func NewContextWithAuthHeaderFromFlag(ctx context.Context, authHeaderFlag *pflag
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	if authHeaderFlag != nil && authHeaderFlag.Value != nil || authHeaderFlag.Value.String() != "" {
+	if authHeaderFlag != nil && authHeaderFlag.Value != nil && authHeaderFlag.Value.String() != "" {
 		md := make(metadata.MD)
 		md.Set("authorization", authHeaderFlag.Value.String())
 		ctx = metadata.NewOutgoingContext(ctx, md)
