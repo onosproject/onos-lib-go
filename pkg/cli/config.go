@@ -29,11 +29,17 @@ const (
 	tlsCertPathKey = "tls.certPath"
 	tlsKeyPathKey  = "tls.keyPath"
 	noTLSKey       = "no-tls"
+	authHeaderKey  = "auth-header"
 
 	addressFlag     = "service-address"
 	tlsCertPathFlag = "tls-cert-path"
 	tlsKeyPathFlag  = "tls-key-path"
 	noTLSFlag       = "no-tls"
+	// AuthHeaderFlag - the flag name
+	AuthHeaderFlag = "auth-header"
+
+	// Authorization the header keyword
+	Authorization = "authorization"
 )
 
 var configName string
@@ -43,6 +49,7 @@ var configOptions = []string{
 	tlsCertPathKey,
 	tlsKeyPathKey,
 	noTLSKey,
+	authHeaderKey,
 }
 
 // AddConfigFlags :
@@ -53,6 +60,7 @@ func AddConfigFlags(cmd *cobra.Command, serviceAddress string) {
 	cmd.PersistentFlags().String(tlsCertPathFlag, viper.GetString(tlsCertPathKey), "the path to the TLS certificate")
 	cmd.PersistentFlags().String(tlsKeyPathFlag, viper.GetString(tlsKeyPathKey), "the path to the TLS key")
 	cmd.PersistentFlags().Bool(noTLSFlag, viper.GetBool(noTLSKey), "if present, do not use TLS")
+	cmd.PersistentFlags().String(AuthHeaderFlag, viper.GetString(authHeaderKey), "Auth header in the form 'Bearer <base64>'")
 }
 
 // GetConfigCommand :
