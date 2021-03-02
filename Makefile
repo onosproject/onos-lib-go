@@ -48,6 +48,7 @@ publish: # @HELP publish version on github and dockerhub
 
 jenkins-publish: build-tools jenkins-tools # @HELP Jenkins calls this to publish artifacts
 	../build-tools/release-merge-commit
+	../build-tools/build/docs/push-docs
 
 all: test
 
