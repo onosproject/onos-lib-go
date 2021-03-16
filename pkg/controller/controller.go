@@ -15,10 +15,9 @@
 package controller
 
 import (
+	"math"
 	"sync"
 	"time"
-
-	"github.com/cenkalti/backoff"
 
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 )
@@ -26,8 +25,7 @@ import (
 var log = logging.GetLogger("controller")
 
 const (
-	initialRetryInterval = 50 * time.Millisecond
-	maxRetryInterval     = 5 * time.Second
+	maxRetryDelay = 5 * time.Second
 )
 
 // Watcher is implemented by controllers to implement watching for specific events
@@ -51,6 +49,12 @@ type Reconciler interface {
 	Reconcile(ID) (Result, error)
 }
 
+// Request is a reconciler request
+type Request struct {
+	ID      ID
+	attempt int
+}
+
 // Result is a reconciler result
 type Result struct {
 	// Requeue is the identifier of an event to requeue
@@ -64,7 +68,7 @@ func NewController(name string) *Controller {
 		activator:   &UnconditionalActivator{},
 		partitioner: &UnaryPartitioner{},
 		watchers:    make([]Watcher, 0),
-		partitions:  make(map[PartitionKey]chan ID),
+		partitions:  make(map[PartitionKey]chan Request),
 	}
 }
 
@@ -92,7 +96,7 @@ type Controller struct {
 	filter      Filter
 	watchers    []Watcher
 	reconciler  Reconciler
-	partitions  map[PartitionKey]chan ID
+	partitions  map[PartitionKey]chan Request
 }
 
 // Activate sets an activator for the controller
@@ -226,12 +230,16 @@ func (c *Controller) processEvents(ch chan ID) {
 
 // partition writes the given request to a partition
 func (c *Controller) partition(id ID, partitioner WorkPartitioner) {
+	c.mu.RLock()
+	reconciler := c.reconciler
+	c.mu.RUnlock()
+
 	iteration := 1
 	for {
 		// Get the partition key for the object ID
 		key, err := partitioner.Partition(id)
 		if err != nil {
-			time.Sleep(time.Duration(iteration*2) * time.Millisecond)
+			time.Sleep(10 * time.Millisecond * time.Duration(math.Pow(2, float64(iteration))))
 		} else {
 			// Get or create a partition channel for the partition key
 			c.mu.RLock()
@@ -241,68 +249,44 @@ func (c *Controller) partition(id ID, partitioner WorkPartitioner) {
 				c.mu.Lock()
 				partition, ok = c.partitions[key]
 				if !ok {
-					partition = make(chan ID)
+					partition = make(chan Request)
 					c.partitions[key] = partition
-					go c.processRequests(partition)
+					go c.reconcileRequests(partition, reconciler)
 				}
 				c.mu.Unlock()
 			}
-			partition <- id
+			partition <- Request{
+				ID: id,
+			}
 			return
 		}
 		iteration++
 	}
 }
 
-// processRequests processes requests from the given channel
-func (c *Controller) processRequests(ch chan ID) {
-	c.mu.RLock()
-	reconciler := c.reconciler
-	c.mu.RUnlock()
-
-	for id := range ch {
-		// Reconcile the request. If the reconciliation is not successful, requeue the request to be processed
-		// after the remaining enqueued events.
-		result := c.reconcile(id, reconciler)
-		if result.Requeue.Value != nil {
-			go c.requeueRequest(ch, result.Requeue)
-		}
+// reconcileRequests reconciles requests from the given channel
+func (c *Controller) reconcileRequests(ch chan Request, reconciler Reconciler) {
+	for request := range ch {
+		c.reconcileRequest(request, ch, reconciler)
 	}
 }
 
-// requeueRequest requeues the given request
-func (c *Controller) requeueRequest(ch chan ID, id ID) {
-	ch <- id
-}
-
-// reconcile reconciles the given request ID until complete
-func (c *Controller) reconcile(id ID, reconciler Reconciler) Result {
-
-	iteration := 0
-	var result Result
-	var err error
-	b := backoff.NewExponentialBackOff()
-	b.InitialInterval = initialRetryInterval
-	// MaxInterval caps the RetryInterval
-	b.MaxInterval = maxRetryInterval
-	// Never stops retrying
-	b.MaxElapsedTime = 0
-
-	notify := func(err error, t time.Duration) {
-		log.Infof("An error occurred during reconciliation of %v in iteration %v: %v", id.Value, err, iteration)
-		iteration++
-
+// reconcileRequest reconciles the given request
+func (c *Controller) reconcileRequest(request Request, ch chan Request, reconciler Reconciler) {
+	request.attempt++
+	result, err := reconciler.Reconcile(request.ID)
+	if err != nil {
+		backoffDelay := 10 * time.Millisecond * time.Duration(math.Pow(2, float64(request.attempt)))
+		retryDelay := time.Duration(math.Min(float64(maxRetryDelay), float64(backoffDelay)))
+		log.Warnf("An error occurred during reconciliation of %v. Retrying after %s: %s", request.ID.Value, retryDelay, err)
+		time.AfterFunc(retryDelay, func() {
+			ch <- request
+		})
+	} else if result.Requeue.Value != nil {
+		go func() {
+			ch <- Request{
+				ID: result.Requeue,
+			}
+		}()
 	}
-
-	err = backoff.RetryNotify(func() error {
-		result, err = reconciler.Reconcile(id)
-		if err != nil {
-			return err
-		}
-
-		return nil
-
-	}, b, notify)
-
-	return result
 }
