@@ -65,14 +65,16 @@ type Config struct {
 
 // GetRootLogger returns the root logger configuration
 func (c Config) GetRootLogger() LoggerConfig {
-	root, ok := c.Loggers[rootLoggerName]
-	if ok {
-		if root.Output == nil {
-			root.Output = map[string]OutputConfig{}
+	root := c.Loggers[rootLoggerName]
+	if root.Output == nil {
+		defaultSink := ""
+		root.Output = map[string]OutputConfig{
+			"": {
+				Sink: &defaultSink,
+			},
 		}
-		return root
 	}
-	return LoggerConfig{Output: map[string]OutputConfig{}}
+	return root
 }
 
 // GetLoggers returns the configured loggers
@@ -109,7 +111,11 @@ func (c Config) GetLogger(name string) (LoggerConfig, bool) {
 
 // GetSinks returns the configured sinks
 func (c Config) GetSinks() []SinkConfig {
-	sinks := make([]SinkConfig, 0, len(c.Sinks))
+	sinks := []SinkConfig{
+		{
+			Name: "",
+		},
+	}
 	for name, sink := range c.Sinks {
 		sink.Name = name
 		sinks = append(sinks, sink)
@@ -119,6 +125,11 @@ func (c Config) GetSinks() []SinkConfig {
 
 // GetSink returns a sink by name
 func (c Config) GetSink(name string) (SinkConfig, bool) {
+	if name == "" {
+		return SinkConfig{
+			Name: "",
+		}, true
+	}
 	sink, ok := c.Sinks[name]
 	if ok {
 		sink.Name = name

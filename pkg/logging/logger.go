@@ -49,6 +49,11 @@ func GetLogger(names ...string) Logger {
 	return root.GetLogger(names...)
 }
 
+// SetLevel sets the root logger level
+func SetLevel(level Level) {
+	root.SetLevel(level)
+}
+
 // Logger represents an abstract logging interface.
 type Logger interface {
 	Output

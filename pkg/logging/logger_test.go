@@ -21,6 +21,14 @@ import (
 	"testing"
 )
 
+func TestDefaultLogger(t *testing.T) {
+	logger := GetLogger()
+	logger.Info("foo: bar")
+	SetLevel(InfoLevel)
+	logger.Info("bar: baz")
+	logger.Debug("baz: bar")
+}
+
 func TestLoggerConfig(t *testing.T) {
 	config := Config{}
 	bytes, err := ioutil.ReadFile("test.yaml")
