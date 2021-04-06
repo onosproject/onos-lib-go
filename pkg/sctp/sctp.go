@@ -17,19 +17,20 @@ package sctp
 import (
 	"encoding/binary"
 	"unsafe"
+
+	"github.com/onosproject/onos-lib-go/pkg/sctp/defs"
 )
 
-// NativeEndian ...
-var NativeEndian binary.ByteOrder
-
-//var sndRcvInfoSize uintptr
+var nativeEndian binary.ByteOrder
+var sndRcvInfoSize uintptr
 
 func init() {
 	i := uint16(1)
 	if *(*byte)(unsafe.Pointer(&i)) == 0 {
-		NativeEndian = binary.BigEndian
+		nativeEndian = binary.BigEndian
 	} else {
-		NativeEndian = binary.LittleEndian
+		nativeEndian = binary.LittleEndian
 	}
-	//sndRcvInfoSize = unsafe.Sizeof(SndRcvInfo{})
+	info := defs.SndRcvInfo{}
+	sndRcvInfoSize = unsafe.Sizeof(info)
 }

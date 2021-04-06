@@ -23,7 +23,6 @@ import (
 const (
 	// SolSctp ...
 	SolSctp = 132
-
 	// SctpBindxAddAddr ...
 	SctpBindxAddAddr = 0x01
 	// SctpBindxRemAddr ...
@@ -31,7 +30,8 @@ const (
 
 	// MsgNotification ...
 	MsgNotification = 0x8000
-	//MSG_EOR          = C.MSG_EOR
+	// MsgEOR ...
+	MsgEOR = 0x80
 )
 
 const (

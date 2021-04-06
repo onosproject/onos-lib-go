@@ -12,13 +12,12 @@ import (
 )
 
 var sctpListenerNameTests = []*addressing.Address{
-	{IPAddrs: []net.IPAddr{{IP: net.IPv4(127, 0, 0, 1)}}},
-	{},
+	&addressing.Address{IPAddrs: []net.IPAddr{net.IPAddr{IP: net.IPv4(127, 0, 0, 1)}}},
+	&addressing.Address{},
 	nil,
-	{Port: 7777},
+	&addressing.Address{Port: 7777},
 }
 
-// TestSCTPListnerName
 func TestSCTPListenerName(t *testing.T) {
 	for _, tt := range sctpListenerNameTests {
 		ln, err := NewListener(tt, defs.InitMsg{}, defs.OneToOne, false)

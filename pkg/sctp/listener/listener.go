@@ -1,5 +1,16 @@
-// SPDX-FileCopyrightText: ${year}-present Open Networking Foundation <info@opennetworking.org>
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2021-present Open Networking Foundation.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package listener
 
@@ -7,30 +18,36 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/onosproject/onos-lib-go/pkg/sctp/primitives"
+	"github.com/onosproject/onos-lib-go/pkg/errors"
+
+	"github.com/onosproject/onos-lib-go/pkg/sctp/connection"
 
 	"github.com/onosproject/onos-lib-go/pkg/sctp/addressing"
-	"github.com/onosproject/onos-lib-go/pkg/sctp/connection"
 	"github.com/onosproject/onos-lib-go/pkg/sctp/defs"
 )
 
-// Listener sctp listener
+// Listener SCTP listener
 type Listener struct {
-	connection.Connection
+	connection.SCTPConn
 	socketMode defs.SocketMode
 }
 
-// NewListener creates a new sctp listener
-func NewListener(laddr *addressing.Address, init defs.InitMsg, mode defs.SocketMode, nonblocking bool) (*Listener, error) {
+// NewListener creates a new SCTP listener instance
+func NewListener(laddr *addressing.Address, options defs.InitMsg, mode defs.SocketMode, nonblocking bool) (*Listener, error) {
 	if laddr == nil {
-		return nil, fmt.Errorf("Local SCTPAddr is required")
+		return nil, errors.NewInvalid("Local SCTPAddr is required")
 	}
 
-	conn, err := connection.NewConnection(laddr.AddressFamily, init, mode, nonblocking)
+	cfg := connection.NewConfig(
+		connection.WithAddressFamily(laddr.AddressFamily),
+		connection.WithOptions(options),
+		connection.WithMode(mode),
+		connection.WithNonBlocking(nonblocking))
+	conn, err := connection.NewSCTPConnection(cfg)
 	if err != nil {
 		return nil, err
 	}
-	ln := &Listener{Connection: *conn, socketMode: mode}
+	ln := &Listener{SCTPConn: *conn, socketMode: mode}
 	ln.socketMode = mode
 
 	if err := ln.Bind(laddr); err != nil {
@@ -43,24 +60,24 @@ func NewListener(laddr *addressing.Address, init defs.InitMsg, mode defs.SocketM
 	return ln, nil
 }
 
-// acceptSCTP waits for and returns the next SCTP connection to the listener.
-func (ln *Listener) acceptSCTP() (*connection.Connection, error) {
+// accept waits for and returns the next SCTP connection to the listener.
+func (ln *Listener) accept() (*connection.SCTPConn, error) {
 	if ln.socketMode == defs.OneToMany {
 		return nil, fmt.Errorf("Calling Accept on OneToMany socket is invalid")
 	}
 
-	fd, err := primitives.Accept(ln.FD())
+	fd, err := connection.Accept(ln.FD())
 	if err != nil {
 		return nil, err
 	}
-	blocking, err := ln.GetNonBlocking()
+	blocking, err := ln.GetNonblocking()
 	if err != nil {
 		return nil, err
 	}
-	conn := &connection.Connection{}
-	conn.SetFd(int32(fd))
+	conn := &connection.SCTPConn{}
+	conn.SetFD(int32(fd))
 
-	err = conn.SetNonBlocking(blocking)
+	err = conn.SetNonblocking(blocking)
 	if err != nil {
 		return nil, err
 	}
@@ -71,23 +88,22 @@ func (ln *Listener) acceptSCTP() (*connection.Connection, error) {
 
 // Accept waits for and returns the next connection connection to the listener.
 func (ln *Listener) Accept() (net.Conn, error) {
-	return ln.acceptSCTP()
+	return ln.accept()
 }
 
-// SCTPRead ...
+//
 func (ln *Listener) SCTPRead(b []byte) (int, *defs.OOBMessage, int, error) {
 	if ln.socketMode == defs.OneToOne {
-		return -1, nil, -1, fmt.Errorf("Invalid state: SCTPRead on OneToOne socket not allowed")
+		return -1, nil, -1, errors.NewInvalid("Invalid state: SCTPRead on OneToOne socket not allowed")
 	}
 
-	return ln.Connection.SCTPRead(b)
+	return ln.SCTPConn.SCTPRead(b)
 }
 
-// SCTPWrite ...
 func (ln *Listener) SCTPWrite(b []byte, info *defs.SndRcvInfo) (int, error) {
 	if ln.socketMode == defs.OneToOne {
-		return -1, fmt.Errorf("Invalid state: SCTPWrite on OneToOne socket not allowed")
+		return -1, errors.NewInvalid("Invalid state: SCTPWrite on OneToOne socket not allowed")
 	}
 
-	return ln.Connection.SCTPWrite(b, info)
+	return ln.SCTPConn.SCTPWrite(b, info)
 }
