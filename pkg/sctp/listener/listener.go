@@ -91,7 +91,7 @@ func (ln *Listener) Accept() (net.Conn, error) {
 	return ln.accept()
 }
 
-//
+// SCTPRead reads from an SCTP connection
 func (ln *Listener) SCTPRead(b []byte) (int, *defs.OOBMessage, int, error) {
 	if ln.socketMode == defs.OneToOne {
 		return -1, nil, -1, errors.NewInvalid("Invalid state: SCTPRead on OneToOne socket not allowed")
@@ -100,6 +100,7 @@ func (ln *Listener) SCTPRead(b []byte) (int, *defs.OOBMessage, int, error) {
 	return ln.SCTPConn.SCTPRead(b)
 }
 
+// SCTPWrite writes on an SCTP connection
 func (ln *Listener) SCTPWrite(b []byte, info *defs.SndRcvInfo) (int, error) {
 	if ln.socketMode == defs.OneToOne {
 		return -1, errors.NewInvalid("Invalid state: SCTPWrite on OneToOne socket not allowed")

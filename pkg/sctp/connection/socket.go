@@ -22,6 +22,8 @@ import (
 	"sync/atomic"
 	"unsafe"
 
+	"github.com/onosproject/onos-lib-go/pkg/errors"
+
 	"github.com/onosproject/onos-lib-go/pkg/sctp/defs"
 	"github.com/onosproject/onos-lib-go/pkg/sctp/utils"
 
@@ -30,6 +32,7 @@ import (
 	syscall "golang.org/x/sys/unix"
 )
 
+// NewSocket creates a new SCTP socket based on a given mode
 func NewSocket(af int, mode defs.SocketMode) (int, error) {
 	socketType := syscall.SOCK_SEQPACKET
 
@@ -58,7 +61,7 @@ func getSocketMode(fd int) (defs.SocketMode, error) {
 		syscall.SOL_SOCKET,
 		uintptr(optname),
 		uintptr(unsafe.Pointer(&optval)),
-		uintptr(optlen),
+		optlen,
 		0)
 
 	if err != 0 {
@@ -77,22 +80,22 @@ func getSocketMode(fd int) (defs.SocketMode, error) {
 
 func setInitOpts(fd int, options defs.InitMsg) error {
 	optlen := unsafe.Sizeof(options)
-	_, _, err := setsockopt(fd, defs.SctpInitmsg, uintptr(unsafe.Pointer(&options)), uintptr(optlen))
+	_, _, err := setsockopt(fd, defs.SctpInitmsg, uintptr(unsafe.Pointer(&options)), optlen)
 	return err
 }
 
-func getInitOpts(fd int) (defs.InitMsg, error) {
+/*func getInitOpts(fd int) (defs.InitMsg, error) {
 	options := defs.InitMsg{}
 	optlen := unsafe.Sizeof(options)
-	_, _, err := getsockopt(fd, defs.SctpInitmsg, uintptr(unsafe.Pointer(&options)), uintptr(optlen))
+	_, _, err := getsockopt(fd, defs.SctpInitmsg, uintptr(unsafe.Pointer(&options)), optlen)
 	return options, err
-}
+}*/
 
 func connect(fd int, addr *addressing.Address) (int, error) {
 	buf := addr.ToRawSockAddrBuf()
 	param := defs.GetAddrsOld{
 		AddrNum: int32(len(buf)),
-		Addrs:   uintptr(uintptr(unsafe.Pointer(&buf[0]))),
+		Addrs:   uintptr(unsafe.Pointer(&buf[0])),
 	}
 	optlen := unsafe.Sizeof(param)
 	_, _, err := getsockopt(fd, defs.SctpSockoptConnectx3, uintptr(unsafe.Pointer(&param)), uintptr(unsafe.Pointer(&optlen)))
@@ -125,6 +128,7 @@ func listen(fd int) error {
 	return syscall.Listen(fd, syscall.SOMAXCONN)
 }
 
+// Accept accepts an SCTP connection request
 func Accept(fd int) (int, error) {
 	fd, _, err := syscall.Accept(fd)
 	return fd, err
@@ -211,13 +215,8 @@ func getRemoteAddr(fd int, stream uint16) (*addressing.Address, error) {
 
 func getAddrs(fd int, id uint16, optname int) (*addressing.Address, error) {
 
-	type getaddrs struct {
-		assocId int32
-		addrNum uint32
-		addrs   [4096]byte
-	}
-	param := getaddrs{
-		assocId: int32(id),
+	param := GetAddrs{
+		assocID: int32(id),
 	}
 	optlen := unsafe.Sizeof(param)
 	_, _, err := getsockopt(fd, uintptr(optname), uintptr(unsafe.Pointer(&param)), uintptr(unsafe.Pointer(&optlen)))
@@ -233,18 +232,16 @@ func getAddrs(fd int, id uint16, optname int) (*addressing.Address, error) {
 
 	switch family := (*(*syscall.RawSockaddrAny)(ptr)).Addr.Family; family {
 	case syscall.AF_INET:
-		addr.Port = int(utils.Ntohs(uint16((*(*syscall.RawSockaddrInet4)(ptr)).Port)))
-		tmp := syscall.RawSockaddrInet4{}
-		size := unsafe.Sizeof(tmp)
+		addr.Port = int(utils.Ntohs((*(*syscall.RawSockaddrInet4)(ptr)).Port))
+		size := unsafe.Sizeof(syscall.RawSockaddrInet4{})
 		for i := 0; i < n; i++ {
 			a := *(*syscall.RawSockaddrInet4)(unsafe.Pointer(
 				uintptr(ptr) + size*uintptr(i)))
 			addr.IPAddrs[i] = net.IPAddr{IP: a.Addr[:]}
 		}
 	case syscall.AF_INET6:
-		addr.Port = int(utils.Ntohs(uint16((*(*syscall.RawSockaddrInet4)(ptr)).Port)))
-		tmp := syscall.RawSockaddrInet6{}
-		size := unsafe.Sizeof(tmp)
+		addr.Port = int(utils.Ntohs((*(*syscall.RawSockaddrInet4)(ptr)).Port))
+		size := unsafe.Sizeof(syscall.RawSockaddrInet6{})
 		for i := 0; i < n; i++ {
 			a := *(*syscall.RawSockaddrInet6)(unsafe.Pointer(
 				uintptr(ptr) + size*uintptr(i)))
@@ -270,17 +267,14 @@ func getDefaultSentParam(fd int) (*defs.SndRcvInfo, error) {
 
 func setDefaultSentParam(fd int, info *defs.SndRcvInfo) error {
 	optlen := unsafe.Sizeof(*info)
-	_, _, err := setsockopt(fd, defs.SctpDefaultSentParam, uintptr(unsafe.Pointer(info)), uintptr(optlen))
+	_, _, err := setsockopt(fd, defs.SctpDefaultSentParam, uintptr(unsafe.Pointer(info)), optlen)
 	return err
 }
 
-func peelOff(fd int, associd int32) (int, error) {
-	type peeloffArg struct {
-		assocId int32
-		sd      int
-	}
-	param := peeloffArg{
-		assocId: associd,
+func peelOff(fd int, assocID int32) (int, error) {
+
+	param := PeeloffArg{
+		assocID: assocID,
 	}
 	optlen := unsafe.Sizeof(param)
 	r0, _, err := getsockopt(fd, defs.SctpSockoptPeeloff, uintptr(unsafe.Pointer(&param)), uintptr(unsafe.Pointer(&optlen)))
@@ -289,7 +283,7 @@ func peelOff(fd int, associd int32) (int, error) {
 	}
 	// Note, for some reason, the struct isn't getting populated after the syscall. But the return values are right, so we use r0 which is our fd that we want.
 	if param.sd == -1 || r0 == 0 {
-		return -1, fmt.Errorf("Returned fd is negative!")
+		return -1, errors.New(errors.Unknown, "returned fd is negative")
 	}
 	return int(r0), nil
 
@@ -341,7 +335,7 @@ func setEvents(fd, flags int) error {
 		SenderDry:       se,
 	}
 	optlen := unsafe.Sizeof(param)
-	_, _, err := setsockopt(fd, defs.SctpEvents, uintptr(unsafe.Pointer(&param)), uintptr(optlen))
+	_, _, err := setsockopt(fd, defs.SctpEvents, uintptr(unsafe.Pointer(&param)), optlen)
 	return err
 }
 
@@ -432,13 +426,14 @@ func getsockopt(fd int, optname, optval, optlen uintptr) (uintptr, uintptr, erro
 	return r0, r1, nil
 }
 
+// SCTPParseOOB ...
 func SCTPParseOOB(b []byte) (*defs.OOBMessage, error) {
 	msgs, err := syscall.ParseSocketControlMessage(b)
 	if err != nil {
 		return nil, err
 	}
 	for _, msg := range msgs {
-		m := &defs.OOBMessage{msg}
+		m := &defs.OOBMessage{SocketControlMessage: msg}
 		if m.IsSCTP() {
 			return m, nil
 		}
@@ -446,6 +441,7 @@ func SCTPParseOOB(b []byte) (*defs.OOBMessage, error) {
 	return nil, nil
 }
 
+// SCTPParseNotification ...
 func SCTPParseNotification(b []byte) (*defs.Notification, error) {
 	return &defs.Notification{Data: b}, nil
 }

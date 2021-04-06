@@ -28,14 +28,14 @@ import (
 	syscall "golang.org/x/sys/unix"
 )
 
-// Address sctp address
+// Address SCTP address data structure
 type Address struct {
 	IPAddrs       []net.IPAddr
 	Port          int
 	AddressFamily defs.AddressFamily
 }
 
-// ResolveAddress resolves sctp address
+// ResolveAddress resolves an SCTP address
 func ResolveAddress(addressFamily defs.AddressFamily, addrs string) (*Address, error) {
 	elems := strings.Split(addrs, "/")
 	if len(elems) == 0 {
@@ -56,7 +56,7 @@ func ResolveAddress(addressFamily defs.AddressFamily, addrs string) (*Address, e
 
 	iPort, err := strconv.Atoi(port)
 	if err != nil {
-		return nil, errors.NewInvalid("invalid input: Non-integer port: %s", addrs)
+		return nil, errors.NewInvalid("invalid input: non-integer port: %s", addrs)
 	}
 
 	elems[len(elems)-1] = addr

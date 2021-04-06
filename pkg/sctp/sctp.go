@@ -15,13 +15,16 @@
 package sctp
 
 import (
-	"encoding/binary"
-	"unsafe"
+	"net"
+
+	"github.com/onosproject/onos-lib-go/pkg/sctp/addressing"
+
+	"github.com/onosproject/onos-lib-go/pkg/sctp/connection"
 
 	"github.com/onosproject/onos-lib-go/pkg/sctp/defs"
 )
 
-var nativeEndian binary.ByteOrder
+/*var nativeEndian binary.ByteOrder
 var sndRcvInfoSize uintptr
 
 func init() {
@@ -31,6 +34,75 @@ func init() {
 	} else {
 		nativeEndian = binary.LittleEndian
 	}
-	info := defs.SndRcvInfo{}
-	sndRcvInfoSize = unsafe.Sizeof(info)
+	sndRcvInfoSize = unsafe.Sizeof(defs.SndRcvInfo{})
+}*/
+
+// DialOptions is SCTP options
+type DialOptions struct {
+	addressFamily defs.AddressFamily
+	mode          defs.SocketMode
+	options       defs.InitMsg
+	nonblocking   bool
+}
+
+// NewDialOptions creates dial options
+func NewDialOptions(options ...func(options *DialOptions)) *DialOptions {
+	dialOptions := &DialOptions{}
+	for _, option := range options {
+		option(dialOptions)
+	}
+
+	return dialOptions
+}
+
+// WithAddressFamily sets address family
+func WithAddressFamily(family defs.AddressFamily) func(options *DialOptions) {
+	return func(options *DialOptions) {
+		options.addressFamily = family
+
+	}
+}
+
+// WithMode sets SCTP mode
+func WithMode(mode defs.SocketMode) func(options *DialOptions) {
+	return func(options *DialOptions) {
+		options.mode = mode
+
+	}
+}
+
+// WithOptions sets options
+func WithOptions(initOptions defs.InitMsg) func(options *DialOptions) {
+	return func(options *DialOptions) {
+		options.options = initOptions
+
+	}
+}
+
+// WithNonBlocking sets nonblocking
+func WithNonBlocking(nonblocking bool) func(options *DialOptions) {
+	return func(options *DialOptions) {
+		options.nonblocking = nonblocking
+	}
+}
+
+// DialSCTP creates a new SCTP connection
+func DialSCTP(addr net.Addr, dialOptions *DialOptions) (*connection.SCTPConn, error) {
+	cfg := connection.NewConfig(
+		connection.WithAddressFamily(dialOptions.addressFamily),
+		connection.WithOptions(dialOptions.options),
+		connection.WithMode(dialOptions.mode),
+		connection.WithNonBlocking(dialOptions.nonblocking))
+	conn, err := connection.NewSCTPConnection(cfg)
+	if err != nil {
+		return nil, err
+	}
+	sctpAddress := addr.(*addressing.Address)
+	err = conn.Connect(sctpAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, nil
+
 }

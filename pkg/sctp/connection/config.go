@@ -26,7 +26,7 @@ type Config struct {
 	nonblocking   bool
 }
 
-// NewConfig creates a conection config
+// NewConfig creates a connection config
 func NewConfig(options ...func(cfg *Config)) *Config {
 	cfg := &Config{}
 	for _, option := range options {
