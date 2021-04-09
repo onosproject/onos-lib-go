@@ -32,13 +32,13 @@ func Asn1BytesToByte(str string) ([]byte, error) {
 	return hex.DecodeString(str)
 }
 
-// HexDumpToByte This function was created for debugging purposes.
+// DumpToByte This function was created for debugging purposes.
 // It takes as an input output of hex.Dump() for asn1 bytes
 // and converts them to the array of bytes ([]byte)
 // which could be passed to the input of *ASN1toProto function
 // Input data could be obtained in a following way:
 // t.Logf("E2SM-KPM-ActionDefinition (Format3) asn1Bytes are \n%v", hex.Dump(asn1Bytes))
-func HexDumpToByte(str string) ([]byte, error) {
+func DumpToByte(str string) ([]byte, error) {
 
 	r, err := regexp.Compile("([\t\n\f\r ][0-9a-f]{2})")
 	if err != nil {

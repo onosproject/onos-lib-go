@@ -59,13 +59,13 @@ func TestServicemodel_Asn1BytesToByte(t *testing.T) {
 }
 
 func TestServicemodel_HexDumpToByte(t *testing.T) {
-	indHdrFmt1Hex, err := HexDumpToByte("00000000  1f 21 22 23 24 18 74 78  74 00 00 03 4f 4e 46 40  " +
+	indHdrFmt1Hex, err := DumpToByte("00000000  1f 21 22 23 24 18 74 78  74 00 00 03 4f 4e 46 40  " +
 		"|.!\"#$.txt...ONF@|\n        00000010  73 6f 6d 65 54 79 70 65  06 6f 6e 66 0c 37 34 37  |someType.onf.747|\n" +
 		"        00000020  00 d4 bc 08 80 30 39 20  1a 85                    |.....09 ..|")
 	assert.NilError(t, err)
 	fmt.Printf("Output of HexDumpToByte is \n%x\n", indHdrFmt1Hex)
 
-	indMsgFmt1Hex, err := HexDumpToByte("00000000  0e 40 30 38 00 00 03 6f  6e 66 01 15 00 00 40 20  |.@08...onf....@ |" +
+	indMsgFmt1Hex, err := DumpToByte("00000000  0e 40 30 38 00 00 03 6f  6e 66 01 15 00 00 40 20  |.@08...onf....@ |" +
 		"	00000010  74 72 69 61 6c 01 3f fb  a0 21 22 23 40 40 01 02  |trial.?..!\"#@@..|" +
 		"	00000020  03 00 0a 7c 0f 00 0f 00  01 72 40 00 fa 00 00 04  |...|.....r@.....|" +
 		"	00000030  00 00 7a 00 01 c7 00 03  14 00 00 00 40 03 00 02  |..z.........@...|" +
@@ -73,16 +73,16 @@ func TestServicemodel_HexDumpToByte(t *testing.T) {
 	assert.NilError(t, err)
 	fmt.Printf("Output of HexDumpToByte is \n%x\n", indMsgFmt1Hex)
 
-	actDefFmt3Hex, err := HexDumpToByte("00000000  00 01 0c 40 00 03 6f 6e  66 00 00 00 40 74 72 69  " +
+	actDefFmt3Hex, err := DumpToByte("00000000  00 01 0c 40 00 03 6f 6e  66 00 00 00 40 74 72 69  " +
 		"|...@..onf...@tri|\n        00000010  61 6c 00 00 48 21 02 00  c9 01 15 20 30 38        |al..H!..... 08|")
 	assert.NilError(t, err)
 	fmt.Printf("Output of HexDumpToByte is \n%x\n", actDefFmt3Hex)
 
-	evntTrigDefHex, err := HexDumpToByte("00000000  00 01 0c                                          |...|")
+	evntTrigDefHex, err := DumpToByte("00000000  00 01 0c                                          |...|")
 	assert.NilError(t, err)
 	fmt.Printf("Output of HexDumpToByte is \n%x\n", evntTrigDefHex)
 
-	ranFuncDescHex, err := HexDumpToByte("00000000  74 04 6f 6e 66 00 00 05  6f 69 64 31 32 33 07 00  |t.onf...oid123..|" +
+	ranFuncDescHex, err := DumpToByte("00000000  74 04 6f 6e 66 00 00 05  6f 69 64 31 32 33 07 00  |t.onf...oid123..|" +
 		"	00000010  73 6f 6d 65 44 65 73 63  72 69 70 74 69 6f 6e 01  |someDescription.|" +
 		"	00000020  15 00 00 43 00 21 22 23  00 d4 bc 08 80 30 39 20  |...C.!\"#.....09 |" +
 		"	00000030  1a 85 00 00 00 00 03 4f  4e 46 00 21 22 23 00 00  |.......ONF.!\"#..|" +
@@ -92,16 +92,15 @@ func TestServicemodel_HexDumpToByte(t *testing.T) {
 	assert.NilError(t, err)
 	fmt.Printf("Output of HexDumpToByte is \n%x\n", ranFuncDescHex)
 
-	ctrlHdrHex, err := HexDumpToByte("00000000  34 12 f4 10 ab d4 bc 00  01 01                    |4.........|")
+	ctrlHdrHex, err := DumpToByte("00000000  34 12 f4 10 ab d4 bc 00  01 01                    |4.........|")
 	assert.NilError(t, err)
 	fmt.Printf("Output of HexDumpToByte is \n%x\n", ctrlHdrHex)
 
-	ctrlMsgHex, err := HexDumpToByte("00000000  00 00 01 01 00 50 43 49  00 01 14                 |.....PCI...|")
+	ctrlMsgHex, err := DumpToByte("00000000  00 00 01 01 00 50 43 49  00 01 14                 |.....PCI...|")
 	assert.NilError(t, err)
 	fmt.Printf("Output of HexDumpToByte is \n%x\n", ctrlMsgHex)
 
-	ctrlOutHex, err := HexDumpToByte("00000000  20 00 00 00 00 14 00 01  0a                       | ........|")
+	ctrlOutHex, err := DumpToByte("00000000  20 00 00 00 00 14 00 01  0a                       | ........|")
 	assert.NilError(t, err)
 	fmt.Printf("Output of HexDumpToByte is \n%x\n", ctrlOutHex)
 }
-
