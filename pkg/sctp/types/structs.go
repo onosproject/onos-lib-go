@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package defs
+package types
 
 import (
 	"unsafe"
@@ -20,21 +20,7 @@ import (
 	syscall "golang.org/x/sys/unix"
 )
 
-// EventSubscribe ...
-type EventSubscribe struct {
-	DataIO          uint8
-	Association     uint8
-	Address         uint8
-	SendFailure     uint8
-	PeerError       uint8
-	Shutdown        uint8
-	PartialDelivery uint8
-	AdaptationLayer uint8
-	Authentication  uint8
-	SenderDry       uint8
-}
-
-// InitMsg ...
+// InitMsg  the default association initialization.
 type InitMsg struct {
 	NumOstreams    uint16
 	MaxInstreams   uint16
@@ -42,7 +28,7 @@ type InitMsg struct {
 	MaxInitTimeout uint16
 }
 
-// NewDefaultInitMsg ...
+// NewDefaultInitMsg creates new InitMsg
 func NewDefaultInitMsg() *InitMsg {
 	return &InitMsg{
 		NumOstreams: uint16(10),

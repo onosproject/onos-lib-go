@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/onosproject/onos-lib-go/pkg/sctp/defs"
+	"github.com/onosproject/onos-lib-go/pkg/sctp/types"
 	"github.com/onosproject/onos-lib-go/pkg/sctp/utils"
 
 	"github.com/onosproject/onos-lib-go/pkg/errors"
@@ -32,11 +32,11 @@ import (
 type Address struct {
 	IPAddrs       []net.IPAddr
 	Port          int
-	AddressFamily defs.AddressFamily
+	AddressFamily types.AddressFamily
 }
 
 // ResolveAddress resolves an SCTP address
-func ResolveAddress(addressFamily defs.AddressFamily, addrs string) (*Address, error) {
+func ResolveAddress(addressFamily types.AddressFamily, addrs string) (*Address, error) {
 	elems := strings.Split(addrs, "/")
 	if len(elems) == 0 {
 		return nil, errors.NewInvalid("invalid address:")
@@ -62,8 +62,8 @@ func ResolveAddress(addressFamily defs.AddressFamily, addrs string) (*Address, e
 	elems[len(elems)-1] = addr
 	for _, e := range elems {
 		family := addressFamily.String()
-		if !strings.Contains(e, ":") && addressFamily == defs.Sctp6 {
-			family = defs.Sctp4.String()
+		if !strings.Contains(e, ":") && addressFamily == types.Sctp6 {
+			family = types.Sctp4.String()
 		}
 		ipa, err := net.ResolveIPAddr(family, e)
 		if err != nil {
@@ -72,7 +72,7 @@ func ResolveAddress(addressFamily defs.AddressFamily, addrs string) (*Address, e
 
 		if ipa.IP != nil {
 			if ipa.IP.To4() == nil {
-				if addressFamily == defs.Sctp4 {
+				if addressFamily == types.Sctp4 {
 					return nil, errors.New(errors.NotFound, "IPv6 address detected but addressFamily is IPv4")
 				}
 			}
@@ -80,9 +80,9 @@ func ResolveAddress(addressFamily defs.AddressFamily, addrs string) (*Address, e
 		} else {
 			var ip net.IPAddr
 			switch addressFamily {
-			case defs.Sctp4:
+			case types.Sctp4:
 				ip = net.IPAddr{IP: net.IPv4zero, Zone: ""}
-			case defs.Sctp6:
+			case types.Sctp6:
 				ip = net.IPAddr{IP: net.IPv6zero, Zone: ""}
 			default:
 				return nil, errors.NewUnknown("Unknown addressFamily: %s", addressFamily)
@@ -184,12 +184,12 @@ func GetAddressFamily(laddr *Address, raddr *Address) (family int, ipv6only bool
 
 	if laddr != nil && raddr != nil {
 		if laddr.AddressFamily == raddr.AddressFamily {
-			return laddr.AddressFamily.ToSyscall(), (laddr.AddressFamily == defs.Sctp6)
+			return laddr.AddressFamily.ToSyscall(), (laddr.AddressFamily == types.Sctp6)
 		}
 
 		if utils.SupportsIPv4map() || !utils.SupportsIPv4() {
-			return defs.Sctp6.ToSyscall(), false
+			return types.Sctp6.ToSyscall(), false
 		}
 	}
-	return defs.Sctp4.ToSyscall(), false
+	return types.Sctp4.ToSyscall(), false
 }

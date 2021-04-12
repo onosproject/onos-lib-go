@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/onosproject/onos-lib-go/pkg/sctp/addressing"
-	"github.com/onosproject/onos-lib-go/pkg/sctp/defs"
+	"github.com/onosproject/onos-lib-go/pkg/sctp/types"
 
 	syscall "golang.org/x/sys/unix"
 )
@@ -44,11 +44,11 @@ func NewSCTPConnection(cfg *Config) (*SCTPConn, error) {
 		}
 	}(fd)
 
-	if err = setDefaultSockopts(fd, cfg.addressFamily.ToSyscall(), cfg.addressFamily == defs.Sctp6Only); err != nil {
+	if err = setDefaultSockopts(fd, cfg.addressFamily.ToSyscall(), cfg.addressFamily == types.Sctp6Only); err != nil {
 		return nil, err
 	}
 
-	if err = setInitOpts(fd, cfg.options); err != nil {
+	if err = setInitOpts(fd, cfg.initMsg); err != nil {
 		return nil, err
 	}
 
@@ -67,7 +67,7 @@ func (c *SCTPConn) SetFD(fd int32) {
 }
 
 // GetSocketMode gets SCTP socket mode
-func (c *SCTPConn) GetSocketMode() (defs.SocketMode, error) {
+func (c *SCTPConn) GetSocketMode() (types.SocketMode, error) {
 	return getSocketMode(c.FD())
 }
 
@@ -88,7 +88,7 @@ func (c *SCTPConn) Listen() error {
 
 // Bind binds SCTP socket to an address
 func (c *SCTPConn) Bind(laddr *addressing.Address) error {
-	return bind(c.FD(), laddr, defs.SctpBindxAddAddr)
+	return bind(c.FD(), laddr, types.SctpBindxAddAddr)
 }
 
 // Connect connects to an SCTP endpoint
@@ -117,8 +117,12 @@ func (c *SCTPConn) Read(b []byte) (int, error) {
 }
 
 // SetEvents set SCTP connection events
-func (c *SCTPConn) SetEvents(flags int) error {
-	return setEvents(c.FD(), flags)
+func (c *SCTPConn) SetEvents(events ...types.Event) error {
+	eventSubscribe := &types.EventSubscribe{}
+	for _, option := range events {
+		option(eventSubscribe)
+	}
+	return setEvents(c.FD(), *eventSubscribe)
 }
 
 // GetEvents gets SCTP connection events
@@ -127,18 +131,18 @@ func (c *SCTPConn) GetEvents() (int, error) {
 }
 
 // SetDefaultSentParam sets default sending parameters
-func (c *SCTPConn) SetDefaultSentParam(info *defs.SndRcvInfo) error {
+func (c *SCTPConn) SetDefaultSentParam(info *types.SndRcvInfo) error {
 	return setDefaultSentParam(c.FD(), info)
 }
 
 // GetDefaultSentParam gets default sending parameters
-func (c *SCTPConn) GetDefaultSentParam() (*defs.SndRcvInfo, error) {
+func (c *SCTPConn) GetDefaultSentParam() (*types.SndRcvInfo, error) {
 	return getDefaultSentParam(c.FD())
 }
 
 // SCTPGetPrimaryPeerAddr returns SCTP primary peer address
 func (c *SCTPConn) SCTPGetPrimaryPeerAddr() (*addressing.Address, error) {
-	return getAddrs(c.FD(), 0, defs.SctpPrimaryAddr)
+	return getAddrs(c.FD(), 0, types.SctpPrimaryAddr)
 }
 
 // SCTPLocalAddr returns SCTP local address
@@ -209,12 +213,12 @@ func (c *SCTPConn) SetWriteDeadline(t time.Time) error {
 }
 
 // SCTPWrite writes on SCTP connection
-func (c *SCTPConn) SCTPWrite(b []byte, info *defs.SndRcvInfo) (int, error) {
+func (c *SCTPConn) SCTPWrite(b []byte, info *types.SndRcvInfo) (int, error) {
 	return write(c.FD(), b, info)
 }
 
 // SCTPRead reads from a SCTP connection
-func (c *SCTPConn) SCTPRead(b []byte) (int, *defs.OOBMessage, int, error) {
+func (c *SCTPConn) SCTPRead(b []byte) (int, *types.OOBMessage, int, error) {
 	return read(c.FD(), b)
 }
 

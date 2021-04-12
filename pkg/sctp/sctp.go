@@ -21,7 +21,7 @@ import (
 
 	"github.com/onosproject/onos-lib-go/pkg/sctp/connection"
 
-	"github.com/onosproject/onos-lib-go/pkg/sctp/defs"
+	"github.com/onosproject/onos-lib-go/pkg/sctp/types"
 )
 
 /*var nativeEndian binary.ByteOrder
@@ -39,24 +39,17 @@ func init() {
 
 // DialOptions is SCTP options
 type DialOptions struct {
-	addressFamily defs.AddressFamily
-	mode          defs.SocketMode
-	options       defs.InitMsg
+	addressFamily types.AddressFamily
+	mode          types.SocketMode
+	initMsg       types.InitMsg
 	nonblocking   bool
 }
 
-// NewDialOptions creates dial options
-func NewDialOptions(options ...func(options *DialOptions)) *DialOptions {
-	dialOptions := &DialOptions{}
-	for _, option := range options {
-		option(dialOptions)
-	}
-
-	return dialOptions
-}
+// DialOption dial option function
+type DialOption func(*DialOptions)
 
 // WithAddressFamily sets address family
-func WithAddressFamily(family defs.AddressFamily) func(options *DialOptions) {
+func WithAddressFamily(family types.AddressFamily) func(options *DialOptions) {
 	return func(options *DialOptions) {
 		options.addressFamily = family
 
@@ -64,17 +57,17 @@ func WithAddressFamily(family defs.AddressFamily) func(options *DialOptions) {
 }
 
 // WithMode sets SCTP mode
-func WithMode(mode defs.SocketMode) func(options *DialOptions) {
+func WithMode(mode types.SocketMode) func(options *DialOptions) {
 	return func(options *DialOptions) {
 		options.mode = mode
 
 	}
 }
 
-// WithOptions sets options
-func WithOptions(initOptions defs.InitMsg) func(options *DialOptions) {
+// WithInitMsg sets options
+func WithInitMsg(initMsg types.InitMsg) func(options *DialOptions) {
 	return func(options *DialOptions) {
-		options.options = initOptions
+		options.initMsg = initMsg
 
 	}
 }
@@ -87,10 +80,14 @@ func WithNonBlocking(nonblocking bool) func(options *DialOptions) {
 }
 
 // DialSCTP creates a new SCTP connection
-func DialSCTP(addr net.Addr, dialOptions *DialOptions) (*connection.SCTPConn, error) {
+func DialSCTP(addr net.Addr, opts ...DialOption) (*connection.SCTPConn, error) {
+	dialOptions := &DialOptions{}
+	for _, option := range opts {
+		option(dialOptions)
+	}
 	cfg := connection.NewConfig(
 		connection.WithAddressFamily(dialOptions.addressFamily),
-		connection.WithOptions(dialOptions.options),
+		connection.WithOptions(dialOptions.initMsg),
 		connection.WithMode(dialOptions.mode),
 		connection.WithNonBlocking(dialOptions.nonblocking))
 	conn, err := connection.NewSCTPConnection(cfg)

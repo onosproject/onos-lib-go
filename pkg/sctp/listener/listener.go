@@ -23,17 +23,17 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/sctp/connection"
 
 	"github.com/onosproject/onos-lib-go/pkg/sctp/addressing"
-	"github.com/onosproject/onos-lib-go/pkg/sctp/defs"
+	"github.com/onosproject/onos-lib-go/pkg/sctp/types"
 )
 
 // Listener SCTP listener
 type Listener struct {
 	connection.SCTPConn
-	socketMode defs.SocketMode
+	socketMode types.SocketMode
 }
 
 // NewListener creates a new SCTP listener instance
-func NewListener(laddr *addressing.Address, options defs.InitMsg, mode defs.SocketMode, nonblocking bool) (*Listener, error) {
+func NewListener(laddr *addressing.Address, options types.InitMsg, mode types.SocketMode, nonblocking bool) (*Listener, error) {
 	if laddr == nil {
 		return nil, errors.NewInvalid("Local SCTPAddr is required")
 	}
@@ -62,7 +62,7 @@ func NewListener(laddr *addressing.Address, options defs.InitMsg, mode defs.Sock
 
 // accept waits for and returns the next SCTP connection to the listener.
 func (ln *Listener) accept() (*connection.SCTPConn, error) {
-	if ln.socketMode == defs.OneToMany {
+	if ln.socketMode == types.OneToMany {
 		return nil, fmt.Errorf("Calling Accept on OneToMany socket is invalid")
 	}
 
@@ -92,8 +92,8 @@ func (ln *Listener) Accept() (net.Conn, error) {
 }
 
 // SCTPRead reads from an SCTP connection
-func (ln *Listener) SCTPRead(b []byte) (int, *defs.OOBMessage, int, error) {
-	if ln.socketMode == defs.OneToOne {
+func (ln *Listener) SCTPRead(b []byte) (int, *types.OOBMessage, int, error) {
+	if ln.socketMode == types.OneToOne {
 		return -1, nil, -1, errors.NewInvalid("Invalid state: SCTPRead on OneToOne socket not allowed")
 	}
 
@@ -101,8 +101,8 @@ func (ln *Listener) SCTPRead(b []byte) (int, *defs.OOBMessage, int, error) {
 }
 
 // SCTPWrite writes on an SCTP connection
-func (ln *Listener) SCTPWrite(b []byte, info *defs.SndRcvInfo) (int, error) {
-	if ln.socketMode == defs.OneToOne {
+func (ln *Listener) SCTPWrite(b []byte, info *types.SndRcvInfo) (int, error) {
+	if ln.socketMode == types.OneToOne {
 		return -1, errors.NewInvalid("Invalid state: SCTPWrite on OneToOne socket not allowed")
 	}
 

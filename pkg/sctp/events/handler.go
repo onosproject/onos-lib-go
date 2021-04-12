@@ -12,39 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !darwin
-
-package listener
+package events
 
 import (
-	"net"
-	"testing"
-
-	"github.com/onosproject/onos-lib-go/pkg/sctp/addressing"
+	"github.com/onosproject/onos-lib-go/pkg/sctp/connection"
 	"github.com/onosproject/onos-lib-go/pkg/sctp/types"
 )
 
-var sctpListenerNameTests = []*addressing.Address{
-	{IPAddrs: []net.IPAddr{{IP: net.IPv4(127, 0, 0, 1)}}},
-	{},
-	nil,
-	{Port: 7777},
+// NotificationHandlerFunc ...
+type NotificationHandlerFunc func(*types.Notification)
+
+// Query ...
+type Query struct {
+	Handler      NotificationHandlerFunc
+	Flags        int
+	Notification []byte
 }
 
-func TestSCTPListenerName(t *testing.T) {
-	for _, tt := range sctpListenerNameTests {
-		ln, err := NewListener(tt, types.InitMsg{}, types.OneToOne, false)
-		if err != nil {
-			if tt == nil {
-				continue
-			}
-			t.Fatal(err)
-		}
-		defer ln.Close()
-		la := ln.LocalAddr()
-		if a, ok := la.(*addressing.Address); !ok || a.Port == 0 {
-			t.Fatalf("got %v; expected a proper address with non-zero port number", la)
-		}
-
+// Run ...
+func (q *Query) Run() {
+	if q.Flags&types.MsgNotification > 0 {
+		notif, _ := connection.SCTPParseNotification(q.Notification)
+		q.Handler(notif)
 	}
+
 }

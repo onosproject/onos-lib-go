@@ -15,14 +15,14 @@
 package connection
 
 import (
-	"github.com/onosproject/onos-lib-go/pkg/sctp/defs"
+	"github.com/onosproject/onos-lib-go/pkg/sctp/types"
 )
 
 // Config sctp connection config
 type Config struct {
-	addressFamily defs.AddressFamily
-	mode          defs.SocketMode
-	options       defs.InitMsg
+	addressFamily types.AddressFamily
+	mode          types.SocketMode
+	initMsg       types.InitMsg
 	nonblocking   bool
 }
 
@@ -37,7 +37,7 @@ func NewConfig(options ...func(cfg *Config)) *Config {
 }
 
 // WithAddressFamily sets address family
-func WithAddressFamily(family defs.AddressFamily) func(config *Config) {
+func WithAddressFamily(family types.AddressFamily) func(config *Config) {
 	return func(config *Config) {
 		config.addressFamily = family
 
@@ -45,7 +45,7 @@ func WithAddressFamily(family defs.AddressFamily) func(config *Config) {
 }
 
 // WithMode sets SCTP mode
-func WithMode(mode defs.SocketMode) func(config *Config) {
+func WithMode(mode types.SocketMode) func(config *Config) {
 	return func(config *Config) {
 		config.mode = mode
 
@@ -53,9 +53,9 @@ func WithMode(mode defs.SocketMode) func(config *Config) {
 }
 
 // WithOptions sets options
-func WithOptions(options defs.InitMsg) func(config *Config) {
+func WithOptions(initMsg types.InitMsg) func(config *Config) {
 	return func(config *Config) {
-		config.options = options
+		config.initMsg = initMsg
 
 	}
 }

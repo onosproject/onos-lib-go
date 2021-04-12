@@ -18,12 +18,12 @@ import (
 	"net"
 	"testing"
 
-	"github.com/onosproject/onos-lib-go/pkg/sctp/defs"
+	"github.com/onosproject/onos-lib-go/pkg/sctp/types"
 	"github.com/stretchr/testify/assert"
 )
 
 type resolveSCTPAddrTest struct {
-	network       defs.AddressFamily
+	network       types.AddressFamily
 	litAddrOrName string
 	addr          *Address
 }
@@ -31,18 +31,18 @@ type resolveSCTPAddrTest struct {
 var ipv4loop = net.IPv4(127, 0, 0, 1)
 
 var resolveSCTPAddrTests = []resolveSCTPAddrTest{
-	{defs.Sctp4, "127.0.0.1:0", &Address{AddressFamily: defs.Sctp4, IPAddrs: []net.IPAddr{{IP: ipv4loop}}, Port: 0}},
-	{defs.Sctp4, "127.0.0.1:65535", &Address{AddressFamily: defs.Sctp4, IPAddrs: []net.IPAddr{{IP: ipv4loop}}, Port: 65535}},
+	{types.Sctp4, "127.0.0.1:0", &Address{AddressFamily: types.Sctp4, IPAddrs: []net.IPAddr{{IP: ipv4loop}}, Port: 0}},
+	{types.Sctp4, "127.0.0.1:65535", &Address{AddressFamily: types.Sctp4, IPAddrs: []net.IPAddr{{IP: ipv4loop}}, Port: 65535}},
 
-	{defs.Sctp6, "[::1]:0", &Address{AddressFamily: defs.Sctp6, IPAddrs: []net.IPAddr{{IP: net.ParseIP("::1")}}, Port: 0}},
-	{defs.Sctp6, "[::1]:65535", &Address{AddressFamily: defs.Sctp6, IPAddrs: []net.IPAddr{{IP: net.ParseIP("::1")}}, Port: 65535}},
+	{types.Sctp6, "[::1]:0", &Address{AddressFamily: types.Sctp6, IPAddrs: []net.IPAddr{{IP: net.ParseIP("::1")}}, Port: 0}},
+	{types.Sctp6, "[::1]:65535", &Address{AddressFamily: types.Sctp6, IPAddrs: []net.IPAddr{{IP: net.ParseIP("::1")}}, Port: 65535}},
 
-	{defs.Sctp6, "[::1%lo0]:0", &Address{AddressFamily: defs.Sctp6, IPAddrs: []net.IPAddr{{IP: net.ParseIP("::1"), Zone: "lo0"}}, Port: 0}},
-	{defs.Sctp6, "[::1%lo0]:65535", &Address{AddressFamily: defs.Sctp6, IPAddrs: []net.IPAddr{{IP: net.ParseIP("::1"), Zone: "lo0"}}, Port: 65535}},
-	{defs.Sctp4, "0.0.0.0:12345", &Address{AddressFamily: defs.Sctp4, IPAddrs: []net.IPAddr{{IP: net.IPv4zero, Zone: ""}}, Port: 12345}},
-	{defs.Sctp4, "127.0.0.1/10.0.0.1:0", &Address{IPAddrs: []net.IPAddr{{IP: net.IPv4(127, 0, 0, 1)}, {IP: net.IPv4(10, 0, 0, 1)}}, Port: 0}},
-	{defs.Sctp4, "127.0.0.1/10.0.0.1:65535", &Address{IPAddrs: []net.IPAddr{{IP: net.IPv4(127, 0, 0, 1)}, {IP: net.IPv4(10, 0, 0, 1)}}, Port: 65535}},
-	{defs.Sctp6, "::1%lo0/127.0.0.1:1234", &Address{AddressFamily: defs.Sctp6, IPAddrs: []net.IPAddr{{IP: net.ParseIP("::1"), Zone: "lo0"}, {IP: ipv4loop, Zone: ""}}, Port: 1234}},
+	{types.Sctp6, "[::1%lo0]:0", &Address{AddressFamily: types.Sctp6, IPAddrs: []net.IPAddr{{IP: net.ParseIP("::1"), Zone: "lo0"}}, Port: 0}},
+	{types.Sctp6, "[::1%lo0]:65535", &Address{AddressFamily: types.Sctp6, IPAddrs: []net.IPAddr{{IP: net.ParseIP("::1"), Zone: "lo0"}}, Port: 65535}},
+	{types.Sctp4, "0.0.0.0:12345", &Address{AddressFamily: types.Sctp4, IPAddrs: []net.IPAddr{{IP: net.IPv4zero, Zone: ""}}, Port: 12345}},
+	{types.Sctp4, "127.0.0.1/10.0.0.1:0", &Address{IPAddrs: []net.IPAddr{{IP: net.IPv4(127, 0, 0, 1)}, {IP: net.IPv4(10, 0, 0, 1)}}, Port: 0}},
+	{types.Sctp4, "127.0.0.1/10.0.0.1:65535", &Address{IPAddrs: []net.IPAddr{{IP: net.IPv4(127, 0, 0, 1)}, {IP: net.IPv4(10, 0, 0, 1)}}, Port: 65535}},
+	{types.Sctp6, "::1%lo0/127.0.0.1:1234", &Address{AddressFamily: types.Sctp6, IPAddrs: []net.IPAddr{{IP: net.ParseIP("::1"), Zone: "lo0"}, {IP: ipv4loop, Zone: ""}}, Port: 1234}},
 }
 
 func TestSCTPAddrString(t *testing.T) {

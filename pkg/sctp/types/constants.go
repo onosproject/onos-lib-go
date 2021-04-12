@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package defs
+package types
 
 import (
 	"fmt"
@@ -39,7 +39,10 @@ const (
 	SctpRtoinfoIota = iota
 	// SctpAssocinfo ...
 	SctpAssocinfo
-	// SctpInitmsg ...
+	// SctpInitmsg Applications can specify protocol parameters for the default
+	//   association initialization. Setting initialization parameters is effective only on an unconnected
+	//   socket (for one-to-many style sockets, only future associations are
+	//   affected by the change)
 	SctpInitmsg
 	// SctpNodelay ...
 	SctpNodelay
@@ -91,83 +94,6 @@ const (
 	// SctpSockoptConnectx3 ...
 	SctpSockoptConnectx3 = 111
 )
-
-const (
-	// SctpEventDataIo ...
-	SctpEventDataIo = 1 << iota
-	// SctpEventAssociation ...
-	SctpEventAssociation
-	// SctpEventAddress ...
-	SctpEventAddress
-	// SctpEventSendFailure ...
-	SctpEventSendFailure
-	// SctpEventPeerError ...
-	SctpEventPeerError
-	// SctpEventShutdown ...
-	SctpEventShutdown
-	// SctpEventPartialDelivery ...
-	SctpEventPartialDelivery
-	// SctpEventAdaptationLayer ...
-	SctpEventAdaptationLayer
-	// SctpEventAuthentication ...
-	SctpEventAuthentication
-	// SctpEventSenderDry ...
-	SctpEventSenderDry
-
-	// SctpEventAll ...
-	SctpEventAll = SctpEventDataIo | SctpEventAssociation | SctpEventAddress | SctpEventSendFailure | SctpEventPeerError | SctpEventShutdown | SctpEventPartialDelivery | SctpEventAdaptationLayer | SctpEventAuthentication | SctpEventSenderDry
-)
-
-// NotificationType sctp notification type
-type NotificationType uint16
-
-const (
-	// SctpSnTypeBase ...
-	SctpSnTypeBase = NotificationType(iota + (1 << 15))
-	// SctpAssocChange ...
-	SctpAssocChange
-	// SctpPeerAddrChange ...
-	SctpPeerAddrChange
-	// SctpSendFailed ...
-	SctpSendFailed
-	// SctpRemoteError ...
-	SctpRemoteError
-	// SctpShutdownEvent ...
-	SctpShutdownEvent
-	// SctpPartialDeliveryEvent ...
-	SctpPartialDeliveryEvent
-	// SctpAdaptationIndication ...
-	SctpAdaptationIndication
-	// SctpAuthenticationIndication ...
-	SctpAuthenticationIndication
-	// SctpSenderDryEvent ...
-	SctpSenderDryEvent
-)
-
-func (n NotificationType) String() string {
-	switch n {
-	case SctpAssocChange:
-		return "SCTP_ASSOC_CHANGE"
-	case SctpPeerAddrChange:
-		return "SCTP_PEER_ADDR_CHANGE"
-	case SctpSendFailed:
-		return "SCTP_SEND_FAILED"
-	case SctpRemoteError:
-		return "SCTP_REMOTE_ERROR"
-	case SctpShutdownEvent:
-		return "SCTP_SHUTDOWN_EVENT"
-	case SctpPartialDeliveryEvent:
-		return "SCTP_PARTIAL_DELIVERY_EVENT"
-	case SctpAdaptationIndication:
-		return "SCTP_ADAPTATION_INDICATION"
-	case SctpAuthenticationIndication:
-		return "SCTP_AUTHENTICATION_INDICATION"
-	case SctpSenderDryEvent:
-		return "SCTP_SENDER_DRY_EVENT"
-	default:
-		panic(fmt.Sprintf("Unknown notification type: %d", n))
-	}
-}
 
 // CmsgType ...
 type CmsgType int32
