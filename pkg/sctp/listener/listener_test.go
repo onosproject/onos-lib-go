@@ -33,7 +33,8 @@ var sctpListenerNameTests = []*addressing.Address{
 
 func TestSCTPListenerName(t *testing.T) {
 	for _, tt := range sctpListenerNameTests {
-		ln, err := NewListener(tt, types.InitMsg{}, types.OneToOne, false)
+
+		ln, err := NewListener(tt, WithInitMsg(types.InitMsg{}), WithMode(types.OneToOne), WithNonBlocking(false))
 		if err != nil {
 			if tt == nil {
 				continue

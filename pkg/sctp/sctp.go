@@ -24,19 +24,6 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/sctp/types"
 )
 
-/*var nativeEndian binary.ByteOrder
-var sndRcvInfoSize uintptr
-
-func init() {
-	i := uint16(1)
-	if *(*byte)(unsafe.Pointer(&i)) == 0 {
-		nativeEndian = binary.BigEndian
-	} else {
-		nativeEndian = binary.LittleEndian
-	}
-	sndRcvInfoSize = unsafe.Sizeof(defs.SndRcvInfo{})
-}*/
-
 // DialOptions is SCTP options
 type DialOptions struct {
 	addressFamily types.AddressFamily

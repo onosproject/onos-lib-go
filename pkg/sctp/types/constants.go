@@ -15,8 +15,6 @@
 package types
 
 import (
-	"fmt"
-
 	syscall "golang.org/x/sys/unix"
 )
 
@@ -30,7 +28,12 @@ const (
 
 	// MsgNotification ...
 	MsgNotification = 0x8000
-	// MsgEOR ...
+	// MsgEOR  If all portions of a data frame or notification have been read,
+	//   recvmsg() will return with MSG_EOR set in msg_flags. If the application
+	//   does not provide enough buffer space to completely
+	//   receive a data message, MSG_EOR will not be set in msg_flags.
+	//   Successive reads will consume more of the same message until the
+	//   entire message has been delivered, and MSG_EOR will be set.
 	MsgEOR = 0x80
 )
 
@@ -161,7 +164,7 @@ func (s State) String() string {
 	case SctpCantStrAssoc:
 		return "SCTP_CANT_STR_ASSOC"
 	default:
-		panic(fmt.Sprintf("Unknown SCTPState: %d", s))
+		return "UNKNOWN_STATE"
 	}
 }
 
@@ -188,7 +191,7 @@ func (af AddressFamily) ToSyscall() int {
 	case Sctp6Only:
 		return syscall.AF_INET6
 	default:
-		panic("Invalid SCTPAddressFamily")
+		return -1
 	}
 }
 

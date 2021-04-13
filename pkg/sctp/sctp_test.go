@@ -22,6 +22,7 @@ import (
 	"io"
 	"math/rand"
 	"net"
+	"strconv"
 	"sync"
 
 	"github.com/onosproject/onos-lib-go/pkg/sctp/events"
@@ -42,8 +43,8 @@ import (
 )
 
 const (
-	StreamTestClients  = 10
-	StreamTestStreams  = 100
+	StreamTestClients  = 1
+	StreamTestStreams  = 10
 	address            = "127.0.0.1:0"
 	ServerRoutineCount = 10
 	ClientRoutineCount = 100
@@ -65,15 +66,80 @@ func randomString(n int) string {
 	}
 	return string(s)
 }
+func serveClient(t *testing.T, conn net.Conn, bufsize int) error {
+	for {
+		buf := make([]byte, bufsize+128)
+		n, err := conn.Read(buf)
+		if err != nil {
+			return err
+		}
+		_, err = conn.Write(buf[:n])
+		if err != nil {
+			return err
+		}
+	}
+}
+
+func createOneToOneListener(t *testing.T, defaultInit bool) *listener.Listener {
+	addr, err := addressing.ResolveAddress(types.Sctp4, address)
+	assert.NoError(t, err)
+	if !defaultInit {
+
+		ln, err := listener.NewListener(addr,
+			listener.WithMode(types.OneToOne),
+			listener.WithNonBlocking(false))
+		assert.NoError(t, err)
+		return ln
+	}
+	ln, err := listener.NewListener(addr,
+		listener.WithMode(types.OneToOne),
+		listener.WithInitMsg(defaultOptions),
+		listener.WithNonBlocking(false))
+	assert.NoError(t, err)
+	return ln
+
+}
+
+func createOneToManyListener(t *testing.T, defaultInit bool) *listener.Listener {
+	addr, err := addressing.ResolveAddress(types.Sctp4, address)
+	assert.NoError(t, err)
+	if !defaultInit {
+
+		ln, err := listener.NewListener(addr,
+			listener.WithMode(types.OneToMany),
+			listener.WithNonBlocking(false))
+		assert.NoError(t, err)
+		return ln
+	}
+	ln, err := listener.NewListener(addr,
+		listener.WithMode(types.OneToMany),
+		listener.WithInitMsg(defaultOptions),
+		listener.WithNonBlocking(false))
+	assert.NoError(t, err)
+	return ln
+
+}
+
+func connect(t *testing.T, raddr *addressing.Address, defaultInit bool) (*connection.SCTPConn, error) {
+	if !defaultInit {
+		conn, err := DialSCTP(raddr,
+			WithAddressFamily(raddr.AddressFamily),
+			WithMode(types.OneToOne),
+			WithNonBlocking(false))
+		return conn, err
+	}
+	conn, err := DialSCTP(raddr,
+		WithAddressFamily(raddr.AddressFamily),
+		WithInitMsg(defaultOptions),
+		WithMode(types.OneToOne),
+		WithNonBlocking(false))
+	return conn, err
+
+}
 
 // TestSCTPConcurrentAccept test multiple clients connecting to one server concurrently
 func TestSCTPConcurrentAccept(t *testing.T) {
-	addr, err := addressing.ResolveAddress(types.Sctp4, address)
-	assert.NoError(t, err)
-
-	ln, err := listener.NewListener(addr, types.InitMsg{}, types.OneToOne, false)
-	assert.NoError(t, err)
-
+	ln := createOneToOneListener(t, false)
 	raddr, err := ln.SCTPLocalAddr(0)
 	assert.NoError(t, err)
 
@@ -88,12 +154,9 @@ func TestSCTPConcurrentAccept(t *testing.T) {
 	attempts := 2 * testClients
 	fails := 0
 	for i := 0; i < attempts; i++ {
-		conn, err := DialSCTP(ln.LocalAddr(),
-			WithAddressFamily(raddr.AddressFamily),
-			WithInitMsg(types.InitMsg{}),
-			WithMode(types.OneToOne),
-			WithNonBlocking(false))
+		conn, err := connect(t, raddr, false)
 		assert.NoError(t, err)
+
 		if err != nil {
 			fails++
 		} else {
@@ -106,12 +169,7 @@ func TestSCTPConcurrentAccept(t *testing.T) {
 
 // TestSCTPCloseRecv checks the server recevies EOF when the connection is closed by the client
 func TestSCTPCloseRecv(t *testing.T) {
-	addr, err := addressing.ResolveAddress(types.Sctp4, address)
-	assert.NoError(t, err)
-
-	ln, err := listener.NewListener(addr, types.InitMsg{}, types.OneToOne, false)
-	assert.NoError(t, err)
-
+	ln := createOneToOneListener(t, false)
 	raddr, err := ln.SCTPLocalAddr(0)
 	assert.NoError(t, err)
 
@@ -130,13 +188,7 @@ func TestSCTPCloseRecv(t *testing.T) {
 			t.Fail()
 		}
 	}()
-
-	conn, err := DialSCTP(ln.LocalAddr(),
-		WithAddressFamily(raddr.AddressFamily),
-		WithInitMsg(types.InitMsg{}),
-		WithMode(types.OneToOne),
-		WithNonBlocking(false))
-
+	conn, err := connect(t, raddr, false)
 	assert.NoError(t, err)
 
 	<-connReady
@@ -147,12 +199,7 @@ func TestSCTPCloseRecv(t *testing.T) {
 
 // TestSCTPConcurrentOneToMany tests SCTP one to many mode with multiple clients
 func TestSCTPConcurrentOneToMany(t *testing.T) {
-	addr, err := addressing.ResolveAddress(types.Sctp4, address)
-	assert.NoError(t, err)
-
-	ln, err := listener.NewListener(addr, types.InitMsg{}, types.OneToMany, false)
-	assert.NoError(t, err)
-
+	ln := createOneToManyListener(t, false)
 	raddr, err := ln.SCTPLocalAddr(0)
 	assert.NoError(t, err)
 
@@ -164,33 +211,23 @@ func TestSCTPConcurrentOneToMany(t *testing.T) {
 			buf := make([]byte, 512)
 			n, _, flags, err := ln.SCTPRead(buf)
 			assert.NoError(t, err)
-
-			q := events.Query{
-				Flags:        flags,
-				Notification: buf[:n],
-				Handler: func(notif *types.Notification) {
-					switch notif.Type() {
-					case types.SctpAssocChange:
-						assocChange := notif.GetAssociationChange()
-						if assocChange.State == types.SctpCommUp {
-							ln.SCTPWrite([]byte{0}, &types.SndRcvInfo{Flags: types.SctpEOF, AssocID: assocChange.AssocID})
-						}
+			if events.IsNotification(flags) {
+				notif, err := events.GetNotfication(buf[:n], flags)
+				assert.NoError(t, err)
+				if events.IsSCTPAssocChange(notif) {
+					assocChange := notif.GetAssociationChange()
+					t.Log(assocChange.State, assocChange.AssocID)
+					if assocChange.State == types.SctpCommUp {
+						ln.SCTPWrite([]byte{0}, &types.SndRcvInfo{Flags: types.SctpEOF, AssocID: assocChange.AssocID})
 					}
-				},
+				}
 			}
-			q.Run()
-
 		}
 	}()
 
 	attempts := 10 * testClients
 	for i := 0; i < attempts; i++ {
-
-		conn, err := DialSCTP(ln.LocalAddr(),
-			WithAddressFamily(raddr.AddressFamily),
-			WithInitMsg(types.InitMsg{}),
-			WithMode(types.OneToOne),
-			WithNonBlocking(false))
+		conn, err := connect(t, raddr, false)
 		assert.NoError(t, err)
 		err = conn.Close()
 		assert.NoError(t, err)
@@ -200,14 +237,13 @@ func TestSCTPConcurrentOneToMany(t *testing.T) {
 }
 
 func TestOneToManyPeelOff(t *testing.T) {
+	// TODO this test needs to be improved
 	var wg sync.WaitGroup
-	addr, _ := addressing.ResolveAddress(types.Sctp4, address)
-	ln, err := listener.NewListener(addr, types.InitMsg{NumOstreams: StreamTestStreams, MaxInstreams: StreamTestStreams}, types.OneToMany, false)
-	assert.NoError(t, err)
+	ln := createOneToManyListener(t, true)
+	raddr, ok := ln.LocalAddr().(*addressing.Address)
+	assert.Equal(t, true, ok)
 
-	laddr, _ := ln.LocalAddr().(*addressing.Address)
-
-	err = ln.SetEvents(types.WithAssociation())
+	err := ln.SetEvents(types.WithAssociation())
 	assert.NoError(t, err)
 
 	go func() {
@@ -222,13 +258,12 @@ func TestOneToManyPeelOff(t *testing.T) {
 			}
 			assert.NoError(t, err)
 
-			if flags&types.MsgNotification > 0 {
-				t.Logf("[%d]Got a notification. Bytes read: %v\n", test, n)
-				notif, err := connection.SCTPParseNotification(buf[:n])
-				assert.NoError(t, err)
+			t.Logf("[%d]Got a notification. Bytes read: %v\n", test, n)
 
-				switch notif.Type() {
-				case types.SctpAssocChange:
+			if events.IsNotification(flags) {
+				notif, err := events.GetNotfication(buf[:n], flags)
+				assert.NoError(t, err)
+				if events.IsSCTPAssocChange(notif) {
 					t.Logf("[%d]Got an association change notification\n", test)
 					assocChange := notif.GetAssociationChange()
 					if assocChange.State == types.SctpCommUp {
@@ -245,36 +280,33 @@ func TestOneToManyPeelOff(t *testing.T) {
 				}
 			}
 
-			if flags&types.MsgEOR > 0 {
+			if events.IsMsgEORSet(flags) {
 				info := oob.GetSndRcvInfo()
 				t.Logf("[%d]Got data on main socket, but it wasn't a notification: %#+v \n", test, info)
-				wn, werr := ln.SCTPWrite(buf[:n],
+				wn, err := ln.SCTPWrite(buf[:n],
 					&types.SndRcvInfo{
 						AssocID: info.AssocID,
 						Stream:  info.Stream,
 						PPID:    info.PPID,
 					},
 				)
-				if werr != nil {
-					t.Errorf("[%d]failed to write %s, len: %d, err: %v, bytes written: %d, info: %+v", test, string(buf[:n]), len(buf[:n]), werr, wn, info)
+				if err != nil {
+					t.Errorf("[%d]failed to write %s, len: %d, err: %v, bytes written: %d, info: %+v", test, string(buf[:n]), len(buf[:n]), err, wn, info)
 					return
 				}
 				continue
 			}
-			t.Logf("[%d]No clue wtf is happening", test)
+			t.Logf("[%d]No clue what is happening", test)
 		}
 	}()
 
 	for i := ClientRoutineCount; i > 0; i-- {
 		wg.Add(1)
-		go func(client int, l *addressing.Address) {
+		go func(client int, raddr *addressing.Address) {
 			defer wg.Done()
 			t.Logf("[%d]Creating new client connection\n", client)
-			conn, err := DialSCTP(ln.LocalAddr(),
-				WithAddressFamily(addr.AddressFamily),
-				WithInitMsg(defaultOptions),
-				WithMode(types.OneToOne),
-				WithNonBlocking(false))
+
+			conn, err := connect(t, raddr, true)
 			assert.NoError(t, err)
 
 			err = conn.SetEvents(types.WithDataIO())
@@ -303,7 +335,7 @@ func TestOneToManyPeelOff(t *testing.T) {
 			}
 			conn.Close()
 
-		}(i, laddr)
+		}(i, raddr)
 	}
 	wg.Wait()
 	ln.Close()
@@ -320,7 +352,7 @@ func socketReaderMirror(sock *connection.SCTPConn, t *testing.T, goroutine int) 
 		}
 		assert.NoError(t, err)
 
-		if flags&types.MsgNotification > 0 {
+		if events.IsNotification(flags) {
 			t.Logf("[%d]Notification received. Byte count: %v, OOB: %#+v, Flags: %v\n", goroutine, n, oob, flags)
 			if notif, err := connection.SCTPParseNotification(buf[:n]); err == nil {
 				t.Logf("[%d]Notification type: %v\n", goroutine, notif.Type().String())
@@ -328,15 +360,15 @@ func socketReaderMirror(sock *connection.SCTPConn, t *testing.T, goroutine int) 
 		}
 		t.Logf("[%d]Writing peel off server socket...\n", goroutine)
 		info := oob.GetSndRcvInfo()
-		wn, werr := sock.SCTPWrite(buf[:n],
+		wn, err := sock.SCTPWrite(buf[:n],
 			&types.SndRcvInfo{
 				AssocID: info.AssocID,
 				Stream:  info.Stream,
 				PPID:    info.PPID,
 			},
 		)
-		if werr != nil {
-			t.Errorf("[%d]failed to write %s, len: %d, err: %v, bytes written: %d, info: %+v", goroutine, string(buf[:n]), len(buf[:n]), werr, wn, info)
+		if err != nil {
+			t.Errorf("[%d]failed to write %s, len: %d, err: %v, bytes written: %d, info: %+v", goroutine, string(buf[:n]), len(buf[:n]), err, wn, info)
 			return
 		}
 	}
@@ -344,15 +376,10 @@ func socketReaderMirror(sock *connection.SCTPConn, t *testing.T, goroutine int) 
 
 func TestNonBlockingServerOneToMany(t *testing.T) {
 	// TODO must be improved
-	addr, err := addressing.ResolveAddress(types.Sctp4, address)
-	assert.NoError(t, err)
-
-	ln, err := listener.NewListener(addr, types.InitMsg{NumOstreams: StreamTestStreams, MaxInstreams: StreamTestStreams}, types.OneToMany, true)
-	assert.NoError(t, err)
-
+	ln := createOneToManyListener(t, true)
 	raddr := ln.LocalAddr().(*addressing.Address)
 
-	err = ln.SetEvents(types.WithDataIO())
+	err := ln.SetEvents(types.WithDataIO())
 	assert.NoError(t, err)
 
 	go func() {
@@ -378,9 +405,7 @@ func TestNonBlockingServerOneToMany(t *testing.T) {
 				}
 			}
 
-			//t.Logf("DATA: %v, N: %d, OOB: %#+v, FLAGS: %d, ERR: %v\n", buf[:n], n, oob, flags, err)
-
-			if flags&types.MsgEOR > 0 {
+			if events.IsMsgEORSet(flags) {
 				info := oob.GetSndRcvInfo()
 				assocID := info.AssocID
 				if _, ok := b[assocID]; !ok {
@@ -418,7 +443,6 @@ func TestNonBlockingServerOneToMany(t *testing.T) {
 				if len(c) > 0 {
 					r := c[0]
 					c = c[1:]
-					//t.Logf("Writing: %v, %#+v\n", r.Data, r.SndRcvInfo)
 					_, err := ln.SCTPWrite(r.Data, r.SndRcvInfo)
 					if err != nil {
 						if err == syscall.EWOULDBLOCK {
@@ -426,7 +450,6 @@ func TestNonBlockingServerOneToMany(t *testing.T) {
 							c = append(c, r)
 							break
 						}
-						//t.Logf("Something went wrong?: %v", err)
 					}
 				} else {
 					break
@@ -434,7 +457,6 @@ func TestNonBlockingServerOneToMany(t *testing.T) {
 			}
 
 			<-time.Tick(time.Millisecond * 10)
-			//t.Logf("tick!\n")
 		}
 	}()
 
@@ -443,11 +465,7 @@ func TestNonBlockingServerOneToMany(t *testing.T) {
 		wg.Add(1)
 		go func(test int) {
 			defer wg.Done()
-			conn, err := DialSCTP(ln.LocalAddr(),
-				WithAddressFamily(raddr.AddressFamily),
-				WithInitMsg(defaultOptions),
-				WithMode(types.OneToOne),
-				WithNonBlocking(false))
+			conn, err := connect(t, raddr, true)
 			assert.NoError(t, err)
 
 			defer conn.Close()
@@ -474,7 +492,7 @@ func TestNonBlockingServerOneToMany(t *testing.T) {
 					assert.NoError(t, err)
 					b.Write(buf[:cn])
 
-					if flags&types.MsgEOR > 0 {
+					if events.IsMsgEORSet(flags) {
 						assert.Equal(t, oob.GetSndRcvInfo().Stream, ppid)
 						rtext := b.String()
 						b.Reset()
@@ -490,25 +508,9 @@ func TestNonBlockingServerOneToMany(t *testing.T) {
 	ln.Close()
 }
 
-func serveClient(t *testing.T, conn net.Conn, bufsize int) error {
-	for {
-		buf := make([]byte, bufsize+128)
-		n, err := conn.Read(buf)
-		if err != nil {
-			return err
-		}
-		_, err = conn.Write(buf[:n])
-		if err != nil {
-			return err
-		}
-	}
-}
-
 func TestStreamsOneToOneWithoutEvents(t *testing.T) {
-	addr, _ := addressing.ResolveAddress(types.Sctp4, address)
-	ln, err := listener.NewListener(addr, types.InitMsg{NumOstreams: StreamTestStreams, MaxInstreams: StreamTestStreams}, types.OneToOne, false)
-	assert.NoError(t, err)
-	addr = ln.LocalAddr().(*addressing.Address)
+	ln := createOneToOneListener(t, true)
+	raddr := ln.LocalAddr().(*addressing.Address)
 
 	go func() {
 		for {
@@ -527,11 +529,7 @@ func TestStreamsOneToOneWithoutEvents(t *testing.T) {
 		wg.Add(1)
 		go func(test int) {
 			defer wg.Done()
-			conn, err := DialSCTP(ln.LocalAddr(),
-				WithAddressFamily(addr.AddressFamily),
-				WithInitMsg(defaultOptions),
-				WithMode(types.OneToOne),
-				WithNonBlocking(false))
+			conn, err := connect(t, raddr, true)
 			assert.NoError(t, err)
 			defer conn.Close()
 			for ppid := uint16(0); ppid < StreamTestStreams; ppid++ {
@@ -569,11 +567,8 @@ func TestStreamsOneToOneWithoutEvents(t *testing.T) {
 }
 
 func TestStreamsOneToOneWithEvents(t *testing.T) {
-	addr, err := addressing.ResolveAddress(types.Sctp4, address)
-	assert.NoError(t, err)
-	ln, err := listener.NewListener(addr, types.InitMsg{NumOstreams: StreamTestStreams, MaxInstreams: StreamTestStreams}, types.OneToOne, false)
-	assert.NoError(t, err)
-	addr = ln.LocalAddr().(*addressing.Address)
+	ln := createOneToOneListener(t, true)
+	raddr := ln.LocalAddr().(*addressing.Address)
 
 	go func() {
 		for {
@@ -596,26 +591,21 @@ func TestStreamsOneToOneWithEvents(t *testing.T) {
 					}
 					assert.NoError(t, err)
 					b.Write(buf[:n])
-					if flags&types.MsgNotification > 0 {
-						if !(flags&types.MsgEOR > 0) {
+					if events.IsNotification(flags) {
+						if !(events.IsMsgEORSet(flags)) {
 							t.Log("buffer not large enough for notification")
 							continue
 						}
-					} else if flags&types.MsgEOR > 0 {
+					} else if events.IsMsgEORSet(flags) {
 						info := oob.GetSndRcvInfo()
 						data := b.Bytes()
 						_, err = sconn.SCTPWrite(data, &types.SndRcvInfo{
 							Stream: info.Stream,
 							PPID:   info.PPID,
 						})
-						if err != nil {
-							t.Error(err)
-							return
-						}
-					} else {
-						t.Logf("No flags match?: %v", flags&types.MsgEOR)
+						t.Log(info.AssocID)
+						assert.NoError(t, err)
 					}
-
 					b.Reset()
 				}
 			}()
@@ -628,11 +618,7 @@ func TestStreamsOneToOneWithEvents(t *testing.T) {
 		wg.Add(1)
 		go func(test int) {
 			defer wg.Done()
-			conn, err := DialSCTP(ln.LocalAddr(),
-				WithAddressFamily(addr.AddressFamily),
-				WithInitMsg(defaultOptions),
-				WithMode(types.OneToOne),
-				WithNonBlocking(false))
+			conn, err := connect(t, raddr, true)
 			assert.NoError(t, err)
 			defer conn.Close()
 			err = conn.SetEvents(types.WithDataIO())
@@ -644,11 +630,8 @@ func TestStreamsOneToOneWithEvents(t *testing.T) {
 					PPID:   uint32(ppid),
 				}
 				text := fmt.Sprintf("[%s,%d,%d]", randomString(10), test, ppid)
-				n, err := conn.SCTPWrite([]byte(text), info)
-				if err != nil {
-					t.Errorf("failed to write %s, len: %d, err: %v, bytes written: %d, info: %+v", text, len(text), err, n, info)
-					return
-				}
+				_, err := conn.SCTPWrite([]byte(text), info)
+				assert.NoError(t, err)
 				var b bytes.Buffer
 				for {
 					buf := make([]byte, 64)
@@ -667,12 +650,12 @@ func TestStreamsOneToOneWithEvents(t *testing.T) {
 
 					b.Write(buf[:cn])
 
-					if flags&types.MsgNotification > 0 {
-						if !(flags&types.MsgEOR > 0) {
+					if events.IsNotification(flags) {
+						if !(events.IsMsgEORSet(flags)) {
 							t.Log("buffer not large enough for notification")
 							continue
 						}
-					} else if flags&types.MsgEOR > 0 {
+					} else if events.IsMsgEORSet(flags) {
 						if oob.GetSndRcvInfo().Stream != ppid {
 							t.Errorf("Mismatched PPIDs: %d != %d", oob.GetSndRcvInfo().Stream, ppid)
 							return
@@ -680,8 +663,6 @@ func TestStreamsOneToOneWithEvents(t *testing.T) {
 						rtext := b.String()
 						b.Reset()
 						assert.Equal(t, rtext, text)
-						t.Log(rtext)
-
 						break
 					}
 				}
@@ -693,15 +674,9 @@ func TestStreamsOneToOneWithEvents(t *testing.T) {
 }
 
 func TestStreamsOneToMany(t *testing.T) {
-	addr, err := addressing.ResolveAddress(types.Sctp4, address)
-	assert.NoError(t, err)
-
-	ln, err := listener.NewListener(addr, types.InitMsg{NumOstreams: StreamTestStreams, MaxInstreams: StreamTestStreams}, types.OneToMany, false)
-	assert.NoError(t, err)
-
-	addr = ln.LocalAddr().(*addressing.Address)
-
-	err = ln.SetEvents(types.WithDataIO())
+	ln := createOneToManyListener(t, true)
+	raddr := ln.LocalAddr().(*addressing.Address)
+	err := ln.SetEvents(types.WithDataIO())
 	assert.NoError(t, err)
 
 	go func() {
@@ -709,14 +684,13 @@ func TestStreamsOneToMany(t *testing.T) {
 		for {
 			buf := make([]byte, 64)
 			n, oob, flags, err := ln.SCTPRead(buf)
-			//t.Logf("Server read data count: %d", n)
 			assert.NoError(t, err)
 			b.Write(buf[:n])
 
-			if flags&types.MsgEOR > 0 {
+			if events.IsMsgEORSet(flags) {
 				info := oob.GetSndRcvInfo()
 				data := b.Bytes()
-				t.Logf("Server received data: %s", string(data))
+				t.Logf("Server received data: %s for stream with Association ID %v", string(data), info.AssocID)
 				_, err = ln.SCTPWrite(data, &types.SndRcvInfo{
 					Stream:  info.Stream,
 					PPID:    info.PPID,
@@ -725,10 +699,7 @@ func TestStreamsOneToMany(t *testing.T) {
 
 				b.Reset()
 				assert.NoError(t, err)
-			} else {
-				t.Logf("No flags match?: %v", flags&types.MsgEOR)
 			}
-
 		}
 	}()
 
@@ -736,13 +707,9 @@ func TestStreamsOneToMany(t *testing.T) {
 	i := 0
 	for ; i < StreamTestClients; i++ {
 		wg.Add(1)
-		go func(test int) {
+		go func(testClient int) {
 			defer wg.Done()
-			conn, err := DialSCTP(ln.LocalAddr(),
-				WithAddressFamily(addr.AddressFamily),
-				WithInitMsg(defaultOptions),
-				WithMode(types.OneToOne),
-				WithNonBlocking(false))
+			conn, err := connect(t, raddr, true)
 			assert.NoError(t, err)
 			defer conn.Close()
 			err = conn.SetEvents(types.WithDataIO())
@@ -752,7 +719,7 @@ func TestStreamsOneToMany(t *testing.T) {
 					Stream: ppid,
 					PPID:   uint32(ppid),
 				}
-				text := randomString(10)
+				text := randomString(10) + ":" + strconv.Itoa(testClient)
 				_, err := conn.SCTPWrite([]byte(text), info)
 				assert.NoError(t, err)
 				var b bytes.Buffer
@@ -768,15 +735,12 @@ func TestStreamsOneToMany(t *testing.T) {
 
 					b.Write(buf[:cn])
 
-					if flags&types.MsgEOR > 0 {
-						if oob.GetSndRcvInfo().Stream != ppid {
-							t.Errorf("mismatched PPIDs: %d != %d", oob.GetSndRcvInfo().Stream, ppid)
-							return
-						}
+					if events.IsMsgEORSet(flags) {
+						t.Log(oob.GetSndRcvInfo().PPID)
+						assert.Equal(t, ppid, oob.GetSndRcvInfo().Stream)
 						rtext := b.String()
 						b.Reset()
 						assert.Equal(t, rtext, text)
-						t.Log("Data read from server matched what we sent")
 						break
 					}
 				}

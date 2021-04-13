@@ -32,23 +32,60 @@ type Listener struct {
 	socketMode types.SocketMode
 }
 
+// Options SCTP listener options
+type Options struct {
+	mode        types.SocketMode
+	initMsg     types.InitMsg
+	nonblocking bool
+}
+
+// Option listener options
+type Option func(options *Options)
+
+// WithMode sets SCTP mode
+func WithMode(mode types.SocketMode) func(options *Options) {
+	return func(options *Options) {
+		options.mode = mode
+
+	}
+}
+
+// WithInitMsg sets options
+func WithInitMsg(initMsg types.InitMsg) func(options *Options) {
+	return func(options *Options) {
+		options.initMsg = initMsg
+
+	}
+}
+
+// WithNonBlocking sets nonblocking
+func WithNonBlocking(nonblocking bool) func(options *Options) {
+	return func(options *Options) {
+		options.nonblocking = nonblocking
+	}
+}
+
 // NewListener creates a new SCTP listener instance
-func NewListener(laddr *addressing.Address, options types.InitMsg, mode types.SocketMode, nonblocking bool) (*Listener, error) {
+func NewListener(laddr *addressing.Address, opts ...Option) (*Listener, error) {
 	if laddr == nil {
 		return nil, errors.NewInvalid("Local SCTPAddr is required")
+	}
+	listenerOptions := &Options{}
+	for _, option := range opts {
+		option(listenerOptions)
 	}
 
 	cfg := connection.NewConfig(
 		connection.WithAddressFamily(laddr.AddressFamily),
-		connection.WithOptions(options),
-		connection.WithMode(mode),
-		connection.WithNonBlocking(nonblocking))
+		connection.WithOptions(listenerOptions.initMsg),
+		connection.WithMode(listenerOptions.mode),
+		connection.WithNonBlocking(listenerOptions.nonblocking))
 	conn, err := connection.NewSCTPConnection(cfg)
 	if err != nil {
 		return nil, err
 	}
-	ln := &Listener{SCTPConn: *conn, socketMode: mode}
-	ln.socketMode = mode
+	ln := &Listener{SCTPConn: *conn, socketMode: listenerOptions.mode}
+	ln.socketMode = listenerOptions.mode
 
 	if err := ln.Bind(laddr); err != nil {
 		return nil, err
