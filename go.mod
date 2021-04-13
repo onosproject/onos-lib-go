@@ -9,7 +9,7 @@ require (
 	github.com/atomix/go-local v0.5.1
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/docker/distribution v2.7.1+incompatible // indirect
+	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
 	github.com/ericchiang/oidc v0.0.0-20160908143337-11f62933e071
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.4.4

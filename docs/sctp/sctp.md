@@ -1,2 +1,0 @@
-# SCTP Golang Library 
-

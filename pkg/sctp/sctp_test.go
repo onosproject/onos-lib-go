@@ -43,8 +43,8 @@ import (
 )
 
 const (
-	StreamTestClients  = 1
-	StreamTestStreams  = 10
+	StreamTestClients  = 10
+	StreamTestStreams  = 100
 	address            = "127.0.0.1:0"
 	ServerRoutineCount = 10
 	ClientRoutineCount = 100
