@@ -32,7 +32,7 @@ func BoolToInt(b bool) int {
 	return 0
 }
 
-func checkEndian() binary.ByteOrder {
+func getNativeByteOrder() binary.ByteOrder {
 	i := uint16(1)
 	var nativeEndian binary.ByteOrder
 	if *(*byte)(unsafe.Pointer(&i)) == 0 {
@@ -47,13 +47,13 @@ func checkEndian() binary.ByteOrder {
 // ToBuf ...
 func ToBuf(v interface{}) []byte {
 	var buf bytes.Buffer
-	binary.Write(&buf, checkEndian(), v)
+	binary.Write(&buf, getNativeByteOrder(), v)
 	return buf.Bytes()
 }
 
 // Htons ...
 func Htons(h uint16) uint16 {
-	if checkEndian() == binary.LittleEndian {
+	if getNativeByteOrder() == binary.LittleEndian {
 		return (h << 8 & 0xff00) | (h >> 8 & 0xff)
 	}
 	return h
