@@ -40,7 +40,7 @@ const (
 	DPanicLevel
 
 	// EmptyLevel :
-	EmptyLevel
+	EmptyLevel = InfoLevel
 )
 
 // String :

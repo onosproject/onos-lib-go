@@ -24,7 +24,6 @@ import (
 func TestDefaultLogger(t *testing.T) {
 	logger := GetLogger()
 	logger.Info("foo: bar")
-	SetLevel(InfoLevel)
 	logger.Info("bar: baz")
 	logger.Debug("baz: bar")
 }
