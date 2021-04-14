@@ -216,7 +216,6 @@ func TestSCTPConcurrentOneToMany(t *testing.T) {
 				assert.NoError(t, err)
 				if events.IsSCTPAssocChange(notif) {
 					assocChange := notif.GetAssociationChange()
-					t.Log(assocChange.State, assocChange.AssocID)
 					if assocChange.State == types.SctpCommUp {
 						ln.SCTPWrite([]byte{0}, &types.SndRcvInfo{Flags: types.SctpEOF, AssocID: assocChange.AssocID})
 					}
@@ -250,27 +249,20 @@ func TestOneToManyPeelOff(t *testing.T) {
 		test := 999
 		count := 0
 		for {
-			t.Logf("[%d]Reading from server socket...\n", test)
 			buf := make([]byte, 512)
 			n, oob, flags, err := ln.SCTPRead(buf)
 			if err == io.EOF {
 				break
 			}
 			assert.NoError(t, err)
-
-			t.Logf("[%d]Got a notification. Bytes read: %v\n", test, n)
-
 			if events.IsNotification(flags) {
 				notif, err := events.GetNotfication(buf[:n], flags)
 				assert.NoError(t, err)
 				if events.IsSCTPAssocChange(notif) {
-					t.Logf("[%d]Got an association change notification\n", test)
 					assocChange := notif.GetAssociationChange()
 					if assocChange.State == types.SctpCommUp {
-						t.Logf("[%d]SCTP_COMM_UP. Creating socket for association: %v\n", test, assocChange.AssocID)
 						newSocket, err := ln.PeelOff(assocChange.AssocID)
 						assert.NoError(t, err)
-						t.Logf("[%d]Peeled off socket: %#+v\n", test, newSocket)
 						err = newSocket.SetEvents(types.WithDataIO())
 						assert.NoError(t, err)
 						count++
@@ -282,8 +274,7 @@ func TestOneToManyPeelOff(t *testing.T) {
 
 			if events.IsMsgEORSet(flags) {
 				info := oob.GetSndRcvInfo()
-				t.Logf("[%d]Got data on main socket, but it wasn't a notification: %#+v \n", test, info)
-				wn, err := ln.SCTPWrite(buf[:n],
+				_, err := ln.SCTPWrite(buf[:n],
 					&types.SndRcvInfo{
 						AssocID: info.AssocID,
 						Stream:  info.Stream,
@@ -291,12 +282,10 @@ func TestOneToManyPeelOff(t *testing.T) {
 					},
 				)
 				if err != nil {
-					t.Errorf("[%d]failed to write %s, len: %d, err: %v, bytes written: %d, info: %+v", test, string(buf[:n]), len(buf[:n]), err, wn, info)
 					return
 				}
 				continue
 			}
-			t.Logf("[%d]No clue what is happening", test)
 		}
 	}()
 
@@ -323,15 +312,12 @@ func TestOneToManyPeelOff(t *testing.T) {
 				)
 				assert.NoError(t, err)
 
-				t.Logf("[%d]Reading from client socket...\n", client)
 				buf := make([]byte, 512)
 				n, oob, _, err := conn.SCTPRead(buf)
 				assert.NoError(t, err)
 				assert.NotNil(t, oob)
-				t.Logf("[%d]***Read from client socket\n", client)
 				assert.Equal(t, oob.GetSndRcvInfo().Stream, rstream)
 				assert.Equal(t, string(buf[:n]), rstring)
-				t.Logf("[%d]Client read success! MsgCount: %v\n", client, q)
 			}
 			conn.Close()
 
@@ -343,7 +329,6 @@ func TestOneToManyPeelOff(t *testing.T) {
 
 func socketReaderMirror(sock *connection.SCTPConn, t *testing.T, goroutine int) {
 	for {
-		t.Logf("[%d]Reading peel off server socket...\n", goroutine)
 		buf := make([]byte, 512)
 		n, oob, flags, err := sock.SCTPRead(buf)
 		if err == io.EOF || err == io.ErrUnexpectedEOF || err == syscall.ENOTCONN {
@@ -353,12 +338,10 @@ func socketReaderMirror(sock *connection.SCTPConn, t *testing.T, goroutine int) 
 		assert.NoError(t, err)
 
 		if events.IsNotification(flags) {
-			t.Logf("[%d]Notification received. Byte count: %v, OOB: %#+v, Flags: %v\n", goroutine, n, oob, flags)
 			if notif, err := connection.SCTPParseNotification(buf[:n]); err == nil {
 				t.Logf("[%d]Notification type: %v\n", goroutine, notif.Type().String())
 			}
 		}
-		t.Logf("[%d]Writing peel off server socket...\n", goroutine)
 		info := oob.GetSndRcvInfo()
 		wn, err := sock.SCTPWrite(buf[:n],
 			&types.SndRcvInfo{
@@ -435,8 +418,6 @@ func TestNonBlockingServerOneToMany(t *testing.T) {
 
 				stream := bucket[info.Stream]
 				stream.Write(buf[:n])
-
-				t.Logf("No EOR\n")
 			}
 		WRITE:
 			for {
@@ -446,7 +427,6 @@ func TestNonBlockingServerOneToMany(t *testing.T) {
 					_, err := ln.SCTPWrite(r.Data, r.SndRcvInfo)
 					if err != nil {
 						if err == syscall.EWOULDBLOCK {
-							t.Logf("WRITE EWOULDBLOCK\n")
 							c = append(c, r)
 							break
 						}
@@ -555,7 +535,6 @@ func TestStreamsOneToOneWithoutEvents(t *testing.T) {
 					b.Write(buf[:cn])
 					rtext := b.String()
 					assert.Equal(t, rtext, text)
-					t.Log(text)
 					b.Reset()
 					break
 
@@ -593,7 +572,6 @@ func TestStreamsOneToOneWithEvents(t *testing.T) {
 					b.Write(buf[:n])
 					if events.IsNotification(flags) {
 						if !(events.IsMsgEORSet(flags)) {
-							t.Log("buffer not large enough for notification")
 							continue
 						}
 					} else if events.IsMsgEORSet(flags) {
@@ -603,7 +581,6 @@ func TestStreamsOneToOneWithEvents(t *testing.T) {
 							Stream: info.Stream,
 							PPID:   info.PPID,
 						})
-						t.Log(info.AssocID)
 						assert.NoError(t, err)
 					}
 					b.Reset()
@@ -641,7 +618,6 @@ func TestStreamsOneToOneWithEvents(t *testing.T) {
 							if cn == 0 {
 								break
 							}
-							t.Logf("EOF on server connection. Total bytes received: %d, bytes received: %d", len(b.Bytes()), cn)
 						} else {
 							t.Errorf("Client connection read err: %v. Total bytes received: %d, bytes received: %d", err, len(b.Bytes()), cn)
 							return
@@ -690,7 +666,6 @@ func TestStreamsOneToMany(t *testing.T) {
 			if events.IsMsgEORSet(flags) {
 				info := oob.GetSndRcvInfo()
 				data := b.Bytes()
-				t.Logf("Server received data: %s for stream with Association ID %v", string(data), info.AssocID)
 				_, err = ln.SCTPWrite(data, &types.SndRcvInfo{
 					Stream:  info.Stream,
 					PPID:    info.PPID,
@@ -736,7 +711,6 @@ func TestStreamsOneToMany(t *testing.T) {
 					b.Write(buf[:cn])
 
 					if events.IsMsgEORSet(flags) {
-						t.Log(oob.GetSndRcvInfo().PPID)
 						assert.Equal(t, ppid, oob.GetSndRcvInfo().Stream)
 						rtext := b.String()
 						b.Reset()
