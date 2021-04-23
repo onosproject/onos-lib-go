@@ -39,7 +39,7 @@ type Address struct {
 func ResolveAddress(addressFamily types.AddressFamily, addrs string) (*Address, error) {
 	elems := strings.Split(addrs, "/")
 	if len(elems) == 0 {
-		return nil, errors.NewInvalid("invalid address:")
+		return nil, errors.NewInvalid("invalid address")
 	}
 
 	lastE := elems[len(elems)-1]

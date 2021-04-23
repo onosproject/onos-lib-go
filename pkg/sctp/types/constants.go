@@ -21,13 +21,18 @@ import (
 const (
 	// SolSctp ...
 	SolSctp = 132
-	// SctpBindxAddAddr ...
+	// SctpBindxAddAddr  SCTP_BINDX_ADD_ADDR directs SCTP to add the given addresses to the
+	//   socket (i.e., endpoint)
 	SctpBindxAddAddr = 0x01
-	// SctpBindxRemAddr ...
+	// SctpBindxRemAddr SCTP_BINDX_REM_ADDR directs SCTP to
+	//   remove the given addresses from the socket.
 	SctpBindxRemAddr = 0x02
 
-	// MsgNotification ...
+	// MsgNotification  If a notification has arrived, recvmsg() will return the notification
+	//   in the msg_iov field and set the MSG_NOTIFICATION flag in msg_flags.
+	//   If the MSG_NOTIFICATION flag is not set, recvmsg() will return data.
 	MsgNotification = 0x8000
+
 	// MsgEOR  If all portions of a data frame or notification have been read,
 	//   recvmsg() will return with MSG_EOR set in msg_flags. If the application
 	//   does not provide enough buffer space to completely
@@ -42,12 +47,15 @@ const (
 	SctpRtoinfoIota = iota
 	// SctpAssocinfo ...
 	SctpAssocinfo
-	// SctpInitmsg Applications can specify protocol parameters for the default
+	// SctpInitmsg applications can specify protocol parameters for the default
 	//   association initialization. Setting initialization parameters is effective only on an unconnected
 	//   socket (for one-to-many style sockets, only future associations are
 	//   affected by the change)
 	SctpInitmsg
-	// SctpNodelay ...
+
+	// SctpNodelay this option turns on/off any Nagle-like algorithm.  This means that
+	//   packets are generally sent as soon as possible, and no unnecessary
+	//   delays are introduced, at the cost of more packets in the network.
 	SctpNodelay
 	// SctpAutoclose ...
 	SctpAutoclose
@@ -118,15 +126,21 @@ const (
 )
 
 const (
-	// SctpUnordered ...
+	// SctpUnordered this flag is present when the message was sent unordered.
 	SctpUnordered = 1 << iota
-	// SctpAddrOver ...
+
+	// SctpAddrOver  for a one-to-many style socket requests that the SCTP stack override
+	//   the primary destination address with the address found with the sendto sendmsg call.
 	SctpAddrOver
-	// SctpAbort ...
+
+	// SctpAbort Setting this flag causes the specified association to abort by sending an ABORT message to the peer.
 	SctpAbort
+
 	// SctpSackImmediately ...
 	SctpSackImmediately
-	// SctpEOF ...
+
+	// SctpEOF Setting this flag invokes the SCTP graceful shutdown
+	//  procedures on the specified association.
 	SctpEOF
 )
 
@@ -135,19 +149,32 @@ const (
 	SctpMaxStream = 0xffff
 )
 
-// State ...
+// State SCTP association event value.
 type State uint16
 
 const (
-	// SctpCommUp ...
+	// SctpCommUp this state means a new association is now ready, and data may be
+	// exchanged with this peer. When an association has been
+	// established successfully, this notification should be the
+	// first one.
 	SctpCommUp = State(iota)
-	// SctpCommLost ...
+
+	// SctpCommLost this state means the association has failed. The association is
+	// now in the closed state. If SEND_FAILED notifications are turned on, an
+	// SCTP_COMM_LOST is accompanied by a series of SCTP_SEND_FAILED_EVENT events,
+	// one for each outstanding message.
 	SctpCommLost
-	// SctpRestart ...
+
+	// SctpRestart SCTP has detected that the peer has restarted.
 	SctpRestart
-	// SctpShutdownComp ...
+
+	// SctpShutdownComp the association has gracefully closed.
 	SctpShutdownComp
-	// SctpCantStrAssoc ...
+
+	// SctpCantStrAssoc the association setup failed.  If non-blocking mode is set and data was sent (on a one-to-many
+	//  style socket), an SCTP_CANT_STR_ASSOC is accompanied by a
+	//  series of SCTP_SEND_FAILED_EVENT events, one for each
+	//  outstanding message.
 	SctpCantStrAssoc
 )
 
@@ -180,7 +207,7 @@ const (
 	Sctp6Only
 )
 
-// ToSyscall ...
+// ToSyscall converts to syscall address family constant values
 func (af AddressFamily) ToSyscall() int {
 
 	switch af {
@@ -212,9 +239,17 @@ func (af AddressFamily) String() string {
 type SocketMode int
 
 const (
-	// OneToOne one to one mode
+	// OneToOne one-to-one mode. the goal of this style is to follow as closely as possible the
+	//   current practice of using the sockets interface for a connection-
+	//   oriented protocol such as TCP.  This style enables existing
+	//   applications using connection-oriented protocols to be ported to SCTP
+	//   with very little effort.
 	OneToOne = SocketMode(iota)
-	// OneToMany one to many mode
+	// OneToMany one to many mode. This set of semantics is
+	// similar to that defined for connectionless protocols, such as
+	//  UDP.  A one-to-many style SCTP socket should be able to control
+	//  multiple SCTP associations.  This is similar to a UDP socket,
+	//  which can communicate with many peer endpoints.
 	OneToMany
 )
 
@@ -222,14 +257,19 @@ const (
 type PeerChangeState uint32
 
 const (
-	// SctpAddrAvailable ...
+	// SctpAddrAvailable   address reachable notification.
 	SctpAddrAvailable = iota
-	// SctpAddrUnreachable ...
+
+	// SctpAddrUnreachable address unreachable notification
 	SctpAddrUnreachable
-	// SctpAddrRemoved ...
+
+	// SctpAddrRemoved the address is no longer part of the association.
 	SctpAddrRemoved
-	// SctpAddrAdded ...
+
+	// SctpAddrAdded the address is now part of the association.
 	SctpAddrAdded
-	// SctpAddrMadePrim ...
+
+	// SctpAddrMadePrim  the address has now been made the primary
+	// destination address.
 	SctpAddrMadePrim
 )

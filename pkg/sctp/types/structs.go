@@ -22,9 +22,17 @@ import (
 
 // InitMsg  the default association initialization.
 type InitMsg struct {
-	NumOstreams    uint16
-	MaxInstreams   uint16
-	MaxAttempts    uint16
+	// NumOstreams specifies the number of
+	// streams to which the application wishes to be able to send.
+	NumOstreams uint16
+	// MaxInstreams specifies the maximum number of
+	// inbound streams the application is prepared to support.
+	MaxInstreams uint16
+	// MaxAttempts specifies how many attempts the
+	//  SCTP endpoint should make at resending the INIT.
+	MaxAttempts uint16
+	// MaxInitTimeout specifies the largest timeout or
+	// retransmission timeout (RTO) value (in milliseconds) to use in attempting an INIT.
 	MaxInitTimeout uint16
 }
 
@@ -37,28 +45,52 @@ func NewDefaultInitMsg() *InitMsg {
 
 // SndRcvInfo ...
 type SndRcvInfo struct {
-	Stream  uint16
-	SSN     uint16
-	Flags   uint16
-	_       uint16
-	PPID    uint32
+	// Stream stream number
+	Stream uint16
+	// SSN  this value contains the stream sequence
+	// number that the remote endpoint placed in the DATA chunk.
+	SSN uint16
+	// Flags ...
+	Flags uint16
+	_     uint16
+	// PPID This value in sendmsg() is an unsigned integer that is
+	// passed to the remote end in each user message.
+	PPID uint32
+	// Context This value is an opaque 32-bit context datum that is
+	// used in the sendmsg() function.  This value is passed back to the
+	// upper layer if an error occurs on the send of a message and is
+	// retrieved with each undelivered message.
 	Context uint32
-	TTL     uint32
-	TSN     uint32
-	CumTSN  uint32
+	// TTL For the sending side, this field contains the
+	// message's time to live, in milliseconds.
+	TTL uint32
+	// TSN For the receiving side, this field holds a Transmission Sequence Number (TSN)
+	// that was assigned to one of the SCTP DATA chunks.
+	TSN uint32
+	// CumTSN This field will hold the current cumulative TSN as known by the underlying SCTP layer.
+	CumTSN uint32
+	// AssocID  The association handle field, sinfo_assoc_id, holds the identifier for the association announced in the SCTP_COMM_UP
+	//  notification.  All notifications for a given association have the
+	//  same identifier.  This field is ignored for one-to-one style sockets.
 	AssocID int32
 }
 
-// NxtInfo ...
+// NxtInfo information of the next message that will be delivered  if this information
+// is already available when delivering the current message.
 type NxtInfo struct {
-	Stream  uint16
-	Flags   uint16
-	PPID    uint32
-	Length  uint32
+	// Stream next message's stream number
+	Stream uint16
+	Flags  uint16
+	PPID   uint32
+	// Length length of the message currently within
+	// the socket buffer
+	Length uint32
+	// holds the identifier for the association announced
+	// in the SCTP_COMM_UP notification.
 	AssocID int32
 }
 
-// SndInfo ...
+// SndInfo SCTP options for sending a msg.
 type SndInfo struct {
 	Stream  uint16
 	Flags   uint16
@@ -136,13 +168,20 @@ func (n *Notification) GetSenderDry() *SenderDry {
 	return (*SenderDry)(unsafe.Pointer(&n.Data[0]))
 }
 
-// AssociationChange ...
+// AssociationChange Communication notifications inform the application that an SCTP
+//   association has either begun or ended.
 type AssociationChange struct {
-	Type            NotificationType
-	Flags           uint16
-	Length          uint32
-	State           State
-	Error           uint16
+	Type  NotificationType
+	Flags uint16
+	// Length length of the notification data,
+	Length uint32
+	State  State
+	//  If the state was reached due to an error condition (e.g.,
+	//  SCTP_COMM_LOST), any relevant error information is available in this field.
+	Error uint16
+	// OutboundStreams  The maximum number of
+	// streams allowed in each direction is available in
+	// sac_outbound_streams and sac_inbound streams.
 	OutboundStreams uint16
 	InboundStreams  uint16
 	AssocID         int32
@@ -159,7 +198,7 @@ type PeerAddrChange struct {
 	AssocID int32
 }
 
-// RemoteError ...
+// RemoteError a remote peer may send an Operation Error message to its peer.
 type RemoteError struct {
 	Type    NotificationType
 	Flags   uint16
@@ -180,7 +219,7 @@ type SendFailed struct {
 	Data    []byte
 }
 
-// AdaptationIndication ...
+// AdaptationIndication for informing the application about the peer's adaptation layer indication.
 type AdaptationIndication struct {
 	Type       NotificationType
 	Flags      uint16
