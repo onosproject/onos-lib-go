@@ -29,7 +29,6 @@ import (
 var (
 	staticLabels = map[string]string{"builder": "test"}
 	builder      = NewBuilder("onos", "exporter_test", staticLabels)
-	activeDesc   = builder.NewMetricDesc("active_state", "Indicates it's activated", []string{"something"}, map[string]string{})
 )
 
 const (
@@ -46,6 +45,8 @@ func NewCustomCollector() Collector {
 }
 
 func (c *customCollector) Retrieve(ch chan<- prometheus.Metric) error {
+	activeDesc := builder.NewMetricDesc("active_state", "Indicates it's activated", []string{"something"}, map[string]string{})
+
 	ch <- builder.MustNewConstMetric(
 		activeDesc,
 		prometheus.GaugeValue,
@@ -99,8 +100,16 @@ func queryExporterMetrics(address, path string, metricNames ...string) error {
 	return nil
 }
 
-func TestExporter(t *testing.T) {
+func TestProm(t *testing.T) {
+
+	newGauge, errNewGauge := builder.NewMetricGauge("new_gauge", "Testing a new gauge")
+	newCounter, errNewCounter := builder.NewMetricCounter("new_counter", "Testing a new counter")
+
+	assert.NilError(t, errNewGauge)
+	assert.NilError(t, errNewCounter)
+
 	e := NewExporter(path, address)
+	e.RegisterCollector("custom-collector", NewCustomCollector())
 
 	go func() {
 		if err := e.Run(); err != nil {
@@ -111,38 +120,11 @@ func TestExporter(t *testing.T) {
 	if err := queryExporter(address, path); err != nil {
 		t.Error(err)
 	}
-}
-
-func TestExporterCollector(t *testing.T) {
-	e := NewExporter(path, address)
-	e.RegisterCollector("custom-collector", NewCustomCollector())
-
-	go func() {
-		if err := e.Run(); err != nil {
-			t.Error(err)
-		}
-	}()
 
 	metricName := "onos_exporter_test_active_state"
 	if err := queryExporterMetrics(address, path, metricName); err != nil {
 		t.Error(err)
 	}
-}
-
-func TestExporterBuilder(t *testing.T) {
-	newGauge, errNewGauge := builder.NewMetricGauge("new_gauge", "Testing a new gauge")
-	newCounter, errNewCounter := builder.NewMetricCounter("new_counter", "Testing a new counter")
-
-	assert.NilError(t, errNewGauge)
-	assert.NilError(t, errNewCounter)
-
-	e := NewExporter(path, address)
-
-	go func() {
-		if err := e.Run(); err != nil {
-			t.Error(err)
-		}
-	}()
 
 	newGauge.Add(1)
 	newCounter.Add(100)
