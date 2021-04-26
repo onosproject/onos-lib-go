@@ -45,26 +45,40 @@ type Collector interface {
 	Retrieve(ch chan<- prometheus.Metric) error
 }
 
+type Exporter interface {
+	RegisterCollector(collectorName string, collector Collector) error
+	Run() error
+	Collect(ch chan<- prometheus.Metric)
+	Describe(ch chan<- *prometheus.Desc)
+}
+
 // Exporter Defines a exporter struct in a address/path and with a set of collectors
-type Exporter struct {
+type exporter struct {
 	path       string
 	address    string
 	Collectors map[string]Collector
+	mu         sync.RWMutex
 }
 
 // RegisterCollector Registers Collectors to a Prometheus exporter
-func (e Exporter) RegisterCollector(collectorName string, collector Collector) {
+func (e *exporter) RegisterCollector(collectorName string, collector Collector) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if _, existsCollector := e.Collectors[collectorName]; existsCollector {
+		return fmt.Errorf("Collector already existent %s", collectorName)
+	}
 	e.Collectors[collectorName] = collector
+	return nil
 }
 
 // Describe Implements the prometheus.Collector interface.
-func (e Exporter) Describe(ch chan<- *prometheus.Desc) {
+func (e *exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- retrieveDurationDesc
 	ch <- retrieveSuccessDesc
 }
 
 // Collect Implements the prometheus.Collector interface.
-func (e Exporter) Collect(ch chan<- prometheus.Metric) {
+func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(e.Collectors))
 	for name, c := range e.Collectors {
@@ -93,8 +107,8 @@ func execute(name string, collector Collector, ch chan<- prometheus.Metric) {
 }
 
 // NewExporter Creates a Prometheus exporter
-func NewExporter(path, address string) *Exporter {
-	return &Exporter{
+func NewExporter(path, address string) Exporter {
+	return &exporter{
 		path:       path,
 		address:    address,
 		Collectors: map[string]Collector{},
@@ -102,7 +116,7 @@ func NewExporter(path, address string) *Exporter {
 }
 
 // registerExporter Registers a Prometheus exporter
-func registerExporter(exporter *Exporter) error {
+func registerExporter(exporter Exporter) error {
 	if err := prometheus.Register(exporter); err != nil {
 		return fmt.Errorf("could not register exporter: %s", err)
 	}
@@ -111,7 +125,7 @@ func registerExporter(exporter *Exporter) error {
 }
 
 // Run Registers a Prometheus exporter and run it
-func (e *Exporter) Run() error {
+func (e *exporter) Run() error {
 	if err := registerExporter(e); err != nil {
 		return err
 	}

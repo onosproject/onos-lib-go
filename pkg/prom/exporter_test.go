@@ -16,6 +16,7 @@ package prom
 
 import (
 	"fmt"
+	"time"
 
 	"io/ioutil"
 	"net/http"
@@ -32,7 +33,7 @@ var (
 )
 
 const (
-	address = "localhost:9999"
+	address = "127.0.0.1:8888"
 	path    = "/metrics"
 )
 
@@ -100,6 +101,24 @@ func queryExporterMetrics(address, path string, metricNames ...string) error {
 	return nil
 }
 
+func waitServerReady(address string, timeout int) error {
+	var err error
+
+	finish := time.After(time.Second * time.Duration(timeout))
+
+	for {
+		select {
+		case <-finish:
+			return err
+		default:
+			err = queryExporter(address, path)
+			if err == nil {
+				return nil
+			}
+			time.Sleep(time.Millisecond * 500)
+		}
+	}
+}
 func TestProm(t *testing.T) {
 
 	newGauge, errNewGauge := builder.NewMetricGauge("new_gauge", "Testing a new gauge")
@@ -109,13 +128,19 @@ func TestProm(t *testing.T) {
 	assert.NilError(t, errNewCounter)
 
 	e := NewExporter(path, address)
-	e.RegisterCollector("custom-collector", NewCustomCollector())
+	if err := e.RegisterCollector("custom-collector", NewCustomCollector()); err != nil {
+		t.Error(err)
+	}
 
-	go func() {
+	go func(e Exporter, t *testing.T) {
 		if err := e.Run(); err != nil {
 			t.Error(err)
 		}
-	}()
+	}(e, t)
+
+	if err := waitServerReady(address, 3); err != nil {
+		t.Error(err)
+	}
 
 	if err := queryExporter(address, path); err != nil {
 		t.Error(err)
