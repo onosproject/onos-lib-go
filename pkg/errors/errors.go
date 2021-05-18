@@ -191,7 +191,7 @@ func FromAtomix(err error) error {
 	}
 
 	if typed, ok := err.(*clienterrors.TypedError); ok {
-		switch typed {
+		switch typed.Type {
 		case clienterrors.Unknown:
 			return New(Unknown, err.Error())
 		case clienterrors.Canceled:
@@ -222,7 +222,7 @@ func FromAtomix(err error) error {
 	}
 
 	if typed, ok := err.(*atomixerrors.TypedError); ok {
-		switch typed {
+		switch typed.Type {
 		case atomixerrors.Unknown:
 			return New(Unknown, err.Error())
 		case atomixerrors.Canceled:
