@@ -20,6 +20,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 
@@ -81,6 +82,7 @@ func TestController(t *testing.T) {
 		Watch(watcher).
 		Partition(partitioner).
 		Reconcile(reconciler)
+	controller.maxRetryDelay = 100 * time.Millisecond
 	defer controller.Stop()
 
 	err := controller.Start()
@@ -107,7 +109,15 @@ func TestController(t *testing.T) {
 
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(4))).
-		Return(Result{}, errors.New("some error"))
+		Return(Result{}, errors.New("some error")).Times(4)
+	reconciler.EXPECT().
+		Reconcile(gomock.Eq(NewID(4))).
+		DoAndReturn(func(id ID) (Result, error) {
+			return Result{Requeue: id}, nil
+		}).Times(3)
+	reconciler.EXPECT().
+		Reconcile(gomock.Eq(NewID(4))).
+		Return(Result{}, errors.New("some other error")).Times(4)
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(4))).
 		DoAndReturn(func(id ID) (Result, error) {
