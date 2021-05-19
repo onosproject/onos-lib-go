@@ -15,7 +15,7 @@
 package controller
 
 import (
-	"errors"
+	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -96,20 +96,20 @@ func TestController(t *testing.T) {
 		Return(Result{}, nil)
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(2))).
-		Return(Result{}, errors.New("some error"))
+		Return(Result{}, errors.NewInvalid("some error"))
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(2))).
-		Return(Result{}, errors.New("some error"))
+		Return(Result{}, errors.NewInvalid("some error"))
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(2))).
-		Return(Result{}, errors.New("some error"))
+		Return(Result{}, errors.NewInvalid("some error"))
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(2))).
 		Return(Result{}, nil)
 
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(4))).
-		Return(Result{}, errors.New("some error")).Times(4)
+		Return(Result{}, errors.NewInvalid("some error")).Times(4)
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(4))).
 		DoAndReturn(func(id ID) (Result, error) {
@@ -117,7 +117,7 @@ func TestController(t *testing.T) {
 		}).Times(3)
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(4))).
-		Return(Result{}, errors.New("some other error")).Times(4)
+		Return(Result{}, errors.NewInvalid("some other error")).Times(4)
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(4))).
 		DoAndReturn(func(id ID) (Result, error) {

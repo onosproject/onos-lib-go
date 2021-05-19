@@ -15,7 +15,7 @@
 package logging
 
 import (
-	"errors"
+	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"strings"
 
 	"github.com/onosproject/onos-lib-go/api/logging"
@@ -55,7 +55,7 @@ func (s *Server) GetLevel(ctx context.Context, req *logging.GetLevelRequest) (*l
 
 	name := req.GetLoggerName()
 	if name == "" {
-		return &logging.GetLevelResponse{}, errors.New("precondition for get level request is failed")
+		return &logging.GetLevelResponse{}, errors.NewInvalid("precondition for get level request is failed")
 	}
 
 	names := splitLoggerName(name)
@@ -94,7 +94,7 @@ func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*l
 	if name == "" {
 		return &logging.SetLevelResponse{
 			ResponseStatus: logging.ResponseStatus_PRECONDITION_FAILED,
-		}, errors.New("precondition for set level request is failed")
+		}, errors.NewInvalid("precondition for set level request is failed")
 	}
 
 	names := splitLoggerName(name)
@@ -119,7 +119,7 @@ func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*l
 	default:
 		return &logging.SetLevelResponse{
 			ResponseStatus: logging.ResponseStatus_PRECONDITION_FAILED,
-		}, errors.New("the requested level is not supported")
+		}, errors.NewNotSupported("the requested level is not supported")
 
 	}
 

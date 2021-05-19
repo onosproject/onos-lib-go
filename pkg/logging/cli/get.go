@@ -16,7 +16,7 @@ package cli
 
 import (
 	"context"
-	"errors"
+	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"time"
 
 	api "github.com/onosproject/onos-lib-go/api/logging"
@@ -55,7 +55,7 @@ func runGetLevelCommand(cmd *cobra.Command, args []string) error {
 
 	name := args[0]
 	if name == "" {
-		return errors.New("the logger name should be provided")
+		return errors.NewInvalid("the logger name should be provided")
 	}
 
 	client := api.NewLoggerClient(conn)
