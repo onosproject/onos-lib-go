@@ -25,7 +25,8 @@ import (
 var log = logging.GetLogger("controller")
 
 const (
-	maxRetryDelay = 5 * time.Second
+	maxRetryDelayDefault = 5 * time.Second
+	delayStep            = 10 * time.Millisecond
 )
 
 // Watcher is implemented by controllers to implement watching for specific events
@@ -64,11 +65,12 @@ type Result struct {
 // NewController creates a new controller
 func NewController(name string) *Controller {
 	return &Controller{
-		name:        name,
-		activator:   &UnconditionalActivator{},
-		partitioner: &UnaryPartitioner{},
-		watchers:    make([]Watcher, 0),
-		partitions:  make(map[PartitionKey]chan Request),
+		name:          name,
+		activator:     &UnconditionalActivator{},
+		partitioner:   &UnaryPartitioner{},
+		watchers:      make([]Watcher, 0),
+		partitions:    make(map[PartitionKey]chan Request),
+		maxRetryDelay: maxRetryDelayDefault,
 	}
 }
 
@@ -89,14 +91,15 @@ func NewController(name string) *Controller {
 // will create a goroutine per PartitionKey provided by the WorkPartitioner, and requests to different
 // partitions may be handled concurrently.
 type Controller struct {
-	name        string
-	mu          sync.RWMutex
-	activator   Activator
-	partitioner WorkPartitioner
-	filter      Filter
-	watchers    []Watcher
-	reconciler  Reconciler
-	partitions  map[PartitionKey]chan Request
+	name          string
+	mu            sync.RWMutex
+	activator     Activator
+	partitioner   WorkPartitioner
+	filter        Filter
+	watchers      []Watcher
+	reconciler    Reconciler
+	partitions    map[PartitionKey]chan Request
+	maxRetryDelay time.Duration
 }
 
 // Activate sets an activator for the controller
@@ -239,7 +242,7 @@ func (c *Controller) partition(id ID, partitioner WorkPartitioner) {
 		// Get the partition key for the object ID
 		key, err := partitioner.Partition(id)
 		if err != nil {
-			time.Sleep(10 * time.Millisecond * time.Duration(math.Pow(2, float64(iteration))))
+			time.Sleep(delayStep * time.Duration(math.Pow(2, float64(iteration))))
 		} else {
 			// Get or create a partition channel for the partition key
 			c.mu.RLock()
@@ -276,9 +279,10 @@ func (c *Controller) reconcileRequest(request Request, ch chan Request, reconcil
 	request.attempt++
 	result, err := reconciler.Reconcile(request.ID)
 	if err != nil {
-		backoffDelay := 10 * time.Millisecond * time.Duration(math.Pow(2, float64(request.attempt)))
-		retryDelay := time.Duration(math.Min(float64(maxRetryDelay), float64(backoffDelay)))
-		log.Warnf("An error occurred during reconciliation of %v. Retrying after %s: %s", request.ID.Value, retryDelay, err)
+		maxExponent := math.Log2(float64(c.maxRetryDelay) / float64(delayStep))
+		retryDelay := delayStep * time.Duration(math.Pow(2, math.Min(float64(request.attempt), maxExponent)))
+		log.Infof("error during reconciliation of %v. Attempt %d. Retrying after %s: %s",
+			request.ID.Value, request.attempt, retryDelay, err)
 		time.AfterFunc(retryDelay, func() {
 			ch <- request
 		})
