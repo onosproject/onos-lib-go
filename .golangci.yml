@@ -9,7 +9,6 @@ run:
 linters:
   enable:
     - gofmt
-    - gocyclo
     - golint
     - misspell
     - typecheck
