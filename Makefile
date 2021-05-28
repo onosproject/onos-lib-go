@@ -3,7 +3,7 @@ export GO111MODULE=on
 
 .PHONY: build
 
-ONOS_PROTOC_VERSION := v0.6.3
+ONOS_PROTOC_VERSION := v0.6.9
 
 test: # @HELP run the unit tests and source code validation  producing a golang style report
 test: deps license_check linters

@@ -217,7 +217,7 @@ func (pd *perBitData) parseLength(sizeRange int64, repeat *bool) (value uint64, 
 	return value, err
 }
 
-func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperBoundPtr *int64) (asn1.BitString, error) {
+func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperBoundPtr *int64) (*asn1.BitString, error) {
 	var lb, ub, sizeRange int64 = 0, -1, -1
 	if !extensed {
 		if lowerBoundPtr != nil {
@@ -240,14 +240,14 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 		log.Debugf("Decoding BIT STRING size %d", ub)
 		if sizes > 2 {
 			if err := pd.parseAlignBits(); err != nil {
-				return bitString, err
+				return nil, err
 			}
 			if (pd.byteOffset + sizes) > uint64(len(pd.bytes)) {
 				err := fmt.Errorf("PER data out of range")
-				return bitString, err
+				return nil, err
 			}
 			if _, err := bitString.UpdateValue(pd.bytes[pd.byteOffset : pd.byteOffset+sizes]); err != nil {
-				return bitString, err
+				return nil, err
 			}
 			pd.byteOffset += sizes
 			pd.bitsOffset = uint(ub & 0x7)
@@ -259,14 +259,14 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 			bytes, err := pd.getBitString(uint(ub))
 			if err != nil {
 				log.Warnf("PD GetBitString error: %+v", err)
-				return bitString, err
+				return nil, err
 			}
 			if _, err = bitString.UpdateValue(bytes); err != nil {
-				return bitString, err
+				return nil, err
 			}
 		}
 		log.Debugf("Decoded BIT STRING (length = %d): %0.8b", ub, bitString.Value)
-		return bitString, nil
+		return &bitString, nil
 
 	}
 	repeat := false
@@ -274,27 +274,27 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 		var rawLength uint64
 		length, err := pd.parseLength(sizeRange, &repeat)
 		if err != nil {
-			return bitString, err
+			return nil, err
 		}
 		rawLength = length
 		rawLength += uint64(lb)
 		log.Debugf("Decoding BIT STRING size %d", rawLength)
 		if rawLength == 0 {
-			return bitString, nil
+			return nil, nil
 		}
 		sizes := (rawLength + 7) >> 3
 		if err := pd.parseAlignBits(); err != nil {
-			return bitString, err
+			return nil, err
 		}
 
 		if (pd.byteOffset + sizes) > uint64(len(pd.bytes)) {
-			return bitString, errors.NewInvalid("PER data out of range")
+			return nil, errors.NewInvalid("PER data out of range")
 		}
 		tempBytes := bitString.GetValueBytes()
 		tempBytes = append(tempBytes, pd.bytes[pd.byteOffset:pd.byteOffset+sizes]...)
 		bitString.Len += uint32(rawLength)
 		if _, err = bitString.UpdateValue(tempBytes); err != nil {
-			return bitString, err
+			return nil, err
 		}
 		pd.byteOffset += sizes
 		pd.bitsOffset = uint(rawLength & 0x7)
@@ -311,7 +311,7 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 			break
 		}
 	}
-	return bitString, nil
+	return &bitString, nil
 }
 func (pd *perBitData) parseOctetString(extensed bool, lowerBoundPtr *int64, upperBoundPtr *int64) (
 	[]byte, error) {

@@ -1,6 +1,6 @@
 module github.com/onosproject/onos-lib-go
 
-go 1.14
+go 1.15
 
 require (
 	github.com/Shopify/sarama v1.26.1
@@ -14,7 +14,6 @@ require (
 	github.com/ericchiang/oidc v0.0.0-20160908143337-11f62933e071
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.4.4
-	github.com/golang/protobuf v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
@@ -28,6 +27,7 @@ require (
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed
 	golang.org/x/sys v0.0.0-20210514084401-e8d321eab015
 	google.golang.org/grpc v1.33.2
+	google.golang.org/protobuf v1.26.0
 	gopkg.in/square/go-jose.v1 v1.1.2 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.4.0
