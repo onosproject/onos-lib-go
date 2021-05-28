@@ -619,7 +619,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 	// We deal with the structures defined in this package first.
 	switch fieldType {
 	case BitStringType:
-		ptr := v.Interface().(asn1.BitString)
+		ptr := v.Interface().(*asn1.BitString)
 		asBytes := ptr.GetValueBytes()
 		log.Debugf("Handling BitString with %x (%v). Len %d", v.Field(0).Uint(), asBytes, v.Field(1).Uint())
 		err := pd.appendBitString(asBytes, v.Field(1).Uint(), params.sizeExtensible, params.sizeLowerBound,
