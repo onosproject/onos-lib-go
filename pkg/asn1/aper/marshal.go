@@ -619,10 +619,12 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 	// We deal with the structures defined in this package first.
 	switch fieldType {
 	case BitStringType:
-		ptr := v.Interface().(*asn1.BitString)
-		asBytes := ptr.GetValueBytes()
-		log.Debugf("Handling BitString with %x (%v). Len %d", v.Field(0).Uint(), asBytes, v.Field(1).Uint())
-		err := pd.appendBitString(asBytes, v.Field(1).Uint(), params.sizeExtensible, params.sizeLowerBound,
+		tempBs := &asn1.BitString{} //Can't copy BitString value as a struct with locks. Create new one an copy values
+		tempBs.Value = v.Field(3).Uint()
+		tempBs.Len = uint32(v.Field(4).Uint())
+		asBytes := tempBs.GetValueBytes()
+		log.Debugf("Handling BitString with %x (%v). Len %d", v.Field(3).Uint(), asBytes, v.Field(4).Uint())
+		err := pd.appendBitString(asBytes, v.Field(4).Uint(), params.sizeExtensible, params.sizeLowerBound,
 			params.sizeUpperBound)
 		return err
 	case reflect.TypeOf([]uint8{}):

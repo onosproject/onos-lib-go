@@ -33,6 +33,7 @@ type fieldParameters struct {
 	referenceFieldName  string // the field to get to get the corresrponding value of this type(maybe nil).
 	referenceFieldValue *int64 // the field value which map to this type(maybe nil).
 	choiceIndex         *uint8 // the choice index
+	oneofName           string // a oneof name if present
 }
 
 // Given a tag string with the format specified in the package comment,

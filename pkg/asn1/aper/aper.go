@@ -25,6 +25,9 @@ import (
 
 var log = logging.GetLogger("asn1", "aper")
 
+// ChoiceMap - a global map of choices - specific to the Protobuf being handled
+var ChoiceMap = map[string]map[int]reflect.Type{}
+
 type perBitData struct {
 	bytes      []byte
 	byteOffset uint64
@@ -571,9 +574,9 @@ func (pd *perBitData) getChoiceIndex(extensed bool, upperBoundPtr *int64) (prese
 		err = fmt.Errorf("unsupported value of CHOICE type is in Extensed")
 	} else if upperBoundPtr == nil {
 		err = fmt.Errorf("the upper bound of CHIOCE is missing")
-	} else if ub := *upperBoundPtr; ub < 0 {
+	} else if ub := *upperBoundPtr; ub < 1 {
 		err = fmt.Errorf("the upper bound of CHIOCE is negative")
-	} else if rawChoice, err1 := pd.parseConstraintValue(ub + 1); err1 != nil {
+	} else if rawChoice, err1 := pd.parseConstraintValue(ub); err1 != nil {
 		err = err1
 	} else {
 		log.Debugf("Decoded Present index of CHOICE is %d + 1", rawChoice)
@@ -603,41 +606,6 @@ func getReferenceFieldValue(v reflect.Value) (value int64, err error) {
 		err = fmt.Errorf("OpenType reference only support INTEGER")
 	}
 	return
-}
-
-func (pd *perBitData) parseOpenType(v reflect.Value, params fieldParameters) error {
-
-	pdOpenType := &perBitData{[]byte(""), 0, 0}
-	repeat := false
-	for {
-		var rawLength uint64
-		rawLengthTmp, err := pd.parseLength(-1, &repeat)
-		if err != nil {
-			return err
-		}
-		rawLength = rawLengthTmp
-		if rawLength == 0 {
-			break
-		} else if err := pd.parseAlignBits(); err != nil {
-			return err
-		}
-		if (rawLength + pd.byteOffset) > uint64(len(pd.bytes)) {
-			return fmt.Errorf("per data out of range ")
-		}
-		pdOpenType.bytes = append(pdOpenType.bytes, pd.bytes[pd.byteOffset:pd.byteOffset+rawLength]...)
-		pd.byteOffset += rawLength
-
-		if !repeat {
-			if err := pd.parseAlignBits(); err != nil {
-				return err
-			}
-			break
-		}
-	}
-	log.Debugf("Decoding OpenType %s with (len = %d byte)", v.Type().String(), len(pdOpenType.bytes))
-	err := parseField(v, pdOpenType, params)
-	log.Debugf("Decoded OpenType %s", v.Type().String())
-	return err
 }
 
 // parseField is the main parsing function. Given a byte slice and an offset
@@ -679,11 +647,11 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 	switch fieldType {
 	case BitStringType:
 		bitString, err1 := pd.parseBitString(sizeExtensible, params.sizeLowerBound, params.sizeUpperBound)
-
 		if err1 != nil {
 			return err1
 		}
-		v.Set(reflect.ValueOf(bitString))
+		v.Field(3).Set(reflect.ValueOf(bitString.Value))
+		v.Field(4).Set(reflect.ValueOf(bitString.Len))
 		return nil
 	case reflect.TypeOf([]uint8{}):
 		octetString, err := pd.parseOctetString(sizeExtensible, params.sizeLowerBound, params.sizeUpperBound)
@@ -712,19 +680,21 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		log.Debugf("Decoded INTEGER Value: %d", parsedInt)
 		return nil
 	case reflect.Struct:
-
 		structType := fieldType
 		var structParams []fieldParameters
 		var optionalCount uint
 		var optionalPresents uint64
 
 		// pass tag for optional
+		fieldIdx := -1
 		for i := 0; i < structType.NumField(); i++ {
 			if structType.Field(i).PkgPath != "" {
 				log.Debugf("struct %s ignoring unexported field : %s", structType.Name(), structType.Field(i).Name)
 				continue
 			}
+			fieldIdx++
 			tempParams := parseFieldParameters(structType.Field(i).Tag.Get("aper"))
+			tempParams.oneofName = structType.Field(i).Tag.Get("protobuf_oneof")
 			// for optional flag
 			if tempParams.optional {
 				optionalCount++
@@ -741,50 +711,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			log.Debugf("optionalPresents is %0b", optionalPresents)
 		}
 
-		// CHOICE or OpenType
-		if structType.NumField() > 0 && structType.Field(0).Name == "Present" {
-			var present int = 0
-			if params.openType {
-				if params.referenceFieldValue == nil {
-					return fmt.Errorf("OpenType reference value is empty")
-				}
-				refValue := *params.referenceFieldValue
-
-				for j, param := range structParams {
-					if j == 0 {
-						continue
-					}
-					if param.referenceFieldValue != nil && *param.referenceFieldValue == refValue {
-						present = j
-						break
-					}
-				}
-				if present == 0 {
-					return fmt.Errorf("OpenType reference value does not match any field")
-				} else if present >= structType.NumField() {
-					return fmt.Errorf("OpenType Present is bigger than number of struct field")
-				} else {
-					val.Field(0).SetInt(int64(present))
-					log.Debugf("Decoded Present index of OpenType is %d ", present)
-					return pd.parseOpenType(val.Field(present), structParams[present])
-				}
-			} else {
-				if presentTmp, err := pd.getChoiceIndex(valueExtensible, params.valueUpperBound); err != nil {
-					log.Errorf("pd.getChoiceIndex Error")
-				} else {
-					present = presentTmp
-				}
-				val.Field(0).SetInt(int64(present))
-				if present == 0 {
-					return fmt.Errorf("CHOICE present is 0(present's field number)")
-				} else if present >= structType.NumField() {
-					return fmt.Errorf("CHOICE Present is bigger than number of struct field")
-				} else {
-					return parseField(val.Field(present), pd, structParams[present])
-				}
-			}
-		}
-		fieldIdx := -1
+		fieldIdx = -1
 		for i := 0; i < structType.NumField(); i++ {
 			if structType.Field(i).PkgPath != "" {
 				log.Debugf("struct %s ignoring unexported field : %s", structType.Name(), structType.Field(i).Name)
@@ -800,25 +727,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(i).Name, structType)
 				}
 			}
-			// for open type reference
-			if structParams[fieldIdx].openType {
-				fieldName := structParams[fieldIdx].referenceFieldName
-				var index int
-				for index = 0; index < fieldIdx; index++ {
-					if structType.Field(index).Name == fieldName {
-						break
-					}
-				}
-				if index == fieldIdx {
-					return fmt.Errorf("open type is not reference to the other field in the struct")
-				}
-				structParams[fieldIdx].referenceFieldValue = new(int64)
-				referenceFieldValue, err := getReferenceFieldValue(val.Field(index))
-				if err != nil {
-					return err
-				}
-				*structParams[fieldIdx].referenceFieldValue = referenceFieldValue
-			}
+
 			if err := parseField(val.Field(i), pd, structParams[fieldIdx]); err != nil {
 				return err
 			}
@@ -843,8 +752,33 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		val.SetString(printableString)
 		log.Debugf("Decoded PrintableString : \"%s\"", printableString)
 		return nil
+	case reflect.Interface:
+		choiceIdx, err := pd.getChoiceIndex(params.valueExtensible, params.valueUpperBound)
+		if err != nil {
+			return err
+		}
+		log.Debugf("Handling interface %s for 'oneof' %s %d/%d", v.Type().String(), params.oneofName, choiceIdx, *params.valueUpperBound)
+		choiceMap, ok := ChoiceMap[params.oneofName]
+		if !ok {
+			return errors.NewInvalid("Expected a choice map with %s", params.oneofName)
+		}
+		choiceType, ok := choiceMap[choiceIdx]
+		if !ok {
+			return errors.NewInvalid("Expected choice map %s to have index %d", params.oneofName, choiceIdx)
+		}
+		choiceStruct := reflect.New(choiceType)
+
+		if v.CanSet() {
+			v.Set(choiceStruct)
+		}
+
+		log.Debugf("type is %s", choiceType.String())
+		if err = parseField(choiceStruct.Elem(), pd, params); err != nil {
+			return err
+		}
+		return nil
 	}
-	return fmt.Errorf("unsupported: " + v.Type().String())
+	return fmt.Errorf("unsupported: %s Kind: %s", v.Type().String(), v.Kind().String())
 }
 
 // Unmarshal parses the APER-encoded ASN.1 data structure b
