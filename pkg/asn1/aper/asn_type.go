@@ -19,8 +19,6 @@ import (
 	"reflect"
 )
 
-// OCTET STRING
-
 var (
 	// BitStringType is the type of BitString
 	BitStringType = reflect.TypeOf(asn1.BitString{})
