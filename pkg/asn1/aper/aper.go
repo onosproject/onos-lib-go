@@ -569,14 +569,12 @@ func (pd *perBitData) parseSequenceOf(sizeExtensed bool, params fieldParameters,
 	return sliceContent, nil
 }
 
-func (pd *perBitData) getChoiceIndex(extensed bool, upperBoundPtr *int64) (present int, err error) {
+func (pd *perBitData) getChoiceIndex(extensed bool, upperBound int) (present int, err error) {
 	if extensed {
 		err = fmt.Errorf("unsupported value of CHOICE type is in Extensed")
-	} else if upperBoundPtr == nil {
+	} else if upperBound < 1 {
 		err = fmt.Errorf("the upper bound of CHIOCE is missing")
-	} else if ub := *upperBoundPtr; ub < 1 {
-		err = fmt.Errorf("the upper bound of CHIOCE is negative")
-	} else if rawChoice, err1 := pd.parseConstraintValue(ub); err1 != nil {
+	} else if rawChoice, err1 := pd.parseConstraintValue(int64(upperBound)); err1 != nil {
 		err = err1
 	} else {
 		log.Debugf("Decoded Present index of CHOICE is %d + 1", rawChoice)
@@ -753,15 +751,15 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		log.Debugf("Decoded PrintableString : \"%s\"", printableString)
 		return nil
 	case reflect.Interface:
-		choiceIdx, err := pd.getChoiceIndex(params.valueExtensible, params.valueUpperBound)
-		if err != nil {
-			return err
-		}
-		log.Debugf("Handling interface %s for 'oneof' %s %d/%d", v.Type().String(), params.oneofName, choiceIdx, *params.valueUpperBound)
 		choiceMap, ok := ChoiceMap[params.oneofName]
 		if !ok {
 			return errors.NewInvalid("Expected a choice map with %s", params.oneofName)
 		}
+		choiceIdx, err := pd.getChoiceIndex(params.valueExtensible, len(choiceMap))
+		if err != nil {
+			return err
+		}
+		log.Debugf("Handling interface %s for 'oneof' %s %d/%d", v.Type().String(), params.oneofName, choiceIdx, len(choiceMap))
 		choiceType, ok := choiceMap[choiceIdx]
 		if !ok {
 			return errors.NewInvalid("Expected choice map %s to have index %d", params.oneofName, choiceIdx)

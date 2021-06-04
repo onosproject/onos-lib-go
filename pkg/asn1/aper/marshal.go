@@ -17,6 +17,7 @@ package aper
 import (
 	"fmt"
 	"github.com/onosproject/onos-lib-go/api/asn1/v1/asn1"
+	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"reflect"
 )
 
@@ -97,8 +98,7 @@ func (pd *perRawBitData) putBitsValue(value uint64, numBits uint) (err error) {
 		value >>= 8
 	}
 
-	err = pd.putBitString(tempBytes, numBits)
-	return
+	return pd.putBitString(tempBytes, numBits)
 }
 
 func (pd *perRawBitData) appendConstraintValue(valueRange int64, value uint64) (err error) {
@@ -540,18 +540,15 @@ func (pd *perRawBitData) parseSequenceOf(v reflect.Value, params fieldParameters
 	return nil
 }
 
-func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, upperBoundPtr *int64) error {
-	var ub int64
+func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, choiceBounds int) error {
 	rawChoice := present - 1
-	if upperBoundPtr == nil {
+	if choiceBounds < 1 {
 		return fmt.Errorf("the upper bound of CHIOCE is missing")
-	} else if ub = *upperBoundPtr; ub < 1 {
-		return fmt.Errorf("the upper bound of CHIOCE is negative")
-	} else if extensive && rawChoice > int(ub) {
+	} else if extensive && rawChoice > choiceBounds {
 		return fmt.Errorf("unsupport value of CHOICE type is in Extensed")
 	}
 	log.Debugf("Encoding Present index of CHOICE  %d - 1", present)
-	if err := pd.appendConstraintValue(ub, uint64(rawChoice)); err != nil {
+	if err := pd.appendConstraintValue(int64(choiceBounds), uint64(rawChoice)); err != nil {
 		return err
 	}
 	return nil
@@ -603,7 +600,7 @@ func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters)
 	return nil
 }
 func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) error {
-	log.Debugf("Encoding %s", v.Type().Name())
+	log.Debugf("Encoding %s %s", v.Type().String(), v.Kind().String())
 	if !v.IsValid() {
 		return fmt.Errorf("aper: cannot marshal nil value")
 	}
@@ -650,7 +647,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		var choiceType string
 		// struct extensive TODO: support extensed type
 		if params.valueExtensible {
-			log.Debugf("Encoding Value Extensive Bit : %t", false)
+			log.Debugf("Encoding Value Extensive Bit : true")
 			if err := pd.putBitsValue(0, 1); err != nil {
 				return err
 			}
@@ -682,8 +679,11 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				tempParams = parseFieldParameters(concreteType.Field(0).Tag.Get("aper"))
 				log.Debugf("handling choice %s %s (%d)", choiceType, concreteType.String(), *tempParams.choiceIndex)
 				present := int(*tempParams.choiceIndex)
-
-				if err := pd.appendChoiceIndex(present, tempParams.valueExtensible, tempParams.valueUpperBound); err != nil {
+				choiceMap, ok := ChoiceMap[choiceType]
+				if !ok {
+					return errors.NewInvalid("Expected a choice map with %s", choiceType)
+				}
+				if err := pd.appendChoiceIndex(present, tempParams.valueExtensible, len(choiceMap)); err != nil {
 					return err
 				}
 
