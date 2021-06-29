@@ -235,7 +235,7 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 		sizeRange = -1
 	}
 	// initailization
-	bitString := asn1.BitString{Value: 0, Len: 0}
+	bitString := asn1.BitString{Value: make([]byte, 0), Len: 0}
 	// lowerbound == upperbound
 	if sizeRange == 1 {
 		sizes := uint64(ub+7) >> 3
@@ -293,12 +293,8 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 		if (pd.byteOffset + sizes) > uint64(len(pd.bytes)) {
 			return nil, errors.NewInvalid("PER data out of range")
 		}
-		tempBytes := bitString.GetValueBytes()
-		tempBytes = append(tempBytes, pd.bytes[pd.byteOffset:pd.byteOffset+sizes]...)
+		bitString.Value = append(bitString.Value, pd.bytes[pd.byteOffset:pd.byteOffset+sizes]...)
 		bitString.Len += uint32(rawLength)
-		if _, err = bitString.UpdateValue(tempBytes); err != nil {
-			return nil, err
-		}
 		pd.byteOffset += sizes
 		pd.bitsOffset = uint(rawLength & 0x7)
 		if pd.bitsOffset != 0 {

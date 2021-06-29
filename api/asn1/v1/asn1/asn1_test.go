@@ -19,21 +19,12 @@ import (
 	"testing"
 )
 
-func Test_BitStringToBytes(t *testing.T) {
-	bs := BitString{
-		Value: 0x3ffffd,
-		Len:   22,
-	}
-	valueBytes := bs.GetValueBytes()
-	assert.EqualValues(t, []byte{0xfd, 0xff, 0x3f}, valueBytes)
-}
-
 func Test_UpdateValue(t *testing.T) {
 	bs := BitString{
-		Value: 0x3ffffd,
+		Value: []byte{0x3f, 0xff, 0xfd},
 		Len:   22,
 	}
 	newValue, err := bs.UpdateValue([]byte{0xfd, 0xee, 0x3f})
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(0x3feefd), newValue)
+	assert.EqualValues(t, []byte{0xfd, 0xee, 0x3f}, newValue)
 }
