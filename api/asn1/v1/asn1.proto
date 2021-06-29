@@ -19,6 +19,6 @@ package asn1.v1;
 option go_package = "github.com/onosproject/onos-lib-go/api/asn1/v1/asn1";
 
 message BitString {
-  uint64 value = 1 [json_name = "value"];
+  bytes value = 1 [json_name = "value"];
   uint32 len = 2 [json_name = "length"];
 }

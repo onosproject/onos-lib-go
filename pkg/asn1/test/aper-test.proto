@@ -1,0 +1,59 @@
+/*
+Copyright 2021-present Open Networking Foundation.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+////////////////////// aper-test.proto //////////////////////
+
+syntax = "proto3";
+
+package aper.test.v1;
+option go_package = "pkg/asn1/test";
+
+import "asn1/v1/asn1.proto";
+
+message TestUnconstrainedInt {
+  int32 attrUciA = 1;
+  int64 attrUciB = 2;
+}
+
+// Add in constraints to control the APER encoding
+message TestConstrainedInt {
+  // @inject_tag: aper:"valueLB:10,valueUB:100"
+  int32 attrCiA = 1;
+  // @inject_tag: aper:"valueLB:10"
+  int64 attrCiB = 2;
+  // @inject_tag: aper:"valueUB:100"
+  int64 attrCiC = 3;
+  // @inject_tag: aper:"valueLB:10,valueUB:20"
+  int64 attrCiD = 4;
+  // @inject_tag: aper:"valueLB:10,valueUB:10"
+  int64 attrCiE = 5;
+}
+
+message TestBitString {
+  asn1.v1.BitString attrBs1 = 1;
+
+  // @inject_tag: aper:"sizeLB:20,sizeUB:20"
+  asn1.v1.BitString attrBs2 = 2;
+
+  // @inject_tag: aper:"sizeLB:22,sizeUB:32"
+  asn1.v1.BitString attrBs3 = 3;
+
+  // @inject_tag: aper:"valueExt,sizeLB:28,sizeUB:32"
+  asn1.v1.BitString attrBs4 = 4;
+
+  // @inject_tag: aper:"optional,sizeLB:32,sizeUB:36"
+  optional asn1.v1.BitString attrBs5 = 5;
+}

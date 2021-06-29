@@ -15,25 +15,13 @@
 package asn1
 
 import (
-	"encoding/binary"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"math"
 )
 
-// GetValueBytes - convert the internal uint64 to []byte format
-func (m *BitString) GetValueBytes() []byte {
-	if m != nil {
-		numBytes := uint(math.Ceil(float64(m.Len) / 8.0))
-		valueBytes := make([]byte, 8)
-		binary.LittleEndian.PutUint64(valueBytes, m.Value)
-		return valueBytes[:numBytes]
-	}
-	return nil
-}
-
-// UpdateValue - replace the uint64 value with values from a new []byte
+// UpdateValue - replace the bytes value with values from a new []byte
 // the size stays the same
-func (m *BitString) UpdateValue(newBytes []byte) (uint64, error) {
+func (m *BitString) UpdateValue(newBytes []byte) ([]byte, error) {
 	if m == nil {
 		return m.Value, errors.NewInvalid("null")
 	}
@@ -41,8 +29,6 @@ func (m *BitString) UpdateValue(newBytes []byte) (uint64, error) {
 	if len(newBytes) != expectedLen {
 		return m.Value, errors.NewInvalid("too many bytes %d. Expecting %d", len(newBytes), expectedLen)
 	}
-	fullBytes := make([]byte, 8)
-	copy(fullBytes, newBytes)
-	m.Value = binary.LittleEndian.Uint64(fullBytes)
+	copy(m.Value, newBytes)
 	return m.Value, nil
 }
