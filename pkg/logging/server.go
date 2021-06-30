@@ -60,7 +60,7 @@ func (s *Server) GetLevel(ctx context.Context, req *logging.GetLevelRequest) (*l
 
 	names := splitLoggerName(name)
 	logger := GetLogger(names...)
-	level := logger.GetLevel()
+	level := logger.Level()
 
 	var loggerLevel logging.Level
 	switch level {

@@ -93,7 +93,7 @@ func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*z
 		atomLevel = zap.NewAtomicLevelAt(zapcore.FatalLevel)
 	}
 
-	zapLogger, err := zapConfig.Build(zap.AddCallerSkip(2))
+	zapLogger, err := zapConfig.Build(zap.AddCallerSkip(4))
 	if err != nil {
 		return nil, err
 	}
@@ -129,33 +129,15 @@ func getWriter(url string) (zapcore.WriteSyncer, error) {
 
 // Output is a logging output
 type Output interface {
-	Debug(...interface{})
-	Debugf(template string, args ...interface{})
-	Debugw(msg string, keysAndValues ...interface{})
-
-	Info(...interface{})
-	Infof(template string, args ...interface{})
-	Infow(msg string, keysAndValues ...interface{})
-
-	Error(...interface{})
-	Errorf(template string, args ...interface{})
-	Errorw(msg string, keysAndValues ...interface{})
-
-	Fatal(...interface{})
-	Fatalf(template string, args ...interface{})
-	Fatalw(msg string, keysAndValues ...interface{})
-
-	Panic(...interface{})
-	Panicf(template string, args ...interface{})
-	Panicw(msg string, keysAndValues ...interface{})
-
-	DPanic(...interface{})
-	DPanicf(template string, args ...interface{})
-	DPanicw(msg string, keysAndValues ...interface{})
-
-	Warn(...interface{})
-	Warnf(template string, args ...interface{})
-	Warnw(msg string, keysAndValues ...interface{})
+	WithFields(fields ...Field) Output
+	Debug(msg string, fields ...Field)
+	Info(msg string, fields ...Field)
+	Error(msg string, fields ...Field)
+	Fatal(msg string, fields ...Field)
+	Panic(msg string, fields ...Field)
+	DPanic(msg string, fields ...Field)
+	Warn(msg string, fields ...Field)
+	Sync() error
 }
 
 // zapOutput is a logging output implementation
@@ -164,88 +146,54 @@ type zapOutput struct {
 	logger *zap.Logger
 }
 
-func (o *zapOutput) Debug(args ...interface{}) {
-	o.logger.Sugar().Debug(args...)
+func (o *zapOutput) WithFields(fields ...Field) Output {
+	return &zapOutput{
+		config: o.config,
+		logger: o.logger.With(o.getZapFields(fields...)...),
+	}
 }
 
-func (o *zapOutput) Debugf(template string, args ...interface{}) {
-	o.logger.Sugar().Debugf(template, args...)
+func (o *zapOutput) getZapFields(fields ...Field) []zap.Field {
+	if len(fields) == 0 {
+		return nil
+	}
+	zapFields := make([]zap.Field, len(fields))
+	for i, field := range fields {
+		zapFields[i] = field.getZapField()
+	}
+	return zapFields
 }
 
-func (o *zapOutput) Debugw(msg string, keysAndValues ...interface{}) {
-	o.logger.Sugar().Debugw(msg, keysAndValues...)
+func (o *zapOutput) Debug(msg string, fields ...Field) {
+	o.logger.Debug(msg, o.getZapFields(fields...)...)
 }
 
-func (o *zapOutput) Info(args ...interface{}) {
-	o.logger.Sugar().Info(args...)
+func (o *zapOutput) Info(msg string, fields ...Field) {
+	o.logger.Info(msg, o.getZapFields(fields...)...)
 }
 
-func (o *zapOutput) Infof(template string, args ...interface{}) {
-	o.logger.Sugar().Infof(template, args...)
+func (o *zapOutput) Error(msg string, fields ...Field) {
+	o.logger.Error(msg, o.getZapFields(fields...)...)
 }
 
-func (o *zapOutput) Infow(msg string, keysAndValues ...interface{}) {
-	o.logger.Sugar().Infow(msg, keysAndValues...)
+func (o *zapOutput) Fatal(msg string, fields ...Field) {
+	o.logger.Fatal(msg, o.getZapFields(fields...)...)
 }
 
-func (o *zapOutput) Error(args ...interface{}) {
-	o.logger.Sugar().Error(args...)
+func (o *zapOutput) Panic(msg string, fields ...Field) {
+	o.logger.Panic(msg, o.getZapFields(fields...)...)
 }
 
-func (o *zapOutput) Errorf(template string, args ...interface{}) {
-	o.logger.Sugar().Errorf(template, args...)
+func (o *zapOutput) DPanic(msg string, fields ...Field) {
+	o.logger.DPanic(msg, o.getZapFields(fields...)...)
 }
 
-func (o *zapOutput) Errorw(msg string, keysAndValues ...interface{}) {
-	o.logger.Sugar().Errorw(msg, keysAndValues...)
+func (o *zapOutput) Warn(msg string, fields ...Field) {
+	o.logger.Warn(msg, o.getZapFields(fields...)...)
 }
 
-func (o *zapOutput) Fatal(args ...interface{}) {
-	o.logger.Sugar().Fatal(args...)
-}
-
-func (o *zapOutput) Fatalf(template string, args ...interface{}) {
-	o.logger.Sugar().Fatalf(template, args)
-}
-
-func (o *zapOutput) Fatalw(msg string, keysAndValues ...interface{}) {
-	o.logger.Sugar().Fatalw(msg, keysAndValues...)
-}
-
-func (o *zapOutput) Panic(args ...interface{}) {
-	o.logger.Sugar().Panic(args...)
-}
-
-func (o *zapOutput) Panicf(template string, args ...interface{}) {
-	o.logger.Sugar().Panicf(template, args...)
-}
-
-func (o *zapOutput) Panicw(msg string, keysAndValues ...interface{}) {
-	o.logger.Sugar().Panicw(msg, keysAndValues...)
-}
-
-func (o *zapOutput) DPanic(args ...interface{}) {
-	o.logger.Sugar().DPanic(args...)
-}
-
-func (o *zapOutput) DPanicf(template string, args ...interface{}) {
-	o.logger.Sugar().DPanicf(template, args...)
-}
-
-func (o *zapOutput) DPanicw(msg string, keysAndValues ...interface{}) {
-	o.logger.Sugar().DPanicw(msg, keysAndValues...)
-}
-
-func (o *zapOutput) Warn(args ...interface{}) {
-	o.logger.Sugar().Warn(args...)
-}
-
-func (o *zapOutput) Warnf(template string, args ...interface{}) {
-	o.logger.Sugar().Warnf(template, args...)
-}
-
-func (o *zapOutput) Warnw(msg string, keysAndValues ...interface{}) {
-	o.logger.Sugar().Warnw(msg, keysAndValues...)
+func (o *zapOutput) Sync() error {
+	return o.logger.Sync()
 }
 
 var _ Output = &zapOutput{}
