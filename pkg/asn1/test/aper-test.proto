@@ -57,3 +57,29 @@ message TestBitString {
   // @inject_tag: aper:"optional,sizeLB:32,sizeUB:36"
   optional asn1.v1.BitString attrBs5 = 5;
 }
+
+message TestChoices {
+  string otherAttr = 1;
+
+  oneof Choice1 {
+    // @inject_tag: aper:"choiceIdx:1,valueExt"
+    int32 choice1A = 10;
+  }
+
+  oneof Choice2 {
+    // @inject_tag: aper:"choiceIdx:1,valueExt"
+    int32 choice2A = 20;
+    // @inject_tag: aper:"choiceIdx:2,valueExt"
+    int32 choice2B = 21;
+  }
+
+  oneof Choice3 {
+    // @inject_tag: aper:"choiceIdx:1,valueExt"
+    int32 choice3A = 30;
+    // @inject_tag: aper:"choiceIdx:2,valueExt"
+    int32 choice3B = 31;
+    // @inject_tag: aper:"choiceIdx:3,valueExt"
+    int32 choice3C = 32;
+  }
+
+}

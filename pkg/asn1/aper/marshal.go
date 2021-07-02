@@ -650,7 +650,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		//sequenceType = structType.NumField() <= 0 || structType.Field(0).Name != "Present"
 		// pass tag for optional
 		fieldIdx := -1
-		for i := 0; i < structType.NumField(); i++ {
+		for i := 3; i < structType.NumField(); i++ {
 			fieldIdx++
 			if structType.Field(i).PkgPath != "" {
 				log.Debugf("struct %s ignoring unexported field : %s", structType.Name(), structType.Field(i).Name)
@@ -670,6 +670,9 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 					return fmt.Errorf("nil element in SEQUENCE type")
 				}
 			} else {
+				if v.Field(i).Interface() == nil {
+					continue
+				}
 				concreteType := reflect.TypeOf(v.Field(i).Interface()).Elem()
 				tempParams = parseFieldParameters(concreteType.Field(0).Tag.Get("aper"))
 				log.Debugf("handling choice %s %s (%d)", choiceType, concreteType.String(), *tempParams.choiceIndex)
@@ -712,13 +715,16 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		//}
 
 		fieldIdx = -1
-		for i := 0; i < structType.NumField(); i++ {
+		for i := 3; i < structType.NumField(); i++ {
 			if structType.Field(i).PkgPath != "" {
 				log.Debugf("struct %s ignoring unexported field : %s", structType.Name(), structType.Field(i).Name)
 				continue
 			}
 			fieldIdx++
 			// optional
+			if len(structParams) <= fieldIdx {
+				continue
+			}
 			if structParams[fieldIdx].optional && optionalCount > 0 {
 				optionalCount--
 				if optionalPresents&(1<<optionalCount) == 0 {

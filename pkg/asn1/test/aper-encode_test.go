@@ -27,6 +27,7 @@ import (
 func TestMain(m *testing.M) {
 	log := logging.GetLogger("asn1")
 	log.SetLevel(logging.DebugLevel)
+	aper.ChoiceMap = Choicemap // from choiceOptions.go - generated with protoc-gen-choice
 	os.Exit(m.Run())
 }
 
@@ -209,4 +210,62 @@ func Test_BitString(t *testing.T) {
 		assert.EqualValues(t, tc.expected, aper)
 	}
 
+}
+
+func Test_encodeChoice1(t *testing.T) {
+	testChoice1 := &TestChoices{
+		OtherAttr: "choice1only",
+		Choice1: &TestChoices_Choice1A{
+			Choice1A: 10,
+		},
+	}
+	tcExpected := []byte{
+		// TODO: investigate why we don't get the string value first
+		0x00, // Because the first option (1A) is chosen
+		0x01, // TODO: investigate why this is here
+		0x0a, // The value 10
+	}
+
+	aper, err := aper.Marshal(testChoice1)
+	assert.NoError(t, err)
+	assert.NotNil(t, aper)
+	t.Logf("Choice 1 APER %s", hex.Dump(aper))
+	assert.EqualValues(t, tcExpected, aper)
+}
+
+func Test_encodeChoice2(t *testing.T) {
+	testChoice2 := &TestChoices{
+		OtherAttr: "choice2only",
+		Choice2: &TestChoices_Choice2B{
+			Choice2B: 21,
+		},
+	}
+	tcExpected := []byte{
+		// TODO: investigate why we don't get the string value first
+		0x80, // Because the 2nd option (2B) is chosen
+		0x01, // TODO: investigate why this is here
+		0x15, // the value: 21
+	}
+
+	aper, err := aper.Marshal(testChoice2)
+	assert.NoError(t, err)
+	assert.NotNil(t, aper)
+	t.Logf("Choice 2 APER %s", hex.Dump(aper))
+	assert.EqualValues(t, tcExpected, aper)
+}
+
+func Test_withNoChoices(t *testing.T) {
+	testNoChoice := &TestChoices{
+		OtherAttr: "no choices",
+	}
+	tcExpected := []byte{
+		0x0a, // Because the first option (1A) is chosen
+		0x6e, 0x6f, 0x20, 0x63, 0x68, 0x6f, 0x69, 0x63, 0x65, 0x73,
+	}
+
+	aper, err := aper.Marshal(testNoChoice)
+	assert.NoError(t, err)
+	assert.NotNil(t, aper)
+	t.Logf("Choice 1 APER %s", hex.Dump(aper))
+	assert.EqualValues(t, tcExpected, aper)
 }
