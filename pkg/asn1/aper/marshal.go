@@ -650,12 +650,13 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		//sequenceType = structType.NumField() <= 0 || structType.Field(0).Name != "Present"
 		// pass tag for optional
 		fieldIdx := -1
-		for i := 3; i < structType.NumField(); i++ {
+		for i := 0; i < structType.NumField(); i++ {
 			fieldIdx++
 			if structType.Field(i).PkgPath != "" {
 				log.Debugf("struct %s ignoring unexported field : %s", structType.Name(), structType.Field(i).Name)
 				continue
 			}
+			log.Debugf("Handling %s", structType.Field(i).Name)
 			tempParams := parseFieldParameters(structType.Field(i).Tag.Get("aper"))
 			choiceType = structType.Field(i).Tag.Get("protobuf_oneof")
 			if choiceType == "" {
@@ -675,20 +676,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				}
 				concreteType := reflect.TypeOf(v.Field(i).Interface()).Elem()
 				tempParams = parseFieldParameters(concreteType.Field(0).Tag.Get("aper"))
-				log.Debugf("handling choice %s %s (%d)", choiceType, concreteType.String(), *tempParams.choiceIndex)
-				present := int(*tempParams.choiceIndex)
-				choiceMap, ok := ChoiceMap[choiceType]
-				if !ok {
-					return errors.NewInvalid("Expected a choice map with %s", choiceType)
-				}
-				if err := pd.appendChoiceIndex(present, tempParams.valueExtensible, len(choiceMap)); err != nil {
-					return err
-				}
-
-				if err := pd.makeField(reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
-					return err
-				}
-				return nil
+				tempParams.oneofName = choiceType
 			}
 
 			structParams = append(structParams, tempParams)
@@ -715,7 +703,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		//}
 
 		fieldIdx = -1
-		for i := 3; i < structType.NumField(); i++ {
+		for i := 0; i < structType.NumField(); i++ {
 			if structType.Field(i).PkgPath != "" {
 				log.Debugf("struct %s ignoring unexported field : %s", structType.Name(), structType.Field(i).Name)
 				continue
@@ -753,8 +741,22 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				}
 				*structParams[fieldIdx].referenceFieldValue = value
 			}
-			if err := pd.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
-				return err
+			if structParams[fieldIdx].oneofName != "" {
+				present := int(*structParams[fieldIdx].choiceIndex)
+				choiceMap, ok := ChoiceMap[choiceType]
+				if !ok {
+					return errors.NewInvalid("Expected a choice map with %s", choiceType)
+				}
+				if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, len(choiceMap)); err != nil {
+					return err
+				}
+				if err := pd.makeField(reflect.ValueOf(v.Field(i).Interface()), structParams[fieldIdx]); err != nil {
+					return err
+				}
+			} else {
+				if err := pd.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
+					return err
+				}
 			}
 		}
 		return nil

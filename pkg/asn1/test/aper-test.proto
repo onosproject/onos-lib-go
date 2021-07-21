@@ -70,16 +70,16 @@ message TestChoices {
     // @inject_tag: aper:"choiceIdx:1,valueExt"
     int32 choice2A = 20;
     // @inject_tag: aper:"choiceIdx:2,valueExt"
-    int32 choice2B = 21;
+    string choice2B = 21;
   }
 
   oneof Choice3 {
     // @inject_tag: aper:"choiceIdx:1,valueExt"
     int32 choice3A = 30;
     // @inject_tag: aper:"choiceIdx:2,valueExt"
-    int32 choice3B = 31;
+    string choice3B = 31;
     // @inject_tag: aper:"choiceIdx:3,valueExt"
-    int32 choice3C = 32;
+    bytes choice3C = 32;
   }
 
 }
