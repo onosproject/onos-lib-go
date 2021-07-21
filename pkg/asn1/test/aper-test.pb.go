@@ -244,6 +244,182 @@ func (x *TestBitString) GetAttrBs5() *asn1.BitString {
 	return nil
 }
 
+type TestChoices struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	OtherAttr string `protobuf:"bytes,1,opt,name=otherAttr,proto3" json:"otherAttr,omitempty"`
+	// Types that are assignable to Choice1:
+	//	*TestChoices_Choice1A
+	Choice1 isTestChoices_Choice1 `protobuf_oneof:"Choice1"`
+	// Types that are assignable to Choice2:
+	//	*TestChoices_Choice2A
+	//	*TestChoices_Choice2B
+	Choice2 isTestChoices_Choice2 `protobuf_oneof:"Choice2"`
+	// Types that are assignable to Choice3:
+	//	*TestChoices_Choice3A
+	//	*TestChoices_Choice3B
+	//	*TestChoices_Choice3C
+	Choice3 isTestChoices_Choice3 `protobuf_oneof:"Choice3"`
+}
+
+func (x *TestChoices) Reset() {
+	*x = TestChoices{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_asn1_test_aper_test_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestChoices) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestChoices) ProtoMessage() {}
+
+func (x *TestChoices) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_asn1_test_aper_test_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestChoices.ProtoReflect.Descriptor instead.
+func (*TestChoices) Descriptor() ([]byte, []int) {
+	return file_pkg_asn1_test_aper_test_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *TestChoices) GetOtherAttr() string {
+	if x != nil {
+		return x.OtherAttr
+	}
+	return ""
+}
+
+func (m *TestChoices) GetChoice1() isTestChoices_Choice1 {
+	if m != nil {
+		return m.Choice1
+	}
+	return nil
+}
+
+func (x *TestChoices) GetChoice1A() int32 {
+	if x, ok := x.GetChoice1().(*TestChoices_Choice1A); ok {
+		return x.Choice1A
+	}
+	return 0
+}
+
+func (m *TestChoices) GetChoice2() isTestChoices_Choice2 {
+	if m != nil {
+		return m.Choice2
+	}
+	return nil
+}
+
+func (x *TestChoices) GetChoice2A() int32 {
+	if x, ok := x.GetChoice2().(*TestChoices_Choice2A); ok {
+		return x.Choice2A
+	}
+	return 0
+}
+
+func (x *TestChoices) GetChoice2B() string {
+	if x, ok := x.GetChoice2().(*TestChoices_Choice2B); ok {
+		return x.Choice2B
+	}
+	return ""
+}
+
+func (m *TestChoices) GetChoice3() isTestChoices_Choice3 {
+	if m != nil {
+		return m.Choice3
+	}
+	return nil
+}
+
+func (x *TestChoices) GetChoice3A() int32 {
+	if x, ok := x.GetChoice3().(*TestChoices_Choice3A); ok {
+		return x.Choice3A
+	}
+	return 0
+}
+
+func (x *TestChoices) GetChoice3B() string {
+	if x, ok := x.GetChoice3().(*TestChoices_Choice3B); ok {
+		return x.Choice3B
+	}
+	return ""
+}
+
+func (x *TestChoices) GetChoice3C() []byte {
+	if x, ok := x.GetChoice3().(*TestChoices_Choice3C); ok {
+		return x.Choice3C
+	}
+	return nil
+}
+
+type isTestChoices_Choice1 interface {
+	isTestChoices_Choice1()
+}
+
+type TestChoices_Choice1A struct {
+	// @inject_tag: aper:"choiceIdx:1,valueExt"
+	Choice1A int32 `protobuf:"varint,10,opt,name=choice1A,proto3,oneof" aper:"choiceIdx:1,valueExt"`
+}
+
+func (*TestChoices_Choice1A) isTestChoices_Choice1() {}
+
+type isTestChoices_Choice2 interface {
+	isTestChoices_Choice2()
+}
+
+type TestChoices_Choice2A struct {
+	// @inject_tag: aper:"choiceIdx:1,valueExt"
+	Choice2A int32 `protobuf:"varint,20,opt,name=choice2A,proto3,oneof" aper:"choiceIdx:1,valueExt"`
+}
+
+type TestChoices_Choice2B struct {
+	// @inject_tag: aper:"choiceIdx:2,valueExt"
+	Choice2B string `protobuf:"bytes,21,opt,name=choice2B,proto3,oneof" aper:"choiceIdx:2,valueExt"`
+}
+
+func (*TestChoices_Choice2A) isTestChoices_Choice2() {}
+
+func (*TestChoices_Choice2B) isTestChoices_Choice2() {}
+
+type isTestChoices_Choice3 interface {
+	isTestChoices_Choice3()
+}
+
+type TestChoices_Choice3A struct {
+	// @inject_tag: aper:"choiceIdx:1,valueExt"
+	Choice3A int32 `protobuf:"varint,30,opt,name=choice3A,proto3,oneof" aper:"choiceIdx:1,valueExt"`
+}
+
+type TestChoices_Choice3B struct {
+	// @inject_tag: aper:"choiceIdx:2,valueExt"
+	Choice3B string `protobuf:"bytes,31,opt,name=choice3B,proto3,oneof" aper:"choiceIdx:2,valueExt"`
+}
+
+type TestChoices_Choice3C struct {
+	// @inject_tag: aper:"choiceIdx:3,valueExt"
+	Choice3C []byte `protobuf:"bytes,32,opt,name=choice3C,proto3,oneof" aper:"choiceIdx:3,valueExt"`
+}
+
+func (*TestChoices_Choice3A) isTestChoices_Choice3() {}
+
+func (*TestChoices_Choice3B) isTestChoices_Choice3() {}
+
+func (*TestChoices_Choice3C) isTestChoices_Choice3() {}
+
 var File_pkg_asn1_test_aper_test_proto protoreflect.FileDescriptor
 
 var file_pkg_asn1_test_aper_test_proto_rawDesc = []byte{
@@ -282,8 +458,24 @@ var file_pkg_asn1_test_aper_test_proto_rawDesc = []byte{
 	0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x61, 0x73, 0x6e, 0x31, 0x2e, 0x76, 0x31, 0x2e,
 	0x42, 0x69, 0x74, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x48, 0x00, 0x52, 0x07, 0x61, 0x74, 0x74,
 	0x72, 0x42, 0x73, 0x35, 0x88, 0x01, 0x01, 0x42, 0x0a, 0x0a, 0x08, 0x5f, 0x61, 0x74, 0x74, 0x72,
-	0x42, 0x73, 0x35, 0x42, 0x0f, 0x5a, 0x0d, 0x70, 0x6b, 0x67, 0x2f, 0x61, 0x73, 0x6e, 0x31, 0x2f,
-	0x74, 0x65, 0x73, 0x74, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x42, 0x73, 0x35, 0x22, 0x80, 0x02, 0x0a, 0x0b, 0x54, 0x65, 0x73, 0x74, 0x43, 0x68, 0x6f, 0x69,
+	0x63, 0x65, 0x73, 0x12, 0x1c, 0x0a, 0x09, 0x6f, 0x74, 0x68, 0x65, 0x72, 0x41, 0x74, 0x74, 0x72,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6f, 0x74, 0x68, 0x65, 0x72, 0x41, 0x74, 0x74,
+	0x72, 0x12, 0x1c, 0x0a, 0x08, 0x63, 0x68, 0x6f, 0x69, 0x63, 0x65, 0x31, 0x41, 0x18, 0x0a, 0x20,
+	0x01, 0x28, 0x05, 0x48, 0x00, 0x52, 0x08, 0x63, 0x68, 0x6f, 0x69, 0x63, 0x65, 0x31, 0x41, 0x12,
+	0x1c, 0x0a, 0x08, 0x63, 0x68, 0x6f, 0x69, 0x63, 0x65, 0x32, 0x41, 0x18, 0x14, 0x20, 0x01, 0x28,
+	0x05, 0x48, 0x01, 0x52, 0x08, 0x63, 0x68, 0x6f, 0x69, 0x63, 0x65, 0x32, 0x41, 0x12, 0x1c, 0x0a,
+	0x08, 0x63, 0x68, 0x6f, 0x69, 0x63, 0x65, 0x32, 0x42, 0x18, 0x15, 0x20, 0x01, 0x28, 0x09, 0x48,
+	0x01, 0x52, 0x08, 0x63, 0x68, 0x6f, 0x69, 0x63, 0x65, 0x32, 0x42, 0x12, 0x1c, 0x0a, 0x08, 0x63,
+	0x68, 0x6f, 0x69, 0x63, 0x65, 0x33, 0x41, 0x18, 0x1e, 0x20, 0x01, 0x28, 0x05, 0x48, 0x02, 0x52,
+	0x08, 0x63, 0x68, 0x6f, 0x69, 0x63, 0x65, 0x33, 0x41, 0x12, 0x1c, 0x0a, 0x08, 0x63, 0x68, 0x6f,
+	0x69, 0x63, 0x65, 0x33, 0x42, 0x18, 0x1f, 0x20, 0x01, 0x28, 0x09, 0x48, 0x02, 0x52, 0x08, 0x63,
+	0x68, 0x6f, 0x69, 0x63, 0x65, 0x33, 0x42, 0x12, 0x1c, 0x0a, 0x08, 0x63, 0x68, 0x6f, 0x69, 0x63,
+	0x65, 0x33, 0x43, 0x18, 0x20, 0x20, 0x01, 0x28, 0x0c, 0x48, 0x02, 0x52, 0x08, 0x63, 0x68, 0x6f,
+	0x69, 0x63, 0x65, 0x33, 0x43, 0x42, 0x09, 0x0a, 0x07, 0x43, 0x68, 0x6f, 0x69, 0x63, 0x65, 0x31,
+	0x42, 0x09, 0x0a, 0x07, 0x43, 0x68, 0x6f, 0x69, 0x63, 0x65, 0x32, 0x42, 0x09, 0x0a, 0x07, 0x43,
+	0x68, 0x6f, 0x69, 0x63, 0x65, 0x33, 0x42, 0x0f, 0x5a, 0x0d, 0x70, 0x6b, 0x67, 0x2f, 0x61, 0x73,
+	0x6e, 0x31, 0x2f, 0x74, 0x65, 0x73, 0x74, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -298,19 +490,20 @@ func file_pkg_asn1_test_aper_test_proto_rawDescGZIP() []byte {
 	return file_pkg_asn1_test_aper_test_proto_rawDescData
 }
 
-var file_pkg_asn1_test_aper_test_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_pkg_asn1_test_aper_test_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_pkg_asn1_test_aper_test_proto_goTypes = []interface{}{
 	(*TestUnconstrainedInt)(nil), // 0: aper.test.v1.TestUnconstrainedInt
 	(*TestConstrainedInt)(nil),   // 1: aper.test.v1.TestConstrainedInt
 	(*TestBitString)(nil),        // 2: aper.test.v1.TestBitString
-	(*asn1.BitString)(nil),       // 3: asn1.v1.BitString
+	(*TestChoices)(nil),          // 3: aper.test.v1.TestChoices
+	(*asn1.BitString)(nil),       // 4: asn1.v1.BitString
 }
 var file_pkg_asn1_test_aper_test_proto_depIdxs = []int32{
-	3, // 0: aper.test.v1.TestBitString.attrBs1:type_name -> asn1.v1.BitString
-	3, // 1: aper.test.v1.TestBitString.attrBs2:type_name -> asn1.v1.BitString
-	3, // 2: aper.test.v1.TestBitString.attrBs3:type_name -> asn1.v1.BitString
-	3, // 3: aper.test.v1.TestBitString.attrBs4:type_name -> asn1.v1.BitString
-	3, // 4: aper.test.v1.TestBitString.attrBs5:type_name -> asn1.v1.BitString
+	4, // 0: aper.test.v1.TestBitString.attrBs1:type_name -> asn1.v1.BitString
+	4, // 1: aper.test.v1.TestBitString.attrBs2:type_name -> asn1.v1.BitString
+	4, // 2: aper.test.v1.TestBitString.attrBs3:type_name -> asn1.v1.BitString
+	4, // 3: aper.test.v1.TestBitString.attrBs4:type_name -> asn1.v1.BitString
+	4, // 4: aper.test.v1.TestBitString.attrBs5:type_name -> asn1.v1.BitString
 	5, // [5:5] is the sub-list for method output_type
 	5, // [5:5] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name
@@ -360,15 +553,35 @@ func file_pkg_asn1_test_aper_test_proto_init() {
 				return nil
 			}
 		}
+		file_pkg_asn1_test_aper_test_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestChoices); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_pkg_asn1_test_aper_test_proto_msgTypes[2].OneofWrappers = []interface{}{}
+	file_pkg_asn1_test_aper_test_proto_msgTypes[3].OneofWrappers = []interface{}{
+		(*TestChoices_Choice1A)(nil),
+		(*TestChoices_Choice2A)(nil),
+		(*TestChoices_Choice2B)(nil),
+		(*TestChoices_Choice3A)(nil),
+		(*TestChoices_Choice3B)(nil),
+		(*TestChoices_Choice3C)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_asn1_test_aper_test_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
