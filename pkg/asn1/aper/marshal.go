@@ -15,8 +15,10 @@
 package aper
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
+	"math"
 	"reflect"
 )
 
@@ -615,7 +617,22 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 	// We deal with the structures defined in this package first.
 	switch fieldType {
 	case BitStringType:
-		log.Debugf("Handling BitString with %v. Len %d", v.Field(3).Bytes(), v.Field(4).Uint())
+		bytes := v.Field(3).Bytes()
+		length := v.Field(4).Uint()
+		expected := int(math.Ceil(float64(length) / 8))
+		unused := 8 - int(math.Mod(float64(length), 8))
+		if unused == 8 {
+			unused = 0
+		}
+		unusedMask := (1 << unused) - 1
+		log.Debugf("Handling BitString with %v. Len %d", bytes, length)
+		if len(bytes) != expected {
+			return errors.NewInvalid("Expected %d BitString byte(s) to contain %d bits. Got %d",
+				expected, length, len(bytes))
+		} else if bytes[len(bytes)-1]&byte(unusedMask) != 0 {
+			return errors.NewInvalid("Expected last %d bits of byte array to be unused, and to contain only trailing zeroes. %s",
+				unused, hex.Dump(bytes))
+		}
 		err := pd.appendBitString(v.Field(3).Bytes(), v.Field(4).Uint(), params.sizeExtensible, params.sizeLowerBound,
 			params.sizeUpperBound)
 		return err
