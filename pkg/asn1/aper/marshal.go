@@ -629,7 +629,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		if len(bytes) != expected {
 			return errors.NewInvalid("Expected %d BitString byte(s) to contain %d bits. Got %d",
 				expected, length, len(bytes))
-		} else if bytes[len(bytes)-1]&byte(unusedMask) != 0 {
+		} else if len(bytes) > 0 && bytes[len(bytes)-1]&byte(unusedMask) != 0 {
 			return errors.NewInvalid("Expected last %d bits of byte array to be unused, and to contain only trailing zeroes. %s",
 				unused, hex.Dump(bytes))
 		}

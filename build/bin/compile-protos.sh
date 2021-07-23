@@ -13,3 +13,9 @@ protoc -I=$proto_imports:api --go_out=. pkg/asn1/test/aper-test.proto
 sed -i "1,17d" pkg/asn1/test/aper-test.pb.go
 
 protoc-go-inject-tag -input=pkg/asn1/test/aper-test.pb.go
+
+protoc -I=$proto_imports:api --go_out=. pkg/asn1/testsm/test_sm.proto
+# Remove the license header copied over by protoc
+sed -i "1,19d" pkg/asn1/testsm/test_sm.pb.go
+
+protoc-go-inject-tag -input=pkg/asn1/testsm/test_sm.pb.go
