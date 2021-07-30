@@ -77,8 +77,9 @@ func Test_TestConstrainedIntEncode(t *testing.T) {
 		{
 			[]int{10, 10, 10, 10, 10, 10},
 			[]byte{
-				0x00,       // A value - no len, value = 0 (over 10) shifted << by 1 ?
-				0x01, 0x00, // B value - len = 1, value = 0 (over 10)
+				0x00, // A value - no len, value = 0 (over 10) shifted << by 1 ?
+				// ToDo - after introducing an upperbound of 4294967295 (maximum range of long in Clang, it started to encode length as 0. Is that correct? Yes, because length is now a known value (we know range)
+				0x00, 0x00, // B value - len = 1, value = 0 (over 10)
 				0x01, 0x0a, // C value - len = 1, value = 10
 				0x00, // D values not octet aligned since under 16. no length. Values = 0 since equals lower bound
 				// E value missing because it always has to be 10
@@ -88,8 +89,9 @@ func Test_TestConstrainedIntEncode(t *testing.T) {
 		{
 			[]int{20, 20, 20, 20, 10, 10},
 			[]byte{
-				0x14,      // A value - no len, value = 10 (over 10) shifted << by 1 ?
-				0x01, 0xa, // B value - len = 1, value = 10 (over 10)
+				0x14, // A value - no len, value = 10 (over 10) shifted << by 1 ?
+				// ToDo - after introducing an upperbound of 4294967295 (maximum range of long in Clang, it started to encode length as 0. Is that correct? Yes, because length is now a known value (we know range)
+				0x00, 0xa, // B value - len = 1, value = 10 (over 10)
 				0x01, 0x14, // C value - len = 1, value = 20
 				0xa0, // D values not octet aligned since under 16. no length. Values = 0 since equals lower bound
 				// E value missing because it always has to be 10
@@ -99,8 +101,9 @@ func Test_TestConstrainedIntEncode(t *testing.T) {
 		{
 			[]int{30, 30, 30, 15, 10, 10},
 			[]byte{
-				0x28,       // A value - no len, value = 20 (over 10) shifted << by 1 ?
-				0x01, 0x14, // B value - len = 1, value = 20 (over 10)
+				0x28, // A value - no len, value = 20 (over 10) shifted << by 1 ?
+				// ToDo - after introducing an upperbound of 4294967295 (maximum range of long in Clang, it started to encode length as 0. Is that correct? Yes, because length is now a known value (we know range)
+				0x00, 0x14, // B value - len = 1, value = 20 (over 10)
 				0x01, 0x1e, // C value - len = 1, value = 30
 				0x50, // 0101 0000 D value = 5 (over 10) - then 0 since F is not extended
 				// E value missing because it always has to be 10
@@ -110,8 +113,9 @@ func Test_TestConstrainedIntEncode(t *testing.T) {
 		{
 			[]int{100, 100, 100, 20, 10, 20},
 			[]byte{
-				0xb4,       // A value - no len, value = 90 (over 10) shifted << by 1 ?
-				0x01, 0x5a, // B value - len = 1, value = 90 (over 10)
+				0xb4, // A value - no len, value = 90 (over 10) shifted << by 1 ?
+				// ToDo - after introducing an upperbound of 4294967295 (maximum range of long in Clang, it started to encode length as 0. Is that correct? Yes, because length is now a known value (we know range)
+				0x00, 0x5a, // B value - len = 1, value = 90 (over 10)
 				0x01, 0x64, // C value - len = 1, value = 100
 				0xa8, // 1010 1000
 				// D = 4 bits 1010 = a = 10 (over 10)
@@ -142,7 +146,7 @@ func Test_TestConstrainedIntEncode(t *testing.T) {
 		aper, err := aper.Marshal(test1)
 		assert.NoError(t, err)
 		assert.NotNil(t, aper)
-		t.Logf("%d %d %d %d %d gives APER %s", a, b, c, d, e, hex.Dump(aper))
+		t.Logf("%d %d %d %d %d %d gives APER %s", a, b, c, d, e, f, hex.Dump(aper))
 		assert.EqualValues(t, tc.expected, aper)
 	}
 }

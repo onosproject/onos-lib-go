@@ -21,18 +21,18 @@ import (
 )
 
 type testreal struct {
-	values   []float32
+	values   []float64
 	expected []byte
 }
 
 func Test_TestUnconstrainedRealEncode(t *testing.T) {
 	testCases := []testreal{
 		{
-			[]float32{1.234, 1.234},
+			[]float64{1.234, 1.234},
 			[]byte{0x01, 0x01},
 		},
 		{
-			[]float32{12345.6789, 98765.4321},
+			[]float64{12345.6789, 98765.4321},
 			[]byte{0x01, 0x01},
 		},
 	}
@@ -42,11 +42,11 @@ func Test_TestUnconstrainedRealEncode(t *testing.T) {
 		b := tc.values[1]
 		test1 := &TestUnconstrainedReal{
 			AttrUcrA: a,
-			AttrUcrB: float64(b),
+			AttrUcrB: b,
 		}
 		assert.NotNil(t, tc.expected)
 		aper, err := aper.Marshal(test1)
 		assert.Nil(t, aper)
-		assert.EqualError(t, err, "unsupported: Type:float32 Kind:float32")
+		assert.EqualError(t, err, "unsupported: Type:float64 Kind:float64")
 	}
 }
