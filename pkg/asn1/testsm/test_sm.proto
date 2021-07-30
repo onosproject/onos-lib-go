@@ -71,16 +71,18 @@ message TestUnconstrainedInt {
 message TestConstrainedInt {
     // @inject_tag: aper:"valueLB:10,valueUB:100"
     int32 attr_ci_a = 1 [json_name = "attrCiA"];
-    // @inject_tag: aper:"valueLB:10,valueUB:4294967295"
+    // @inject_tag: aper:"valueLB:255,valueUB:65535"
     int32 attr_ci_b = 2 [json_name = "attrCiB"];
-    // @inject_tag: aper:"valueUB:100"
+    // @inject_tag: aper:"valueLB:10,valueUB:4294967295"
     int32 attr_ci_c = 3 [json_name = "attrCiC"];
-    // @inject_tag: aper:"valueLB:10,valueUB:20"
+    // @inject_tag: aper:"valueUB:100"
     int32 attr_ci_d = 4 [json_name = "attrCiD"];
-    // @inject_tag: aper:"valueLB:10,valueUB:10"
+    // @inject_tag: aper:"valueLB:10,valueUB:20"
     int32 attr_ci_e = 5 [json_name = "attrCiE"];
-    // @inject_tag: aper:"valueLB:10,valueUB:10,valueExt"
+    // @inject_tag: aper:"valueLB:10,valueUB:10"
     int32 attr_ci_f = 6 [json_name = "attrCiF"];
+    // @inject_tag: aper:"valueLB:10,valueUB:10,valueExt"
+    int32 attr_ci_g = 7 [json_name = "attrCiG"];
 };
 
 // sequence from tes_sm.asn1:29
