@@ -21,12 +21,15 @@ limitations under the License.
 syntax = "proto3";
 
 package aper.test.v1;
+
+import "asn1/v1/asn1.proto";
+
 //package test_sm_aper_go_lib.v1;
 option go_package = "pkg/asn1/testsm";
+
 //option go_package = "test_sm_aper_go_lib/v1/test-sm-ies";
 
 //import "validate/v1/validate.proto";
-import "asn1/v1/asn1.proto";
 
 // enumerated from tes_sm.asn1:161
 //{TEST-Enumerated}
@@ -50,81 +53,89 @@ enum TestEnumeratedExtensible {
     TEST_ENUMERATED_EXTENSIBLE_ENUM6 = 5;
 };
 
+//{TEST-EnumeratedExtensible}
+enum TestFullyOptionalSequenceItem4 {
+    TEST_FULLY_OPTIONAL_SEQUENCE_ITEM4_ONE = 0;
+    TEST_FULLY_OPTIONAL_SEQUENCE_ITEM4_TWO = 1;
+};
+
 // sequence from tes_sm.asn1:15
 // {TEST-UnconstrainedInt}
 message TestUnconstrainedInt {
-    int32 attr_uci_a = 1 [ json_name="attrUciA"];
-    int32 attr_uci_b = 2 [ json_name="attrUciB"];
+    int32 attr_uci_a = 1 [json_name = "attrUciA"];
+    int32 attr_uci_b = 2 [json_name = "attrUciB"];
 };
 
 // sequence from tes_sm.asn1:20
 // {TEST-ConstrainedInt}
 message TestConstrainedInt {
     // @inject_tag: aper:"valueLB:10,valueUB:100"
-    int32 attr_ci_a = 1 [ json_name="attrCiA"];
-    // @inject_tag: aper:"valueLB:10"
-    int32 attr_ci_b = 2 [ json_name="attrCiB"];
+    int32 attr_ci_a = 1 [json_name = "attrCiA"];
+    // @inject_tag: aper:"valueLB:255,valueUB:65535"
+    int32 attr_ci_b = 2 [json_name = "attrCiB"];
+    // @inject_tag: aper:"valueLB:10,valueUB:4294967295"
+    int32 attr_ci_c = 3 [json_name = "attrCiC"];
     // @inject_tag: aper:"valueUB:100"
-    int32 attr_ci_c = 3 [ json_name="attrCiC"];
+    int32 attr_ci_d = 4 [json_name = "attrCiD"];
     // @inject_tag: aper:"valueLB:10,valueUB:20"
-    int32 attr_ci_d = 4 [ json_name="attrCiD"];
+    int32 attr_ci_e = 5 [json_name = "attrCiE"];
     // @inject_tag: aper:"valueLB:10,valueUB:10"
-    int32 attr_ci_e = 5 [ json_name="attrCiE"];
+    int32 attr_ci_f = 6 [json_name = "attrCiF"];
     // @inject_tag: aper:"valueLB:10,valueUB:10,valueExt"
-    int32 attr_ci_f = 6 [ json_name="attrCiF"];
+    int32 attr_ci_g = 7 [json_name = "attrCiG"];
 };
 
 // sequence from tes_sm.asn1:29
 // {TEST-UnconstrainedReal}
 message TestUnconstrainedReal {
-    float attr_ucr_a = 1 [ json_name="attrUcrA"];
-    double attr_ucr_b = 2 [ json_name="attrUcrB"];
+    double attr_ucr_a = 1 [json_name = "attrUcrA"];
+    double attr_ucr_b = 2 [json_name = "attrUcrB"];
 };
 
 // sequence from tes_sm.asn1:34
 // {TEST-ConstrainedReal}
 message TestConstrainedReal {
     // @inject_tag: aper:"valueLB:10,valueUB:100"
-    float attr_cr_a = 1 [ json_name="attrCrA"];
+    double attr_cr_a = 1 [json_name = "attrCrA"];
     // @inject_tag: aper:"valueLB:10"
-    float attr_cr_b = 2 [ json_name="attrCrB"];
+    double attr_cr_b = 2 [json_name = "attrCrB"];
     // @inject_tag: aper:"valueUB:100"
-    float attr_cr_c = 3 [ json_name="attrCrC"];
+    double attr_cr_c = 3 [json_name = "attrCrC"];
     // @inject_tag: aper:"valueLB:10,valueUB:20"
-    float attr_cr_d = 4 [ json_name="attrCrD"];
+    double attr_cr_d = 4 [json_name = "attrCrD"];
     // @inject_tag: aper:"valueLB:10,valueUB:10"
-    float attr_cr_e = 5 [ json_name="attrCrE"];
+    double attr_cr_e = 5 [json_name = "attrCrE"];
     // @inject_tag: aper:"valueLB:10,valueUB:10,valueExt"
-    float attr_cr_f = 6 [ json_name="attrCrF"];
+    double attr_cr_f = 6 [json_name = "attrCrF"];
 };
 
 // sequence from tes_sm.asn1:43
 // {TEST-BitString}
 message TestBitString {
-    asn1.v1.BitString attr_bs1 = 1 [ json_name="attrBs1"];
+    asn1.v1.BitString attr_bs1 = 1 [json_name = "attrBs1"];
     // @inject_tag: aper:"sizeLB:20,sizeUB:20"
-    asn1.v1.BitString attr_bs2 = 2 [ json_name="attrBs2"];
+    asn1.v1.BitString attr_bs2 = 2 [json_name = "attrBs2"];
     // @inject_tag: aper:"sizeLB:20,sizeUB:20, valueExt"
-    asn1.v1.BitString attr_bs3 = 3 [ json_name="attrBs3"];
+    asn1.v1.BitString attr_bs3 = 3 [json_name = "attrBs3"];
     // @inject_tag: aper:"sizeLB:0,sizeUB:18"
-    asn1.v1.BitString attr_bs4 = 4 [ json_name="attrBs4"];
+    asn1.v1.BitString attr_bs4 = 4 [json_name = "attrBs4"];
     // @inject_tag: aper:"sizeLB:22,sizeUB:32"
-    asn1.v1.BitString attr_bs5 = 5 [ json_name="attrBs5"];
+    asn1.v1.BitString attr_bs5 = 5 [json_name = "attrBs5"];
     // @inject_tag: aper:"sizeLB:28,sizeUB:32,sizeExt"
-    asn1.v1.BitString attr_bs6 = 6 [ json_name="attrBs6"];
+    asn1.v1.BitString attr_bs6 = 6 [json_name = "attrBs6"];
     // @inject_tag: aper:"sizeLB:22,sizeUB:36,optional"
-    optional asn1.v1.BitString attr_bs7 = 7 [ json_name="attrBs7"];
+    optional asn1.v1.BitString attr_bs7 = 7 [json_name = "attrBs7"];
 };
 
 // sequence from tes_sm.asn1:53
 // {TEST-Choices}
 message TestChoices {
-    string other_attr = 1 [ json_name="otherAttr"];
-    Choice1 choice1 = 2 [ json_name="choice1"];
-    Choice2 choice2 = 3 [ json_name="choice2"];
-    Choice3 choice3 = 4 [ json_name="choice3"];
+    string other_attr = 1 [json_name = "otherAttr"];
+    Choice1 choice1 = 2 [json_name = "choice1"];
+    Choice2 choice2 = 3 [json_name = "choice2"];
+    Choice3 choice3 = 4 [json_name = "choice3"];
     // @inject_tag: aper:"valueExt"
-    Choice4 choice4 = 5 [ json_name="choice4"];
+    Choice4 choice4 = 5 [json_name = "choice4"];
 };
 
 // sequence from tes_sm.asn1:62
@@ -133,7 +144,7 @@ message Choice1 {
     // choice from tes_sm.asn1:62
     oneof choice1 {
         // @inject_tag: aper:"choiceIdx:1,valueExt"
-        int32 choice1_a = 1 [ json_name="choice1A"];
+        int32 choice1_a = 1 [json_name = "choice1A"];
     }
 };
 
@@ -143,9 +154,9 @@ message Choice2 {
     // choice from tes_sm.asn1:65
     oneof choice2 {
         // @inject_tag: aper:"choiceIdx:1,valueExt"
-        int32 choice2_a = 1 [ json_name="choice2A"];
+        int32 choice2_a = 1 [json_name = "choice2A"];
         // @inject_tag: aper:"choiceIdx:2,valueExt"
-        int32 choice2_b = 2 [ json_name="choice2B"];
+        int32 choice2_b = 2 [json_name = "choice2B"];
     }
 };
 
@@ -155,11 +166,11 @@ message Choice3 {
     // choice from tes_sm.asn1:70
     oneof choice3 {
         // @inject_tag: aper:"choiceIdx:1,valueExt"
-        int32 choice3_a = 1 [ json_name="choice3A"];
+        int32 choice3_a = 1 [json_name = "choice3A"];
         // @inject_tag: aper:"choiceIdx:2,valueExt"
-        int32 choice3_b = 2 [ json_name="choice3B"];
+        int32 choice3_b = 2 [json_name = "choice3B"];
         // @inject_tag: aper:"choiceIdx:3,valueExt"
-        int32 choice3_c = 3 [ json_name="choice3C"];
+        int32 choice3_c = 3 [json_name = "choice3C"];
     }
 };
 
@@ -170,7 +181,7 @@ message Choice4 {
     // @inject_tag: aper:"valueExt"
     oneof choice4 {
         // @inject_tag: aper:"choiceIdx:1,valueExt"
-        int32 choice4_a = 1 [ json_name="choice4A"];
+        int32 choice4_a = 1 [json_name = "choice4A"];
     }
 };
 
@@ -178,13 +189,12 @@ message Choice4 {
 // {TEST-ConstrainedChoices}
 message TestConstrainedChoices {
     // @inject_tag: aper:"sizeLB:1,sizeUB:50,sizeExt"
-    string other_cattr = 1 [ json_name="otherCAttr"];
-//    string other_cattr = 1 [(validate.v1.rules).string = {min_len: 1, max_len: 50}, json_name="otherCAttr"];
-    ConstrainedChoice1 constrained_choice1 = 2 [ json_name="constrainedChoice1"];
-    ConstrainedChoice2 constrained_choice2 = 3 [ json_name="constrainedChoice2"];
-    ConstrainedChoice3 constrained_choice3 = 4 [ json_name="constrainedChoice3"];
+    string other_cattr = 1 [json_name = "otherCAttr"];
+    ConstrainedChoice1 constrained_choice1 = 2 [json_name = "constrainedChoice1"];
+    ConstrainedChoice2 constrained_choice2 = 3 [json_name = "constrainedChoice2"];
+    ConstrainedChoice3 constrained_choice3 = 4 [json_name = "constrainedChoice3"];
     // @inject_tag: aper:"valueExt"
-    ConstrainedChoice4 constrained_choice4 = 5 [ json_name="constrainedChoice4"];
+    ConstrainedChoice4 constrained_choice4 = 5 [json_name = "constrainedChoice4"];
 };
 
 // sequence from tes_sm.asn1:91
@@ -193,7 +203,7 @@ message ConstrainedChoice1 {
     // choice from tes_sm.asn1:91
     oneof constrained_choice1 {
         // @inject_tag: aper:"choiceIdx:1,valueLB:1,valueUB:128,valueExt"
-        int32 constrained_choice1_a = 1 [ json_name="constrainedChoice1A"];
+        int32 constrained_choice1_a = 1 [json_name = "constrainedChoice1A"];
     }
 };
 
@@ -203,9 +213,9 @@ message ConstrainedChoice2 {
     // choice from tes_sm.asn1:94
     oneof constrained_choice2 {
         // @inject_tag: aper:"choiceIdx:1,valueLB:0,valueUB:15,valueExt"
-        int32 constrained_choice2_a = 1 [ json_name="constrainedChoice2A"];
-        // @inject_tag: aper:"choiceIdx:2,valueLB:1,valueExt"
-        int32 constrained_choice2_b = 2 [ json_name="constrainedChoice2B"];
+        int32 constrained_choice2_a = 1 [json_name = "constrainedChoice2A"];
+        // @inject_tag: aper:"choiceIdx:2,valueLB:1,valueUB:4294967295,valueExt"
+        int32 constrained_choice2_b = 2 [json_name = "constrainedChoice2B"];
     }
 };
 
@@ -215,13 +225,13 @@ message ConstrainedChoice3 {
     // choice from tes_sm.asn1:99
     oneof constrained_choice3 {
         // @inject_tag: aper:"choiceIdx:1,valueExt"
-        int32 constrained_choice3_a = 1 [ json_name="constrainedChoice3A"];
+        int32 constrained_choice3_a = 1 [json_name = "constrainedChoice3A"];
         // @inject_tag: aper:"choiceIdx:2,valueLB:0,valueUB:15,valueExt"
-        int32 constrained_choice3_b = 2 [ json_name="constrainedChoice3B"];
-        // @inject_tag: aper:"choiceIdx:3,valueLB:1,valueExt"
-        int32 constrained_choice3_c = 3 [ json_name="constrainedChoice3C"];
+        int32 constrained_choice3_b = 2 [json_name = "constrainedChoice3B"];
+        // @inject_tag: aper:"choiceIdx:3,valueLB:1,valueUB:4294967295,valueExt"
+        int32 constrained_choice3_c = 3 [json_name = "constrainedChoice3C"];
         // @inject_tag: aper:"choiceIdx:4,valueLB:1,valueUB:1,valueExt"
-        int32 constrained_choice3_d = 4 [ json_name="constrainedChoice3D"];
+        int32 constrained_choice3_d = 4 [json_name = "constrainedChoice3D"];
     }
 };
 
@@ -232,125 +242,129 @@ message ConstrainedChoice4 {
     // @inject_tag: aper:"valueExt"
     oneof constrained_choice4 {
         // @inject_tag: aper:"choiceIdx:1,valueLB:1,valueUB:128,valueExt"
-        int32 constrained_choice4_a = 1 [ json_name="constrainedChoice4A"];
+        int32 constrained_choice4_a = 1 [json_name = "constrainedChoice4A"];
+    }
+};
+
+// sequence from tes_sm.asn1:107
+// {TEST-NestedChoice}
+message TestNestedChoice {
+    // choice from tes_sm.asn1:107
+    // @inject_tag: aper:"valueExt"
+    oneof test_nested_choice {
+        Choice3 option1 = 1 [json_name = "option1"];
+        ConstrainedChoice3 option2 = 2 [json_name = "option2"];
+        // @inject_tag: aper:"valueExt"
+        ConstrainedChoice4 option3 = 3 [json_name = "option3"];
     }
 };
 
 // sequence from tes_sm.asn1:112
 // {TEST-OctetString}
 message TestOctetString {
-    bytes attr_os1 = 1 [ json_name="attrOs1"];
-    // @inject_tag: aper:"sizeLB:20,sizeUB:20"
-    bytes attr_os2 = 2 [json_name="attrOs2"];
-//    bytes attr_os2 = 2 [(validate.v1.rules).bytes.len = 20, json_name="attrOs2"];
-    // @inject_tag: aper:"sizeLB:127,sizeUB:127,sizeExt"
-    bytes attr_os3 = 3 [json_name="attrOs3"];
-//    bytes attr_os3 = 3 [(validate.v1.rules).bytes.len = 127, json_name="attrOs3"];
-    // @inject_tag: aper:"sizeLB:0,sizeUB:32"
-    bytes attr_os4 = 4 [json_name="attrOs4"];
-    // @inject_tag: aper:"sizeLB:22,sizeUB:32"
-    bytes attr_os5 = 5 [json_name="attrOs5"];
-    // @inject_tag: aper:"sizeLB:28,sizeUB:32,sizeExt"
-    bytes attr_os6 = 6 [json_name="attrOs6"];
-    // @inject_tag: aper:"optional,sizeLB:22,sizeUB:36"
-    optional bytes attr_os7 = 7 [json_name="attrOs7"];
+    bytes attr_os1 = 1 [json_name = "attrOs1"];
+    // @inject_tag: aper:"sizeLB:2,sizeUB:2"
+    bytes attr_os2 = 2 [json_name = "attrOs2"];
+    // @inject_tag: aper:"sizeLB:2,sizeUB:2,sizeExt"
+    bytes attr_os3 = 3 [json_name = "attrOs3"];
+    // @inject_tag: aper:"sizeLB:0,sizeUB:3"
+    bytes attr_os4 = 4 [json_name = "attrOs4"];
+    // @inject_tag: aper:"sizeLB:2,sizeUB:3"
+    bytes attr_os5 = 5 [json_name = "attrOs5"];
+    // @inject_tag: aper:"sizeLB:1,sizeUB:3,sizeExt"
+    bytes attr_os6 = 6 [json_name = "attrOs6"];
+    // @inject_tag: aper:"optional,sizeLB:2,sizeUB:6"
+    optional bytes attr_os7 = 7 [json_name = "attrOs7"];
 };
 
 // sequence from tes_sm.asn1:122
 // {TEST-PrintableString}
 message TestPrintableString {
-    string attr_ps1 = 1 [ json_name="attrPs1"];
-    // @inject_tag: aper:"sizeLB:20,sizeUB:20"
-    string attr_ps2 = 2 [json_name="attrPs2"];
-//    string attr_ps2 = 2 [(validate.v1.rules).string = {min_len: 20, max_len: 20}, json_name="attrPs2"];
-    // @inject_tag: aper:"sizeLB:127,sizeUB:127,sizeExt"
-    string attr_ps3 = 3 [json_name="attrPs3"];
-//    string attr_ps3 = 3 [(validate.v1.rules).string = {min_len: 127, max_len: 127}, json_name="attrPs3"];
-    // @inject_tag: aper:"sizeLB:0,sizeUB:32"
-    string attr_ps4 = 4 [json_name="attrPs4"];
-//    string attr_ps4 = 4 [(validate.v1.rules).string = {min_len: 0, max_len: 32}, json_name="attrPs4"];
-    // @inject_tag: aper:"sizeLB:22,sizeUB:32"
-    string attr_ps5 = 5 [json_name="attrPs5"];
-//    string attr_ps5 = 5 [(validate.v1.rules).string = {min_len: 22, max_len: 32}, json_name="attrPs5"];
-    // @inject_tag: aper:"sizeLB:28,sizeUB:32,sizeExt"
-    string attr_ps6 = 6 [json_name="attrPs6"];
-//    string attr_ps6 = 6 [(validate.v1.rules).string = {min_len: 28, max_len: 32}, json_name="attrPs6"];
-    // @inject_tag: aper:"optional,sizeLB:22,sizeUB:36"
-    optional string attr_ps7 = 7 [json_name="attrPs7"];
-//    optional string attr_ps7 = 7 [(validate.v1.rules).string = {min_len: 22, max_len: 36}, json_name="attrPs7"];
+    string attr_ps1 = 1 [json_name = "attrPs1"];
+    // @inject_tag: aper:"sizeLB:2,sizeUB:2"
+    string attr_ps2 = 2 [json_name = "attrPs2"];
+    // @inject_tag: aper:"sizeLB:2,sizeUB:2,sizeExt"
+    string attr_ps3 = 3 [json_name = "attrPs3"];
+    // @inject_tag: aper:"sizeLB:0,sizeUB:3"
+    string attr_ps4 = 4 [json_name = "attrPs4"];
+    // @inject_tag: aper:"sizeLB:2,sizeUB:3"
+    string attr_ps5 = 5 [json_name = "attrPs5"];
+    // @inject_tag: aper:"sizeLB:1,sizeUB:3,sizeExt"
+    string attr_ps6 = 6 [json_name = "attrPs6"];
+    // @inject_tag: aper:"optional,sizeLB:2,sizeUB:6"
+    optional string attr_ps7 = 7 [json_name = "attrPs7"];
 };
 
 // sequence from tes_sm.asn1:133
 // {TEST-List1}
 message TestList1 {
     // @inject_tag: aper:"sizeLB:0,sizeUB:12,valueExt"
-    repeated Item value = 1 [ json_name="value"];
+    repeated Item value = 1 [json_name = "value"];
 };
 
 // sequence from tes_sm.asn1:134
 // {Item}
 message Item {
     // @inject_tag: aper:"optional"
-    optional int32 item1 = 1 [ json_name="item1"];
+    optional int32 item1 = 1 [json_name = "item1"];
     // @inject_tag: aper:"sizeLB:3,sizeUB:7"
-    asn1.v1.BitString item2 = 2 [ json_name="item2"];
+    asn1.v1.BitString item2 = 2 [json_name = "item2"];
 };
 
 // sequence from tes_sm.asn1:140
 // {TEST-List2}
 message TestList2 {
     // @inject_tag: aper:"sizeLB:0,sizeUB:12,valueExt"
-    repeated ItemExtensible value = 1 [ json_name="value"];
+    repeated ItemExtensible value = 1 [json_name = "value"];
 };
 
 // sequence from tes_sm.asn1:141
 // {ItemExtensible}
 message ItemExtensible {
-    int32 item1 = 1 [ json_name="item1"];
+    int32 item1 = 1 [json_name = "item1"];
     // @inject_tag: aper:"optional,sizeLB:3,sizeUB:7"
-    optional bytes item2 = 2 [json_name="item2"];
+    optional bytes item2 = 2 [json_name = "item2"];
 };
 
 // sequence from tes_sm.asn1:147
 // {TEST-FullyOptionalSequence}
 message TestFullyOptionalSequence {
     // @inject_tag: aper:"optional"
-    optional int32 item1 = 1 [ json_name="item1"];
+    optional int32 item1 = 1 [json_name = "item1"];
     // @inject_tag: aper:"optional,sizeLB:3,sizeUB:7"
-    optional bytes item2 = 2 [json_name="item2"];
+    optional bytes item2 = 2 [json_name = "item2"];
     // @inject_tag: aper:"optional"
-    optional bool item3 = 3 [ json_name="item3"];
+    optional bool item3 = 3 [json_name = "item3"];
     // @inject_tag: aper:"optional,valueLB:0,valueUB:1,valueExt"
-    optional int32 item4 = 4 [ json_name="item4"];
+    optional TestFullyOptionalSequenceItem4 item4 = 4 [json_name = "item4"];
     // @inject_tag: aper:"optional,valueLB:0,valueUB:0"
-    optional int32 item5 = 5 [ json_name="item5"];
+    optional int32 item5 = 5 [json_name = "item5"];
 };
 
 // sequence from tes_sm.asn1:156
 // {TEST-ListExtensible1}
 message TestListExtensible1 {
     // @inject_tag: aper:"sizeLB:0,sizeUB:4,sizeExt"
-    repeated Item value = 1 [ json_name="value"];
+    repeated Item value = 1 [json_name = "value"];
 };
 
 // sequence from tes_sm.asn1:157
 // {TEST-ListExtensible2}
 message TestListExtensible2 {
     // @inject_tag: aper:"sizeLB:0,sizeUB:4,sizeExt,valueExt"
-    repeated ItemExtensible value = 1 [ json_name="value"];
+    repeated ItemExtensible value = 1 [json_name = "value"];
 };
 
 // sequence from tes_sm.asn1:158
 // {TEST-ListExtensible3}
 message TestListExtensible3 {
     // @inject_tag: aper:"sizeLB:0,sizeUB:4,sizeExt,valueExt"
-    repeated TestFullyOptionalSequence value = 1 [ json_name="value"];
+    repeated TestFullyOptionalSequence value = 1 [json_name = "value"];
 };
 
 // sequence from tes_sm.asn1:160
 // {TEST-List3}
 message TestList3 {
     // @inject_tag: aper:"sizeLB:0,sizeUB:12,valueExt"
-    repeated TestFullyOptionalSequence value = 1 [ json_name="value"];
+    repeated TestFullyOptionalSequence value = 1 [json_name = "value"];
 };
-
