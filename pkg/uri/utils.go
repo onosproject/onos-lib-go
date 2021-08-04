@@ -20,6 +20,29 @@ package uri
 
 const upperhex = "0123456789ABCDEF"
 
+type encoding int
+
+const (
+	encodePath encoding = 1 + iota
+	encodePathSegment
+	encodeHost
+	encodeZone
+	encodeUserPassword
+	encodeQueryComponent
+	encodeFragment
+)
+
+// stringContainsCTLByte reports whether s contains any ASCII control character.
+func stringContainsCTLByte(s string) bool {
+	for i := 0; i < len(s); i++ {
+		b := s[i]
+		if b < ' ' || b == 0x7f {
+			return true
+		}
+	}
+	return false
+}
+
 func ishex(c byte) bool {
 	switch {
 	case '0' <= c && c <= '9':
@@ -43,15 +66,3 @@ func unhex(c byte) byte {
 	}
 	return 0
 }
-
-type encoding int
-
-const (
-	encodePath encoding = 1 + iota
-	encodePathSegment
-	encodeHost
-	encodeZone
-	encodeUserPassword
-	encodeQueryComponent
-	encodeFragment
-)

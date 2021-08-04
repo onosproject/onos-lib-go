@@ -763,3 +763,134 @@ func TestURIString(t *testing.T) {
 		}
 	}
 }
+
+type RequestURITest struct {
+	uri *URI
+	out string
+}
+
+var requritests = []RequestURITest{
+	{
+		&URI{
+			Scheme: "http",
+			Host:   "example.com",
+			Path:   "",
+		},
+		"/",
+	},
+	{
+		&URI{
+			Scheme: "http",
+			Host:   "example.com",
+			Path:   "/a b",
+		},
+		"/a%20b",
+	},
+	// golang.org/issue/4860 variant 1
+	{
+		&URI{
+			Scheme: "http",
+			Host:   "example.com",
+			Opaque: "/%2F/%2F/",
+		},
+		"/%2F/%2F/",
+	},
+	// golang.org/issue/4860 variant 2
+	{
+		&URI{
+			Scheme: "http",
+			Host:   "example.com",
+			Opaque: "//other.example.com/%2F/%2F/",
+		},
+		"http://other.example.com/%2F/%2F/",
+	},
+	// better fix for issue 4860
+	{
+		&URI{
+			Scheme:  "http",
+			Host:    "example.com",
+			Path:    "/////",
+			RawPath: "/%2F/%2F/",
+		},
+		"/%2F/%2F/",
+	},
+	{
+		&URI{
+			Scheme:  "http",
+			Host:    "example.com",
+			Path:    "/////",
+			RawPath: "/WRONG/", // ignored because doesn't match Path
+		},
+		"/////",
+	},
+	{
+		&URI{
+			Scheme:   "http",
+			Host:     "example.com",
+			Path:     "/a b",
+			RawQuery: "q=go+language",
+		},
+		"/a%20b?q=go+language",
+	},
+	{
+		&URI{
+			Scheme:   "http",
+			Host:     "example.com",
+			Path:     "/a b",
+			RawPath:  "/a b", // ignored because invalid
+			RawQuery: "q=go+language",
+		},
+		"/a%20b?q=go+language",
+	},
+	{
+		&URI{
+			Scheme:   "http",
+			Host:     "example.com",
+			Path:     "/a?b",
+			RawPath:  "/a?b", // ignored because invalid
+			RawQuery: "q=go+language",
+		},
+		"/a%3Fb?q=go+language",
+	},
+	{
+		&URI{
+			Scheme: "myschema",
+			Opaque: "opaque",
+		},
+		"opaque",
+	},
+	{
+		&URI{
+			Scheme:   "myschema",
+			Opaque:   "opaque",
+			RawQuery: "q=go+language",
+		},
+		"opaque?q=go+language",
+	},
+	{
+		&URI{
+			Scheme: "http",
+			Host:   "example.com",
+			Path:   "//foo",
+		},
+		"//foo",
+	},
+	{
+		&URI{
+			Scheme:     "http",
+			Host:       "example.com",
+			Path:       "/foo",
+			ForceQuery: true,
+		},
+		"/foo?",
+	},
+}
+
+func TestRequestURI(t *testing.T) {
+	for _, tt := range requritests {
+		s := tt.uri.RequestURI()
+		if s != tt.out {
+			t.Errorf("%#v.RequestURI() == %q (expected %q)", tt.uri, s, tt.out)
+		}
+	}
+}

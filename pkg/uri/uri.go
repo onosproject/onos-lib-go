@@ -30,6 +30,37 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 )
 
+// URI represents a parsed URI
+//
+// The general form represented is:
+//
+//	[scheme:][//[userinfo@]host][/]path[?query][#fragment]
+//
+// URIs that do not start with a slash after the scheme are interpreted as:
+//
+//	scheme:opaque[?query][#fragment]
+//
+// Note that the Path field is stored in decoded form: /%47%6f%2f becomes /Go/.
+// A consequence is that it is impossible to tell which slashes in the Path were
+// slashes in the raw URI and which were %2f. This distinction is rarely important,
+// but when it is, the code should use RawPath, an optional field which only gets
+// set if the default encoding is different from Path.
+//
+// URI's String method uses the EscapedPath method to obtain the path. See the
+// EscapedPath method for more details.
+type URI struct {
+	Scheme      string
+	Opaque      string    // encoded opaque data
+	User        *Userinfo // username and password information
+	Host        string    // host or host:port
+	Path        string    // path (relative paths may omit leading slash)
+	RawPath     string    // encoded path hint (see EscapedPath method)
+	ForceQuery  bool      // append a query ('?') even if RawQuery is empty
+	RawQuery    string    // encoded query values, without '?'
+	Fragment    string    // fragment for references, without '#'
+	RawFragment string    // encoded fragment hint (see EscapedFragment method)
+}
+
 // Return true if the specified character should be escaped when
 // appearing in a URI string, according to RFC 3986.
 //
@@ -273,37 +304,6 @@ func escape(s string, mode encoding) string {
 		}
 	}
 	return string(t)
-}
-
-// URI represents a parsed URI
-//
-// The general form represented is:
-//
-//	[scheme:][//[userinfo@]host][/]path[?query][#fragment]
-//
-// URIs that do not start with a slash after the scheme are interpreted as:
-//
-//	scheme:opaque[?query][#fragment]
-//
-// Note that the Path field is stored in decoded form: /%47%6f%2f becomes /Go/.
-// A consequence is that it is impossible to tell which slashes in the Path were
-// slashes in the raw URI and which were %2f. This distinction is rarely important,
-// but when it is, the code should use RawPath, an optional field which only gets
-// set if the default encoding is different from Path.
-//
-// URI's String method uses the EscapedPath method to obtain the path. See the
-// EscapedPath method for more details.
-type URI struct {
-	Scheme      string
-	Opaque      string    // encoded opaque data
-	User        *Userinfo // username and password information
-	Host        string    // host or host:port
-	Path        string    // path (relative paths may omit leading slash)
-	RawPath     string    // encoded path hint (see EscapedPath method)
-	ForceQuery  bool      // append a query ('?') even if RawQuery is empty
-	RawQuery    string    // encoded query values, without '?'
-	Fragment    string    // fragment for references, without '#'
-	RawFragment string    // encoded fragment hint (see EscapedFragment method)
 }
 
 // User returns a Userinfo containing the provided username
@@ -1155,15 +1155,4 @@ func validUserinfo(s string) bool {
 		}
 	}
 	return true
-}
-
-// stringContainsCTLByte reports whether s contains any ASCII control character.
-func stringContainsCTLByte(s string) bool {
-	for i := 0; i < len(s); i++ {
-		b := s[i]
-		if b < ' ' || b == 0x7f {
-			return true
-		}
-	}
-	return false
 }
