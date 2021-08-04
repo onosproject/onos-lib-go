@@ -578,29 +578,30 @@ func (pd *perBitData) getChoiceIndex(extensed bool, upperBound int) (present int
 	}
 	return
 }
-func getReferenceFieldValue(v reflect.Value) (value int64, err error) {
-	fieldType := v.Type()
-	switch v.Kind() {
-	case reflect.Int, reflect.Int32, reflect.Int64:
-		value = v.Int()
-	case reflect.Struct:
-		if fieldType.Field(0).Name == "Present" {
-			present := int(v.Field(0).Int())
-			if present == 0 {
-				err = fmt.Errorf("ReferenceField Value present is 0(present's field number)")
-			} else if present >= fieldType.NumField() {
-				err = fmt.Errorf("'Present' is bigger than number of struct field")
-			} else {
-				value, err = getReferenceFieldValue(v.Field(present))
-			}
-		} else {
-			value, err = getReferenceFieldValue(v.Field(0))
-		}
-	default:
-		err = fmt.Errorf("OpenType reference only support INTEGER")
-	}
-	return
-}
+
+//func getReferenceFieldValue(v reflect.Value) (value int64, err error) {
+//	fieldType := v.Type()
+//	switch v.Kind() {
+//	case reflect.Int, reflect.Int32, reflect.Int64:
+//		value = v.Int()
+//	case reflect.Struct:
+//		if fieldType.Field(0).Name == "Present" {
+//			present := int(v.Field(0).Int())
+//			if present == 0 {
+//				err = fmt.Errorf("ReferenceField Value present is 0(present's field number)")
+//			} else if present >= fieldType.NumField() {
+//				err = fmt.Errorf("'Present' is bigger than number of struct field")
+//			} else {
+//				value, err = getReferenceFieldValue(v.Field(present))
+//			}
+//		} else {
+//			value, err = getReferenceFieldValue(v.Field(0))
+//		}
+//	default:
+//		err = fmt.Errorf("OpenType reference only support INTEGER")
+//	}
+//	return
+//}
 
 // parseField is the main parsing function. Given a byte slice and an offset
 // into the array, it will try to parse a suitable ASN.1 value out and store it
