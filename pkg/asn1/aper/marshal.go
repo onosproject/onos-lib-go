@@ -740,32 +740,35 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				}
 			}
 			// for open type reference
-			if structParams[fieldIdx].openType {
-				fieldName := structParams[fieldIdx].referenceFieldName
-				var index int
-				for index = 0; index < fieldIdx; index++ {
-					if structType.Field(index).Name == fieldName {
-						break
-					}
-				}
-				if index == fieldIdx {
-					return fmt.Errorf("open type is not reference to the other field in the struct")
-				}
-				structParams[fieldIdx].referenceFieldValue = new(int64)
-				value, err := getReferenceFieldValue(val.Field(index))
-				if err != nil {
-					return err
-				}
-				*structParams[fieldIdx].referenceFieldValue = value
-			}
+			//if structParams[fieldIdx].openType {
+			//	fieldName := structParams[fieldIdx].referenceFieldName
+			//	var index int
+			//	for index = 0; index < fieldIdx; index++ {
+			//		if structType.Field(index).Name == fieldName {
+			//			break
+			//		}
+			//	}
+			//	if index == fieldIdx {
+			//		return fmt.Errorf("open type is not reference to the other field in the struct")
+			//	}
+			//	structParams[fieldIdx].referenceFieldValue = new(int64)
+			//	value, err := getReferenceFieldValue(val.Field(index))
+			//	if err != nil {
+			//		return err
+			//	}
+			//	*structParams[fieldIdx].referenceFieldValue = value
+			//}
 			if structParams[fieldIdx].oneofName != "" {
 				present := int(*structParams[fieldIdx].choiceIndex)
 				choiceMap, ok := ChoiceMap[choiceType]
 				if !ok {
 					return errors.NewInvalid("Expected a choice map with %s", choiceType)
 				}
-				if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, len(choiceMap)); err != nil {
-					return err
+				// When there is only one item in the choice, you don't need to encode choice index
+				if len(choiceMap) > 1 {
+					if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, len(choiceMap)); err != nil {
+						return err
+					}
 				}
 				if err := pd.makeField(reflect.ValueOf(v.Field(i).Interface()), structParams[fieldIdx]); err != nil {
 					return err
@@ -786,9 +789,9 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		err := pd.appendOctetString([]byte(printableString), params.sizeExtensible, params.sizeLowerBound,
 			params.sizeUpperBound)
 		return err
-	case reflect.Array:
-		log.Debugf("Ignoring array: \"%s\"", v.String())
-		return nil
+	//case reflect.Array:
+	//	log.Debugf("Ignoring array: \"%s\"", v.String())
+	//	return nil
 	default:
 		log.Debugf("Unhandled: \"%s\"", v.String())
 	}

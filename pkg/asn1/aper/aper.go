@@ -578,29 +578,30 @@ func (pd *perBitData) getChoiceIndex(extensed bool, upperBound int) (present int
 	}
 	return
 }
-func getReferenceFieldValue(v reflect.Value) (value int64, err error) {
-	fieldType := v.Type()
-	switch v.Kind() {
-	case reflect.Int, reflect.Int32, reflect.Int64:
-		value = v.Int()
-	case reflect.Struct:
-		if fieldType.Field(0).Name == "Present" {
-			present := int(v.Field(0).Int())
-			if present == 0 {
-				err = fmt.Errorf("ReferenceField Value present is 0(present's field number)")
-			} else if present >= fieldType.NumField() {
-				err = fmt.Errorf("'Present' is bigger than number of struct field")
-			} else {
-				value, err = getReferenceFieldValue(v.Field(present))
-			}
-		} else {
-			value, err = getReferenceFieldValue(v.Field(0))
-		}
-	default:
-		err = fmt.Errorf("OpenType reference only support INTEGER")
-	}
-	return
-}
+
+//func getReferenceFieldValue(v reflect.Value) (value int64, err error) {
+//	fieldType := v.Type()
+//	switch v.Kind() {
+//	case reflect.Int, reflect.Int32, reflect.Int64:
+//		value = v.Int()
+//	case reflect.Struct:
+//		if fieldType.Field(0).Name == "Present" {
+//			present := int(v.Field(0).Int())
+//			if present == 0 {
+//				err = fmt.Errorf("ReferenceField Value present is 0(present's field number)")
+//			} else if present >= fieldType.NumField() {
+//				err = fmt.Errorf("'Present' is bigger than number of struct field")
+//			} else {
+//				value, err = getReferenceFieldValue(v.Field(present))
+//			}
+//		} else {
+//			value, err = getReferenceFieldValue(v.Field(0))
+//		}
+//	default:
+//		err = fmt.Errorf("OpenType reference only support INTEGER")
+//	}
+//	return
+//}
 
 // parseField is the main parsing function. Given a byte slice and an offset
 // into the array, it will try to parse a suitable ASN.1 value out and store it
@@ -626,7 +627,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		} else if bitsValue != 0 {
 			sizeExtensible = true
 		}
-		log.Debugf("Decoded Size Extensive Bit : %t", sizeExtensible)
+		log.Debugf("Decoded Size Extensive Bit : %t, present", sizeExtensible)
 	}
 	if params.valueExtensible && v.Kind() != reflect.Slice {
 		if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
@@ -634,7 +635,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		} else if bitsValue != 0 {
 			valueExtensible = true
 		}
-		log.Debugf("Decoded Value Extensive Bit : %t", valueExtensible)
+		log.Debugf("Decoded Value Extensive Bit : %t, not present", valueExtensible)
 	}
 
 	// We deal with the structures defined in this package first.
@@ -751,9 +752,13 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		if !ok {
 			return errors.NewInvalid("Expected a choice map with %s", params.oneofName)
 		}
-		choiceIdx, err := pd.getChoiceIndex(params.valueExtensible, len(choiceMap))
-		if err != nil {
-			return err
+		choiceIdx := 1
+		var err error
+		if len(choiceMap) > 1 {
+			choiceIdx, err = pd.getChoiceIndex(params.valueExtensible, len(choiceMap))
+			if err != nil {
+				return err
+			}
 		}
 		log.Debugf("Handling interface %s for 'oneof' %s %d/%d", v.Type().String(), params.oneofName, choiceIdx, len(choiceMap))
 		choiceType, ok := choiceMap[choiceIdx]
