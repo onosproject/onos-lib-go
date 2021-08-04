@@ -368,3 +368,20 @@ message TestList3 {
     // @inject_tag: aper:"sizeLB:0,sizeUB:12,valueExt"
     repeated TestFullyOptionalSequence value = 1 [json_name = "value"];
 };
+
+// sequence from test_sm.asn1:193
+// {TEST-TopLevelPDU}
+message TestTopLevelPdu {
+    TestUnconstrainedInt opt1 = 1 [json_name = "opt1"];
+    // @inject_tag: aper:"optional"
+    optional TestConstrainedReal opt2 = 2 [json_name = "opt2"];
+    // @inject_tag: aper:"valueExt"
+    TestNestedChoice opt3 = 3 [json_name = "opt3"];
+    TestBitString opt4 = 4 [json_name = "opt4"];
+    // @inject_tag: aper:"optional"
+    optional TestOctetString opt5 = 5 [json_name = "opt5"];
+    // @inject_tag: aper:""
+    TestListExtensible3 opt6 = 6 [json_name = "opt6"];
+    // @inject_tag: aper:"valueExt"
+    TestEnumeratedExtensible opt7 = 7 [json_name = "opt7"];
+};
