@@ -626,7 +626,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		} else if bitsValue != 0 {
 			sizeExtensible = true
 		}
-		log.Debugf("Decoded Size Extensive Bit : %t", sizeExtensible)
+		log.Debugf("Decoded Size Extensive Bit : %t, present", sizeExtensible)
 	}
 	if params.valueExtensible && v.Kind() != reflect.Slice {
 		if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
@@ -634,7 +634,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		} else if bitsValue != 0 {
 			valueExtensible = true
 		}
-		log.Debugf("Decoded Value Extensive Bit : %t", valueExtensible)
+		log.Debugf("Decoded Value Extensive Bit : %t, not present", valueExtensible)
 	}
 
 	// We deal with the structures defined in this package first.
@@ -751,9 +751,13 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		if !ok {
 			return errors.NewInvalid("Expected a choice map with %s", params.oneofName)
 		}
-		choiceIdx, err := pd.getChoiceIndex(params.valueExtensible, len(choiceMap))
-		if err != nil {
-			return err
+		choiceIdx := 1
+		var err error
+		if len(choiceMap) > 1 {
+			choiceIdx, err = pd.getChoiceIndex(params.valueExtensible, len(choiceMap))
+			if err != nil {
+				return err
+			}
 		}
 		log.Debugf("Handling interface %s for 'oneof' %s %d/%d", v.Type().String(), params.oneofName, choiceIdx, len(choiceMap))
 		choiceType, ok := choiceMap[choiceIdx]
