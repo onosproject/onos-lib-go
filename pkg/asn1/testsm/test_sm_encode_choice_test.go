@@ -48,16 +48,16 @@ func Test_encodeChoice1(t *testing.T) {
 	tcExpected := []byte{
 		0x0b,                                                             // The length of the following text == 11 - not constrained so uses all 8 bits
 		0x63, 0x68, 0x6f, 0x69, 0x63, 0x65, 0x31, 0x6f, 0x6e, 0x6c, 0x79, // the text "choice1only"
-		0x00, // Choice 1a (1 of 1) 1 bit and 0 for extensible TODO shouldn't this be 0 bits for choice
+		// no bits for choice1 as there is only 1 option - choice1_a
 		0x01, // num bytes for integer - 0000 0001 - not constrained so uses all 8 bits
 		0x0a, // Value of Choice 1a int = 10
-		0x80, // Choice 2b (2 of 2) 2 bits for choice, 0 for extensible TODO shouldn't this be 1 bit for choice
+		0x80, // Choice 2b (2 of 2) 1 bits for choice (1), 0 for extensible
 		0x01, // num bytes for integer - 0000 0001 - not constrained so uses all 8 bits
 		0x14, // Value of Choice 2b int = 20
-		0x40, // Choice 3b (2 of 3) 3 bits for choice, 0 for extensible TODO shouldn't this be 2 bits for choice
+		0x40, // Choice 3b (2 of 3) 2 bits for choice (01), 0 for extensible
 		0x01, // num bytes for integer - 0000 0001 - not constrained so uses all 8 bits
 		0x1e, // Value of Choice 3b int = 30
-		0x00, // Choice 4a (1 of 1) 1 bit for choice, 0 for extensible TODO shouldn't this be 0 bit for choice
+		0x00, // Choice 4a (1 of 1) 0 bits for choice, 0 for extensible on the oneof
 		0x01, // num bytes for integer - 0000 0001 - not constrained so uses all 8 bits
 		0x0a, // Value of Choice 4a int = 10
 	}
