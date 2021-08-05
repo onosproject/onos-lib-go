@@ -19,9 +19,10 @@
 package uri
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type URITest struct {
@@ -676,29 +677,11 @@ var uritests = []URITest{
 	},
 }
 
-// more useful string for debugging than fmt's struct printer
-func ufmt(u *URI) string {
-	var user, pass interface{}
-	if u.User != nil {
-		user = u.User.Username()
-		if p, ok := u.User.Password(); ok {
-			pass = p
-		}
-	}
-	return fmt.Sprintf("opaque=%q, scheme=%q, user=%#v, pass=%#v, host=%q, path=%q, rawpath=%q, rawq=%q, frag=%q, rawfrag=%q, forcequery=%v",
-		u.Opaque, u.Scheme, user, pass, u.Host, u.Path, u.RawPath, u.RawQuery, u.Fragment, u.RawFragment, u.ForceQuery)
-}
-
 func TestParse(t *testing.T) {
 	for _, tt := range uritests {
 		u, err := Parse(tt.in)
-		if err != nil {
-			t.Errorf("Parse(%q) returned error %v", tt.in, err)
-			continue
-		}
-		if !reflect.DeepEqual(u, tt.out) {
-			t.Errorf("Parse(%q):\n\tgot  %v\n\twant %v\n", tt.in, ufmt(u), ufmt(tt.out))
-		}
+		assert.NoError(t, err)
+		assert.True(t, reflect.DeepEqual(u, tt.out))
 	}
 }
 
@@ -743,24 +726,17 @@ var stringURITests = []struct {
 func TestURIString(t *testing.T) {
 	for _, tt := range uritests {
 		u, err := Parse(tt.in)
-		if err != nil {
-			t.Errorf("Parse(%q) returned error %s", tt.in, err)
-			continue
-		}
+		assert.NoError(t, err)
 		expected := tt.in
 		if tt.roundtrip != "" {
 			expected = tt.roundtrip
 		}
 		s := u.String()
-		if s != expected {
-			t.Errorf("Parse(%q).String() == %q (expected %q)", tt.in, s, expected)
-		}
+		assert.Equal(t, expected, s)
 	}
 
 	for _, tt := range stringURITests {
-		if got := tt.uri.String(); got != tt.want {
-			t.Errorf("%+v.String() = %q; want %q", tt.uri, got, tt.want)
-		}
+		assert.Equal(t, tt.want, tt.uri.String())
 	}
 }
 
@@ -771,126 +747,92 @@ type RequestURITest struct {
 
 var requritests = []RequestURITest{
 	{
-		&URI{
-			Scheme: "http",
-			Host:   "example.com",
-			Path:   "",
-		},
-		"/",
+		uri: NewURI(WithScheme("http"),
+			WithHost("example.com"),
+			WithPath("")),
+		out: "/",
 	},
 	{
-		&URI{
-			Scheme: "http",
-			Host:   "example.com",
-			Path:   "/a b",
-		},
-		"/a%20b",
+		uri: NewURI(WithScheme("http"),
+			WithHost("example.com"),
+			WithPath("/a b")),
+		out: "/a%20b",
 	},
 	// golang.org/issue/4860 variant 1
 	{
-		&URI{
-			Scheme: "http",
-			Host:   "example.com",
-			Opaque: "/%2F/%2F/",
-		},
-		"/%2F/%2F/",
+		uri: NewURI(WithScheme("http"),
+			WithHost("example.com"),
+			WithOpaque("/%2F/%2F/")),
+		out: "/%2F/%2F/",
 	},
 	// golang.org/issue/4860 variant 2
 	{
-		&URI{
-			Scheme: "http",
-			Host:   "example.com",
-			Opaque: "//other.example.com/%2F/%2F/",
-		},
-		"http://other.example.com/%2F/%2F/",
+		uri: NewURI(WithScheme("http"),
+			WithHost("example.com"),
+			WithOpaque("//other.example.com/%2F/%2F/")),
+		out: "http://other.example.com/%2F/%2F/",
 	},
 	// better fix for issue 4860
 	{
-		&URI{
-			Scheme:  "http",
-			Host:    "example.com",
-			Path:    "/////",
-			RawPath: "/%2F/%2F/",
-		},
-		"/%2F/%2F/",
+		uri: NewURI(WithScheme("http"),
+			WithHost("example.com"),
+			WithPath("/////"),
+			WithRawPath("/%2F/%2F/")),
+		out: "/%2F/%2F/",
 	},
 	{
-		&URI{
-			Scheme:  "http",
-			Host:    "example.com",
-			Path:    "/////",
-			RawPath: "/WRONG/", // ignored because doesn't match Path
-		},
-		"/////",
+		uri: NewURI(WithScheme("http"),
+			WithHost("example.com"),
+			WithPath("/////"), WithRawPath("/WRONG/")),
+		out: "/////",
 	},
 	{
-		&URI{
-			Scheme:   "http",
-			Host:     "example.com",
-			Path:     "/a b",
-			RawQuery: "q=go+language",
-		},
-		"/a%20b?q=go+language",
+		uri: NewURI(WithScheme("http"),
+			WithHost("example.com"),
+			WithPath("/a b"), WithRawQuery("q=go+language")),
+		out: "/a%20b?q=go+language",
 	},
 	{
-		&URI{
-			Scheme:   "http",
-			Host:     "example.com",
-			Path:     "/a b",
-			RawPath:  "/a b", // ignored because invalid
-			RawQuery: "q=go+language",
-		},
-		"/a%20b?q=go+language",
+		uri: NewURI(WithScheme("http"), WithHost("example.com"),
+			WithPath("/a b"), WithRawPath("/a b"), WithRawQuery("q=go+language")),
+		out: "/a%20b?q=go+language",
 	},
 	{
-		&URI{
-			Scheme:   "http",
-			Host:     "example.com",
-			Path:     "/a?b",
-			RawPath:  "/a?b", // ignored because invalid
-			RawQuery: "q=go+language",
-		},
-		"/a%3Fb?q=go+language",
+		uri: NewURI(WithScheme("http"),
+			WithHost("example.com"),
+			WithPath("/a?b"), WithRawPath("/a?b"),
+			WithRawQuery("q=go+language")),
+		out: "/a%3Fb?q=go+language",
 	},
 	{
-		&URI{
-			Scheme: "myschema",
-			Opaque: "opaque",
-		},
-		"opaque",
+		uri: NewURI(WithScheme("myschema"),
+			WithOpaque("opaque")),
+		out: "opaque",
 	},
 	{
-		&URI{
-			Scheme:   "myschema",
-			Opaque:   "opaque",
-			RawQuery: "q=go+language",
-		},
-		"opaque?q=go+language",
+		uri: NewURI(WithScheme("myschema"),
+			WithOpaque("opaque"),
+			WithRawQuery("q=go+language")),
+		out: "opaque?q=go+language",
 	},
 	{
-		&URI{
-			Scheme: "http",
-			Host:   "example.com",
-			Path:   "//foo",
-		},
-		"//foo",
+		uri: NewURI(WithScheme("http"),
+			WithHost("example.com"),
+			WithPath("//foo")),
+		out: "//foo",
 	},
 	{
-		&URI{
-			Scheme:     "http",
-			Host:       "example.com",
-			Path:       "/foo",
-			ForceQuery: true,
-		},
-		"/foo?",
+		uri: NewURI(WithScheme("http"),
+			WithHost("example.com"),
+			WithPath("/foo"),
+			WithForceQuery(true)),
+		out: "/foo?",
 	},
 }
 
 func TestRequestURI(t *testing.T) {
 	for _, tt := range requritests {
 		s := tt.uri.RequestURI()
-		if s != tt.out {
-			t.Errorf("%#v.RequestURI() == %q (expected %q)", tt.uri, s, tt.out)
-		}
+		assert.Equal(t, tt.out, s)
 	}
 }

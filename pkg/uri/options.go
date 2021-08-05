@@ -32,7 +32,7 @@ type Options struct {
 type Option func(options *Options)
 
 // NewURI creates a new URI
-func NewURI(opts ...Option) (*URI, error) {
+func NewURI(opts ...Option) *URI {
 	URIOptions := &Options{}
 	for _, option := range opts {
 		option(URIOptions)
@@ -48,7 +48,7 @@ func NewURI(opts ...Option) (*URI, error) {
 		RawQuery:    URIOptions.rawQuery,
 		Fragment:    URIOptions.fragment,
 		RawFragment: URIOptions.rawFragment,
-	}, nil
+	}
 
 }
 
