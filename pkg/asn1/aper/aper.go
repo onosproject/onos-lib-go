@@ -249,7 +249,7 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 				err := fmt.Errorf("PER data out of range")
 				return nil, err
 			}
-			if _, err := bitString.UpdateValue(pd.bytes[pd.byteOffset:pd.byteOffset+sizes]); err != nil {
+			if _, err := bitString.UpdateValue(pd.bytes[pd.byteOffset : pd.byteOffset+sizes]); err != nil {
 				return nil, err
 			}
 			//bitString.Value = append(bitString.Value, pd.bytes[pd.byteOffset:pd.byteOffset+sizes]...)
@@ -294,7 +294,7 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 		if (pd.byteOffset + sizes) > uint64(len(pd.bytes)) {
 			return nil, errors.NewInvalid("PER data out of range")
 		}
-		if _, err := bitString.UpdateValue(pd.bytes[pd.byteOffset:pd.byteOffset+sizes]); err != nil {
+		if _, err := bitString.UpdateValue(pd.bytes[pd.byteOffset : pd.byteOffset+sizes]); err != nil {
 			return nil, err
 		}
 		//bitString.Value = append(bitString.Value, pd.bytes[pd.byteOffset:pd.byteOffset+sizes]...)

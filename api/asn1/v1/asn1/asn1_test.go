@@ -35,7 +35,7 @@ func Test_UpdateValue(t *testing.T) {
 	// Testing case of an empty value
 	bs1 := BitString{
 		//Value: []byte{0x3f, 0xff, 0xfd},
-		Len:   31,
+		Len: 31,
 	}
 	t.Logf("%x", bs1.GetValue())
 	newValue1, err := bs1.UpdateValue([]byte{0xfd, 0xe4, 0xff, 0x1c})
