@@ -29,6 +29,6 @@ func (m *BitString) UpdateValue(newBytes []byte) ([]byte, error) {
 	if len(newBytes) != expectedLen {
 		return m.Value, errors.NewInvalid("too many bytes %d. Expecting %d", len(newBytes), expectedLen)
 	}
-	copy(m.Value, newBytes)
+	m.Value = newBytes
 	return m.Value, nil
 }
