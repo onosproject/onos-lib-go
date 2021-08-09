@@ -249,10 +249,10 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 				err := fmt.Errorf("PER data out of range")
 				return nil, err
 			}
-			//if _, err := bitString.UpdateValue(pd.bytes[pd.byteOffset : pd.byteOffset+sizes]); err != nil {
-			//	return nil, err
-			//}
-			bitString.Value = append(bitString.Value, pd.bytes[pd.byteOffset:pd.byteOffset+sizes]...)
+			if _, err := bitString.UpdateValue(pd.bytes[pd.byteOffset:pd.byteOffset+sizes]); err != nil {
+				return nil, err
+			}
+			//bitString.Value = append(bitString.Value, pd.bytes[pd.byteOffset:pd.byteOffset+sizes]...)
 			pd.byteOffset += sizes
 			pd.bitsOffset = uint(ub & 0x7)
 			if pd.bitsOffset > 0 {
@@ -294,7 +294,10 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 		if (pd.byteOffset + sizes) > uint64(len(pd.bytes)) {
 			return nil, errors.NewInvalid("PER data out of range")
 		}
-		bitString.Value = append(bitString.Value, pd.bytes[pd.byteOffset:pd.byteOffset+sizes]...)
+		if _, err := bitString.UpdateValue(pd.bytes[pd.byteOffset:pd.byteOffset+sizes]); err != nil {
+			return nil, err
+		}
+		//bitString.Value = append(bitString.Value, pd.bytes[pd.byteOffset:pd.byteOffset+sizes]...)
 		bitString.Len += uint32(rawLength)
 		pd.byteOffset += sizes
 		pd.bitsOffset = uint(rawLength & 0x7)
@@ -628,7 +631,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		} else if bitsValue != 0 {
 			sizeExtensible = true
 		}
-		log.Debugf("Decoded Size Extensive Bit : %t, present", sizeExtensible)
+		log.Debugf("Decoded Size Extensive Bit : %t", sizeExtensible)
 	}
 	if params.valueExtensible && v.Kind() != reflect.Slice {
 		if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
