@@ -32,7 +32,7 @@ func Test_UpdateValue(t *testing.T) {
 	assert.EqualValues(t, []byte{0xfd, 0xee, 0x3f}, bs.GetValue())
 	t.Logf("%x", bs.GetValue())
 
-	// Testing case of an empty value
+	// Testing case of an empty BitString value
 	bs1 := BitString{
 		//Value: []byte{0x3f, 0xff, 0xfd},
 		Len: 31,
@@ -44,4 +44,16 @@ func Test_UpdateValue(t *testing.T) {
 	t.Logf("%x", newValue1)
 	assert.EqualValues(t, []byte{0xfd, 0xe4, 0xff, 0x1c}, bs1.GetValue())
 	t.Logf("%x", bs1.GetValue())
+
+	bs2 := BitString{
+		Value: make([]byte, 0),
+		Len:   40,
+	}
+	t.Logf("%x", bs2.GetValue())
+	newValue2, err := bs2.UpdateValue([]byte{0xbd, 0xe4, 0xaa, 0x1c, 0xd3})
+	assert.NoError(t, err)
+	assert.EqualValues(t, []byte{0xbd, 0xe4, 0xaa, 0x1c, 0xd3}, newValue2)
+	t.Logf("%x", newValue2)
+	assert.EqualValues(t, []byte{0xbd, 0xe4, 0xaa, 0x1c, 0xd3}, bs2.GetValue())
+	t.Logf("%x", bs2.GetValue())
 }
