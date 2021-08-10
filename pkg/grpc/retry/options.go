@@ -70,7 +70,7 @@ type callOptions struct {
 
 func perCallContext(ctx context.Context, opts *callOptions) context.Context {
 	if opts.perCallTimeout != nil {
-		ctx, _ = context.WithTimeout(ctx, *opts.perCallTimeout)
+		ctx, _ = context.WithTimeout(ctx, *opts.perCallTimeout) //nolint:govet
 	}
 	return ctx
 }
