@@ -19,13 +19,13 @@ package northbound
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/onosproject/onos-lib-go/pkg/grpc/auth"
 	"net"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 
 	"github.com/onosproject/onos-lib-go/pkg/certs"
-	"github.com/onosproject/onos-lib-go/pkg/grpcinterceptors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"google.golang.org/grpc/credentials"
 
@@ -148,11 +148,11 @@ func (s *Server) Serve(started func(string)) error {
 		log.Info("Authentication Enabled")
 		opts = append(opts, grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
-				grpc_auth.UnaryServerInterceptor(grpcinterceptors.AuthenticationInterceptor),
+				grpc_auth.UnaryServerInterceptor(auth.AuthenticationInterceptor),
 			)))
 		opts = append(opts, grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(
-				grpc_auth.StreamServerInterceptor(grpcinterceptors.AuthenticationInterceptor))))
+				grpc_auth.StreamServerInterceptor(auth.AuthenticationInterceptor))))
 
 	}
 
