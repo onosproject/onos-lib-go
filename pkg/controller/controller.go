@@ -59,7 +59,8 @@ type Request struct {
 // Result is a reconciler result
 type Result struct {
 	// Requeue is the identifier of an event to requeue
-	Requeue ID
+	Requeue      ID
+	RequeueAfter time.Duration
 }
 
 // NewController creates a new controller
@@ -292,5 +293,15 @@ func (c *Controller) reconcileRequest(request Request, ch chan Request, reconcil
 				ID: result.Requeue,
 			}
 		}()
+	} else if result.RequeueAfter > 0 {
+		time.AfterFunc(result.RequeueAfter, func() {
+			if result.Requeue.Value != nil {
+				ch <- Request{
+					ID: result.Requeue,
+				}
+			} else {
+				ch <- request
+			}
+		})
 	}
 }
