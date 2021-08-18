@@ -287,12 +287,6 @@ func (c *Controller) reconcileRequest(request Request, ch chan Request, reconcil
 		time.AfterFunc(retryDelay, func() {
 			ch <- request
 		})
-	} else if result.Requeue.Value != nil {
-		go func() {
-			ch <- Request{
-				ID: result.Requeue,
-			}
-		}()
 	} else if result.RequeueAfter > 0 {
 		time.AfterFunc(result.RequeueAfter, func() {
 			if result.Requeue.Value != nil {
@@ -300,8 +294,16 @@ func (c *Controller) reconcileRequest(request Request, ch chan Request, reconcil
 					ID: result.Requeue,
 				}
 			} else {
-				ch <- request
+				ch <- Request{
+					ID: request.ID,
+				}
 			}
 		})
+	} else if result.Requeue.Value != nil {
+		go func() {
+			ch <- Request{
+				ID: result.Requeue,
+			}
+		}()
 	}
 }
