@@ -520,7 +520,7 @@ func (pd *perBitData) parseInteger(extensed bool, lowerBoundPtr *int64, upperBou
 func (pd *perBitData) parseSequenceOf(sizeExtensed bool, params fieldParameters, sliceType reflect.Type) (
 	reflect.Value, error) {
 	var sliceContent reflect.Value
-	var lb int64 = 0
+	var lb int64
 	var sizeRange int64
 	if params.sizeLowerBound != nil && *params.sizeLowerBound < 65536 {
 		lb = *params.sizeLowerBound

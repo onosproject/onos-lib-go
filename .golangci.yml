@@ -9,14 +9,14 @@ run:
 linters:
   enable:
     - gofmt
-    - golint
+    - revive
     - misspell
     - typecheck
     - errcheck
     - dogsled
     - unconvert
     - nakedret
-    - scopelint
+    - exportloopref
 
 issues:
   exclude-use-default: false
@@ -29,3 +29,6 @@ issues:
     - path: pkg/northbound/gnmi/set.go
       linters:
         - typecheck
+    - path: pkg/sctp/connection/socket.go
+      linters:
+        - errcheck

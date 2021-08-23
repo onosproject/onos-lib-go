@@ -1,6 +1,6 @@
 module github.com/onosproject/onos-lib-go
 
-go 1.15
+go 1.16
 
 require (
 	github.com/Shopify/sarama v1.26.1
