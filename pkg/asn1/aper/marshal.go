@@ -759,6 +759,9 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			//	*structParams[fieldIdx].referenceFieldValue = value
 			//}
 			if structParams[fieldIdx].oneofName != "" {
+				if structParams[fieldIdx].choiceIndex == nil {
+					return fmt.Errorf("choice Index is nil at Field Index %v.\n Make sure all aper tags are injected in your proto", fieldIdx)
+				}
 				present := int(*structParams[fieldIdx].choiceIndex)
 				choiceMap, ok := ChoiceMap[choiceType]
 				if !ok {
