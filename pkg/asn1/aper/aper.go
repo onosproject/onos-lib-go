@@ -575,7 +575,7 @@ func (pd *perBitData) getChoiceIndex(extensed bool, upperBound int) (present int
 	if extensed {
 		err = fmt.Errorf("unsupported value of CHOICE type is in Extensed")
 	} else if upperBound < 1 {
-		err = fmt.Errorf("the upper bound of CHIOCE is missing")
+		err = fmt.Errorf("the upper bound of CHOICE is missing")
 	} else if rawChoice, err1 := pd.parseConstraintValue(int64(upperBound)); err1 != nil {
 		err = err1
 	} else {
