@@ -289,7 +289,7 @@ func (c *Controller) reconcileRequest(request Request, ch chan Request, reconcil
 			ch <- request
 		})
 	} else if !result.RequeueAt.IsZero() {
-		time.AfterFunc(result.RequeueAt.Sub(time.Now()), func() {
+		time.AfterFunc(time.Until(result.RequeueAt), func() {
 			if result.Requeue.Value != nil {
 				ch <- Request{
 					ID: result.Requeue,
