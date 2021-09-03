@@ -60,6 +60,7 @@ type Request struct {
 type Result struct {
 	// Requeue is the identifier of an event to requeue
 	Requeue      ID
+	RequeueAt    time.Time
 	RequeueAfter time.Duration
 }
 
@@ -286,6 +287,18 @@ func (c *Controller) reconcileRequest(request Request, ch chan Request, reconcil
 			request.ID.Value, request.attempt, retryDelay, err)
 		time.AfterFunc(retryDelay, func() {
 			ch <- request
+		})
+	} else if !result.RequeueAt.IsZero() {
+		time.AfterFunc(time.Until(result.RequeueAt), func() {
+			if result.Requeue.Value != nil {
+				ch <- Request{
+					ID: result.Requeue,
+				}
+			} else {
+				ch <- Request{
+					ID: request.ID,
+				}
+			}
 		})
 	} else if result.RequeueAfter > 0 {
 		time.AfterFunc(result.RequeueAfter, func() {
