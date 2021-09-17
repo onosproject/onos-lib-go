@@ -17,6 +17,7 @@ package aper
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/google/martian/log"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"math"
 	"reflect"
@@ -168,15 +169,15 @@ func (pd *perRawBitData) appendBitString(bytes []byte, bitsLength uint64, extens
 				return
 			}
 			if extensive {
-				log.Debug("Putting size Extension Value")
+				log.Debugf("Putting size Extension Value")
 				if sizeRange == -1 {
 					if errTmp := pd.putBitsValue(1, 1); errTmp != nil {
-						log.Warnf("putBitsValue(1, 1) error: %v", errTmp)
+						log.Errorf("putBitsValue(1, 1) error: %v", errTmp)
 					}
 					lb = 0
 				} else {
 					if errTmp := pd.putBitsValue(0, 1); errTmp != nil {
-						log.Warnf("putBitsValue(0, 1) error: %v", errTmp)
+						log.Errorf("putBitsValue(0, 1) error: %v", errTmp)
 					}
 				}
 			}
@@ -262,7 +263,7 @@ func (pd *perRawBitData) appendOctetString(bytes []byte, extensive bool, lowerBo
 				return err
 			}
 			if extensive {
-				log.Debug("Putting size Extension Value")
+				log.Debugf("Putting size Extension Value")
 				if sizeRange == -1 {
 					if errTmp := pd.putBitsValue(1, 1); errTmp != nil {
 						log.Debugf("putBitsValue(1, 1) err: %v", errTmp)
@@ -339,10 +340,10 @@ func (pd *perRawBitData) appendBool(value bool) (err error) {
 	log.Debugf("Encoding BOOLEAN Value %t", value)
 	if value {
 		err = pd.putBitsValue(1, 1)
-		log.Debug("Encoded BOOLEAN Value : 0x1")
+		log.Debugf("Encoded BOOLEAN Value : 0x1")
 	} else {
 		err = pd.putBitsValue(0, 1)
-		log.Debug("Encoded BOOLEAN Value : 0x0")
+		log.Debugf("Encoded BOOLEAN Value : 0x0")
 	}
 	return
 }
@@ -362,9 +363,9 @@ func (pd *perRawBitData) appendInteger(value int64, extensive bool, lowerBoundPt
 				return fmt.Errorf("INTEGER value is larger than upperbound")
 			}
 			if extensive {
-				log.Debug("Putting value Extension bit")
+				log.Debugf("Putting value Extension bit")
 				if valueRange == 0 {
-					log.Debug("Encoding INTEGER with Unconstraint Value")
+					log.Debugf("Encoding INTEGER with Unconstraint Value")
 					valueRange = -1
 					if errTmp := pd.putBitsValue(1, 1); errTmp != nil {
 						fmt.Printf("pd.putBitsValue(1, 1) error: %v", errTmp)
@@ -381,14 +382,14 @@ func (pd *perRawBitData) appendInteger(value int64, extensive bool, lowerBoundPt
 			log.Debugf("Encoding INTEGER with Semi-Constraint Range(%d..)", lb)
 		}
 	} else {
-		log.Debug("Encoding INTEGER with Unconstraint Value")
+		log.Debugf("Encoding INTEGER with Unconstraint Value")
 		valueRange = -1
 	}
 
 	unsignedValue := uint64(value)
 	var rawLength uint
 	if valueRange == 1 {
-		log.Debug("Value of INTEGER is fixed")
+		log.Debugf("Value of INTEGER is fixed")
 
 		return nil
 	}

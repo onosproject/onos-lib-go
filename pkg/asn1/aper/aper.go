@@ -16,14 +16,11 @@ package aper
 
 import (
 	"fmt"
+	"github.com/google/martian/log"
 	"github.com/onosproject/onos-lib-go/api/asn1/v1/asn1"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"reflect"
-
-	"github.com/onosproject/onos-lib-go/pkg/logging"
 )
-
-var log = logging.GetLogger("asn1", "aper")
 
 // ChoiceMap - a global map of choices - specific to the Protobuf being handled
 var ChoiceMap = map[string]map[int]reflect.Type{}
@@ -263,7 +260,7 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 		} else {
 			bytes, err := pd.getBitString(uint(ub))
 			if err != nil {
-				log.Warnf("PD GetBitString error: %+v", err)
+				log.Errorf("PD GetBitString error: %+v", err)
 				return nil, err
 			}
 			if _, err = bitString.UpdateValue(bytes); err != nil {
@@ -537,7 +534,7 @@ func (pd *perBitData) parseSequenceOf(sizeExtensed bool, params fieldParameters,
 	var numElements uint64
 	if sizeRange > 1 {
 		if numElementsTmp, err := pd.parseConstraintValue(sizeRange); err != nil {
-			log.Warnf("Parse Constraint Value failed: %+v", err)
+			log.Errorf("Parse Constraint Value failed: %+v", err)
 		} else {
 			numElements = numElementsTmp
 		}
