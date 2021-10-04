@@ -22,6 +22,10 @@ import (
 	"reflect"
 )
 
+func init() {
+	log.SetLevel(log.Debug)
+}
+
 // ChoiceMap - a global map of choices - specific to the Protobuf being handled
 var ChoiceMap = map[string]map[int]reflect.Type{}
 
