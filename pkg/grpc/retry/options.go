@@ -68,14 +68,14 @@ type callOptions struct {
 	codes           []codes.Code
 }
 
-func perCallContext(ctx context.Context, opts *callOptions) context.Context {
+func newCallContext(ctx context.Context, opts *callOptions) context.Context {
 	if opts.perCallTimeout != nil {
 		ctx, _ = context.WithTimeout(ctx, *opts.perCallTimeout) //nolint:govet
 	}
 	return ctx
 }
 
-func reuseOrNewWithCallOptions(opts *callOptions, options []CallOption) *callOptions {
+func newCallOptions(opts *callOptions, options []CallOption) *callOptions {
 	if len(options) == 0 {
 		return opts
 	}
