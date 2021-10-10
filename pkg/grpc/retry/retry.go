@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 	"io"
 	"sync"
+	"time"
 )
 
 var log = logging.GetLogger("onos", "grpc", "retry")
@@ -37,10 +38,10 @@ var defaultOptions = &callOptions{
 
 // RetryingUnaryClientInterceptor returns a UnaryClientInterceptor that retries requests
 func RetryingUnaryClientInterceptor(callOpts ...CallOption) func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-	connOpts := reuseOrNewWithCallOptions(defaultOptions, callOpts)
+	connOpts := newCallOptions(defaultOptions, callOpts)
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		grpcOpts, retryOpts := filterCallOptions(opts)
-		callOpts := reuseOrNewWithCallOptions(connOpts, retryOpts)
+		callOpts := newCallOptions(connOpts, retryOpts)
 		b := backoff.NewExponentialBackOff()
 		if callOpts.initialInterval != nil {
 			b.InitialInterval = *callOpts.initialInterval
@@ -49,18 +50,28 @@ func RetryingUnaryClientInterceptor(callOpts ...CallOption) func(ctx context.Con
 			b.MaxInterval = *callOpts.maxInterval
 		}
 		return backoff.Retry(func() error {
-			log.Debugf("Sending %s", req)
-			callCtx := perCallContext(ctx, callOpts)
+			log.Debugf("SendMsg %s", req)
+			callCtx := newCallContext(ctx, callOpts)
 			if err := invoker(callCtx, method, req, reply, cc, grpcOpts...); err != nil {
-				if isRetryable(ctx, callOpts, err) {
-					log.Debugf("Sending %s failed", req, err)
+				if isContextError(err) {
+					if ctx.Err() != nil {
+						log.Debugf("SendMsg %s: error", req, err)
+						return backoff.Permanent(err)
+					} else if callOpts.perCallTimeout != nil {
+						log.Debugf("SendMsg %s: error", req, err)
+						return err
+					}
+				}
+				if isRetryable(callOpts, err) {
+					log.Debugf("SendMsg %s: error", req, err)
 					return err
 				}
-				log.Warnf("Sending %s failed", req, err)
+				log.Warnf("SendMsg %s: error", req, err)
 				return backoff.Permanent(err)
 			}
+			log.Debugf("RecvMsg %s", reply)
 			return nil
-		}, backoff.WithContext(b, ctx))
+		}, b)
 	}
 }
 
@@ -80,10 +91,10 @@ func RetryingStreamClientInterceptor(callOpts ...CallOption) func(ctx context.Co
 
 // newClientStreamClientInterceptor returns a ClientStreamInterceptor that retries both requests and responses
 func newClientStreamClientInterceptor(callOpts ...CallOption) func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	connOpts := reuseOrNewWithCallOptions(defaultOptions, callOpts)
+	connOpts := newCallOptions(defaultOptions, callOpts)
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		grpcOpts, retryOpts := filterCallOptions(opts)
-		callOpts := reuseOrNewWithCallOptions(connOpts, retryOpts)
+		callOpts := newCallOptions(connOpts, retryOpts)
 		stream := &retryingClientStream{
 			ctx:    ctx,
 			buffer: &retryingClientStreamBuffer{},
@@ -98,10 +109,10 @@ func newClientStreamClientInterceptor(callOpts ...CallOption) func(ctx context.C
 
 // newServerStreamClientInterceptor returns a ClientStreamInterceptor that retries both requests and responses
 func newServerStreamClientInterceptor(callOpts ...CallOption) func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	connOpts := reuseOrNewWithCallOptions(defaultOptions, callOpts)
+	connOpts := newCallOptions(defaultOptions, callOpts)
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		grpcOpts, retryOpts := filterCallOptions(opts)
-		callOpts := reuseOrNewWithCallOptions(connOpts, retryOpts)
+		callOpts := newCallOptions(connOpts, retryOpts)
 		stream := &retryingClientStream{
 			ctx:    ctx,
 			buffer: &retryingServerStreamBuffer{},
@@ -116,10 +127,10 @@ func newServerStreamClientInterceptor(callOpts ...CallOption) func(ctx context.C
 
 // newBiDirectionalStreamClientInterceptor returns a ClientStreamInterceptor that retries both requests and responses
 func newBiDirectionalStreamClientInterceptor(callOpts ...CallOption) func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	connOpts := reuseOrNewWithCallOptions(defaultOptions, callOpts)
+	connOpts := newCallOptions(defaultOptions, callOpts)
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		grpcOpts, retryOpts := filterCallOptions(opts)
-		callOpts := reuseOrNewWithCallOptions(connOpts, retryOpts)
+		callOpts := newCallOptions(connOpts, retryOpts)
 		stream := &retryingClientStream{
 			ctx:    ctx,
 			buffer: &retryingBiDirectionalStreamBuffer{},
@@ -197,12 +208,6 @@ type retryingClientStream struct {
 	closed    bool
 }
 
-func (s *retryingClientStream) setStream(stream grpc.ClientStream) {
-	s.mu.Lock()
-	s.stream = stream
-	s.mu.Unlock()
-}
-
 func (s *retryingClientStream) getStream() grpc.ClientStream {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -219,7 +224,7 @@ func (s *retryingClientStream) CloseSend() error {
 	s.closed = true
 	s.mu.Unlock()
 	if err := s.getStream().CloseSend(); err != nil {
-		log.Debug("Received stream error", err)
+		log.Warn("CloseSend: error", err)
 		return err
 	}
 	return nil
@@ -235,97 +240,77 @@ func (s *retryingClientStream) Trailer() metadata.MD {
 
 func (s *retryingClientStream) SendMsg(m interface{}) error {
 	log.Debugf("SendMsg %s", m)
+	return s.retrySendMsg(m)
+}
+
+func (s *retryingClientStream) retrySendMsg(m interface{}) error {
+	return backoff.RetryNotify(func() error {
+		return s.trySendMsg(m)
+	}, backoff.NewExponentialBackOff(), func(err error, duration time.Duration) {
+		log.Debugf("SendMsg %s: retry after %s", m, duration, err)
+	})
+}
+
+func (s *retryingClientStream) trySendMsg(m interface{}) error {
 	err := s.getStream().SendMsg(m)
 	if err == nil {
 		s.buffer.append(m)
 		return nil
 	}
-
-	if err == io.EOF {
-		s.mu.RLock()
-		closed := s.closed
-		s.mu.RUnlock()
-		if closed {
-			log.Debugf("SendMsg %s: EOF", m)
-			return err
-		}
-	} else if !isRetryable(s.ctx, s.opts, err) {
-		log.Warnf("SendMsg %s: error", m, err)
-		return err
-	}
-
-	log.Debugf("SendMsg %s: error", err)
-	err = backoff.Retry(func() error {
-		log.Debugf("SendMsg %s: retry", m)
-		if err := s.retryStream(); err != nil {
-			if err == io.EOF {
-				s.mu.RLock()
-				closed := s.closed
-				s.mu.RUnlock()
-				if !closed {
-					log.Debugf("SendMsg %s: EOF", m)
-					return err
-				}
-			} else if isRetryable(s.ctx, s.opts, err) {
-				log.Debugf("SendMsg %s: error", m, err)
-				return err
-			}
-			log.Warnf("SendMsg %s: error", m, err)
+	if isContextError(err) {
+		if s.ctx.Err() != nil {
+			log.Debugf("SendMsg %s: error", m, err)
 			return backoff.Permanent(err)
+		} else if s.opts.perCallTimeout != nil {
+			log.Debugf("SendMsg %s: error", m, err)
+			return s.tryStream()
 		}
-		if err := s.getStream().SendMsg(m); err != nil {
-			if err == io.EOF {
-				s.mu.RLock()
-				closed := s.closed
-				s.mu.RUnlock()
-				if !closed {
-					log.Debugf("SendMsg %s: EOF", m)
-					return err
-				}
-			} else if isRetryable(s.ctx, s.opts, err) {
-				log.Debugf("SendMsg %s: error", m, err)
-				return err
-			}
-			log.Warnf("SendMsg %s: error", m, err)
-			return backoff.Permanent(err)
-		}
-		return nil
-	}, backoff.WithContext(backoff.NewExponentialBackOff(), s.ctx))
-	if err == nil {
-		s.buffer.append(m)
-		return nil
 	}
-	return err
+	if isRetryable(s.opts, err) {
+		log.Debugf("SendMsg %s: error", m, err)
+		return s.tryStream()
+	}
+	log.Warnf("SendMsg %s: error", m, err)
+	return backoff.Permanent(err)
 }
 
 func (s *retryingClientStream) RecvMsg(m interface{}) error {
-	if err := s.getStream().RecvMsg(m); err != nil {
-		if err == io.EOF {
-			log.Debug("RecvMsg: EOF")
-			return err
-		}
-		return backoff.Retry(func() error {
-			if err := s.retryStream(); err != nil {
-				if isRetryable(s.ctx, s.opts, err) {
-					log.Debug("RecvMsg: error", err)
-					return err
-				}
-				log.Warn("RecvMsg: error", err)
-				return backoff.Permanent(err)
-			}
-			if err := s.getStream().RecvMsg(m); err != nil {
-				if isRetryable(s.ctx, s.opts, err) {
-					log.Debugf("RecvMsg: error", err)
-					return err
-				}
-				log.Warn("RecvMsg: error", err)
-				return backoff.Permanent(err)
-			}
-			return nil
-		}, backoff.WithContext(backoff.NewExponentialBackOff(), s.ctx))
+	return s.retryRecvMsg(m)
+}
+
+func (s *retryingClientStream) retryRecvMsg(m interface{}) error {
+	return backoff.RetryNotify(func() error {
+		return s.tryRecvMsg(m)
+	}, backoff.NewExponentialBackOff(), func(err error, duration time.Duration) {
+		log.Debugf("RecvMsg: retry after %s", duration, err)
+	})
+}
+
+func (s *retryingClientStream) tryRecvMsg(m interface{}) error {
+	err := s.getStream().RecvMsg(m)
+	if err == nil {
+		log.Debugf("RecvMsg %s", m)
+		return nil
 	}
-	log.Debugf("RecvMsg %s", m)
-	return nil
+	if err == io.EOF {
+		log.Debug("RecvMsg: EOF")
+		return backoff.Permanent(err)
+	}
+	if isContextError(err) {
+		if s.ctx.Err() != nil {
+			log.Debug("RecvMsg: error", err)
+			return backoff.Permanent(err)
+		} else if s.opts.perCallTimeout != nil {
+			log.Debug("RecvMsg: error", err)
+			return s.tryStream()
+		}
+	}
+	if isRetryable(s.opts, err) {
+		log.Debug("RecvMsg: error", err)
+		return s.tryStream()
+	}
+	log.Warn("RecvMsg: error", err)
+	return backoff.Permanent(err)
 }
 
 func (s *retryingClientStream) retryStream() error {
@@ -336,51 +321,92 @@ func (s *retryingClientStream) retryStream() error {
 	if s.opts.maxInterval != nil {
 		b.MaxInterval = *s.opts.maxInterval
 	}
-	return backoff.Retry(func() error {
-		stream, err := s.newStream(s.ctx)
-		if err != nil {
-			log.Debug("Received stream error", err)
-			return err
-		}
-
-		s.mu.RLock()
-		closed := s.closed
-		s.mu.RUnlock()
-		msgs := s.buffer.list()
-		for _, m := range msgs {
-			if err := stream.SendMsg(m); err != nil {
-				if isRetryable(s.ctx, s.opts, err) {
-					log.Debug("Received stream error", err)
-					return err
-				}
-				log.Warn("Received stream error", err)
-				return backoff.Permanent(err)
-			}
-		}
-
-		if closed {
-			if err := stream.CloseSend(); err != nil {
-				if isRetryable(s.ctx, s.opts, err) {
-					log.Debug("Received stream error", err)
-					return err
-				}
-				log.Warn("Received stream error", err)
-				return backoff.Permanent(err)
-			}
-		}
-
-		s.setStream(stream)
-		return nil
-	}, backoff.WithContext(b, s.ctx))
+	return backoff.RetryNotify(s.tryStream, backoff.NewExponentialBackOff(), func(err error, duration time.Duration) {
+		log.Debugf("Stream: retry after %s", duration, err)
+	})
 }
 
-func isRetryable(ctx context.Context, opts *callOptions, err error) bool {
-	st := status.Code(err)
-	if opts.perCallTimeout != nil && st == codes.DeadlineExceeded {
-		return ctx.Err() == nil
+func (s *retryingClientStream) tryStream() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	stream, err := s.newStream(newCallContext(s.ctx, s.opts))
+	if err != nil {
+		if isContextError(err) {
+			if s.ctx.Err() != nil {
+				log.Debug("Stream: error", err)
+				return backoff.Permanent(err)
+			} else if s.opts.perCallTimeout != nil {
+				log.Debug("Stream: error", err)
+				return err
+			}
+		}
+		if isRetryable(s.opts, err) {
+			log.Debug("Stream: error", err)
+			return err
+		}
+		log.Warn("Stream: error", err)
+		return backoff.Permanent(err)
 	}
-	for _, code := range opts.codes {
-		if st == code {
+
+	msgs := s.buffer.list()
+	for _, m := range msgs {
+		log.Debugf("SendMsg %s", m)
+		if err := stream.SendMsg(m); err != nil {
+			if isContextError(err) {
+				if s.ctx.Err() != nil {
+					log.Debugf("SendMsg %s: error", m, err)
+					return backoff.Permanent(err)
+				} else if s.opts.perCallTimeout != nil {
+					log.Debugf("SendMsg %s: error", m, err)
+					return err
+				}
+			}
+			if isRetryable(s.opts, err) {
+				log.Debugf("SendMsg %s: error", m, err)
+				return err
+			}
+			log.Warnf("SendMsg %s: error", m, err)
+			return backoff.Permanent(err)
+		}
+	}
+
+	if s.closed {
+		log.Debug("CloseSend")
+		if err := stream.CloseSend(); err != nil {
+			if isContextError(err) {
+				if s.ctx.Err() != nil {
+					log.Debug("CloseSend: error", err)
+					return backoff.Permanent(err)
+				} else if s.opts.perCallTimeout != nil {
+					log.Debug("CloseSend: error", err)
+					return err
+				}
+			}
+			if isRetryable(s.opts, err) {
+				log.Debug("CloseSend: error", err)
+				return err
+			}
+			log.Warn("CloseSend: error", err)
+			return backoff.Permanent(err)
+		}
+	}
+	s.stream = stream
+	return nil
+}
+
+func isContextError(err error) bool {
+	code := status.Code(err)
+	return code == codes.DeadlineExceeded || code == codes.Canceled
+}
+
+func isRetryable(opts *callOptions, err error) bool {
+	code := status.Code(err)
+	if code == codes.Canceled || code == codes.DeadlineExceeded {
+		return false
+	}
+	for _, retryableCode := range opts.codes {
+		if code == retryableCode {
 			return true
 		}
 	}
