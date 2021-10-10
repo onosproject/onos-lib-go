@@ -50,25 +50,28 @@ func RetryingUnaryClientInterceptor(callOpts ...CallOption) func(ctx context.Con
 			b.MaxInterval = *callOpts.maxInterval
 		}
 		return backoff.Retry(func() error {
-			log.Debugf("Sending %s", req)
+			log.Debugf("SendMsg %s", req)
 			callCtx := newCallContext(ctx, callOpts)
 			if err := invoker(callCtx, method, req, reply, cc, grpcOpts...); err != nil {
 				if isContextError(err) {
 					if ctx.Err() != nil {
+						log.Debugf("SendMsg %s: error", req, err)
 						return backoff.Permanent(err)
 					} else if callOpts.perCallTimeout != nil {
+						log.Debugf("SendMsg %s: error", req, err)
 						return err
 					}
 				}
 				if isRetryable(callOpts, err) {
-					log.Debugf("Sending %s failed", req, err)
+					log.Debugf("SendMsg %s: error", req, err)
 					return err
 				}
-				log.Warnf("Sending %s failed", req, err)
+				log.Warnf("SendMsg %s: error", req, err)
 				return backoff.Permanent(err)
 			}
+			log.Debugf("RecvMsg %s", reply)
 			return nil
-		}, backoff.WithContext(b, ctx))
+		}, b)
 	}
 }
 
