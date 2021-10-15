@@ -43,18 +43,18 @@ func (m *BitString) TruncateValue() ([]byte, error) {
 		return nil, errors.NewInvalid("Length should not be 0")
 	}
 	// Computing the number of bytes
-	expectedLen := int(math.Ceil(float64(m.Len) / 8.0))
-	if len(m.Value) != expectedLen {
-		return m.Value, errors.NewInvalid("too many bytes %d. Expecting %d", len(m.Value), expectedLen)
+	expectedBytesLen := int(math.Ceil(float64(m.Len) / 8.0))
+	if len(m.Value) != expectedBytesLen {
+		return m.Value, errors.NewInvalid("too many bytes %d. Expecting %d", len(m.Value), expectedBytesLen)
 	}
 	// Creating set of truncated bytes, with trailing zeroes
 	// Since we've got there, value in expectedLen is correct
-	truncBytes := make([]byte, expectedLen)
-	for i := 0; i < expectedLen; i++ {
+	truncBytes := make([]byte, expectedBytesLen)
+	for i := 0; i < expectedBytesLen; i++ {
 		truncBytes[i] = m.Value[i]
 	}
 
-	bitsFull := expectedLen * 8
+	bitsFull := expectedBytesLen * 8
 	trailingBits := uint32(bitsFull) - m.Len
 
 	mask := ^((1 << trailingBits) - 1)
