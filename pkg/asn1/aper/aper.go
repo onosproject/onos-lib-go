@@ -254,6 +254,10 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 			if _, err := bitString.UpdateValue(pd.bytes[pd.byteOffset : pd.byteOffset+sizes]); err != nil {
 				return nil, err
 			}
+			// Truncating last trailing bits -- Length of a BitString should be already set!
+			if _, err := bitString.TruncateValue(); err != nil {
+				return nil, err
+			}
 			//bitString.Value = append(bitString.Value, pd.bytes[pd.byteOffset:pd.byteOffset+sizes]...)
 			pd.byteOffset += sizes
 			pd.bitsOffset = uint(ub & 0x7)
@@ -300,6 +304,10 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 		bitString.Len += uint32(rawLength)
 		// we need to get length before we want to decode with UpdateValue
 		if _, err := bitString.UpdateValue(pd.bytes[pd.byteOffset : pd.byteOffset+sizes]); err != nil {
+			return nil, err
+		}
+		// Truncating last trailing bits -- Length of a BitString should be already set!
+		if _, err := bitString.TruncateValue(); err != nil {
 			return nil, err
 		}
 		pd.byteOffset += sizes
