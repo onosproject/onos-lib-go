@@ -395,21 +395,16 @@ func (pd *perRawBitData) appendInteger(value int64, extensive bool, lowerBoundPt
 	}
 	if value < 0 {
 		y := value >> 63
-		//y := uint64(uint64(1) << 64) & value //(value xOr 1)
 		valueXor := value ^ y
 		unsignedValue = uint64((valueXor - y))
-		//unsignedValue = uint64((valueXor - y)) - 1
-		//unsignedValue = uint64(((value ^ y) - y)) - 1
 	}
 	if valueRange <= 0 {
 		unsignedValue >>= 7
 	} else if valueRange <= 65536 {
 		return pd.appendConstraintValue(valueRange, uint64(value-lb))
 	} else {
-		//ToDo - ???
 		unsignedValue >>= 8
 	}
-	//ToDo - this algorithm is the root cause of a problem, IMO
 	for rawLength = 1; rawLength <= 127; rawLength++ {
 		if unsignedValue == 0 {
 			break
@@ -431,27 +426,19 @@ func (pd *perRawBitData) appendInteger(value int64, extensive bool, lowerBoundPt
 		unsignedValueRange := uint64(valueRange - 1)
 		for byteLen = 1; byteLen <= 127; byteLen++ {
 			unsignedValueRange >>= 8
-			if unsignedValueRange <= 1 { //ToDo - shouldn't it be less than 1??
+			if unsignedValueRange <= 1 {
 				break
 			}
 		}
 		var i, upper uint
 		// 1 ~ 8 bits
 		for i = 1; i <= 8; i++ {
-			upper = 1 << i // ToDo - Is this the place where all problems start?
+			upper = 1 << i
 			if upper >= byteLen {
 				break
 			}
 		}
-		//rawLength = i
 
-		//ToDo - here we define the length of an Integer - error is somewhere here
-		//if lb < 0 {
-		//	log.Debugf("Encoding INTEGER Length %d+1 in %d bits", rawLength, i)
-		//	if err := pd.putBitsValue(uint64(rawLength+1), i); err != nil {
-		//		return err
-		//	}
-		//} else {
 		// New implementation of algorithm
 		absoluteDistanceToLB := value - lb
 		for rawLength = 1; rawLength <= 127; rawLength++ {
@@ -465,17 +452,10 @@ func (pd *perRawBitData) appendInteger(value int64, extensive bool, lowerBoundPt
 		} else {
 			rawLength--
 		}
-		//if rawLength == 0 {
-		//	log.Debugf("Encoding INTEGER Length %d in %d bits", 0, i)
-		//	if err := pd.putBitsValue(uint64(0), i); err != nil { //ToDo - rawLenght here gives wrong value, probably should be changed
-		//		return err
-		//	}
-		//} else {
 		log.Debugf("Encoding INTEGER Length %d-1 in %d bits", rawLength, i)
-		if err := pd.putBitsValue(uint64(rawLength-1), i); err != nil { //ToDo - rawLenght here gives wrong value, probably should be changed
+		if err := pd.putBitsValue(uint64(rawLength-1), i); err != nil {
 			return err
 		}
-		//}
 	}
 
 	// ToDo - trace where and why rawLength is computed incorrectly
@@ -664,7 +644,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			unused = 0
 		}
 		unusedMask := (1 << unused) - 1
-		log.Debugf("Handling BitString with %x. Len %d", bytes, length)
+		log.Debugf("Handling BitString with %v. Len %d", bytes, length)
 		if len(bytes) != expected {
 			return errors.NewInvalid("Expected %d BitString byte(s) to contain %d bits. Got %d",
 				expected, length, len(bytes))
