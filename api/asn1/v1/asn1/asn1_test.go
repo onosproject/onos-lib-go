@@ -57,3 +57,65 @@ func Test_UpdateValue(t *testing.T) {
 	assert.EqualValues(t, []byte{0xbd, 0xe4, 0xaa, 0x1c, 0xd3}, bs2.GetValue())
 	t.Logf("%x", bs2.GetValue())
 }
+
+func Test_TruncateValue(t *testing.T) {
+	bs := BitString{
+		Value: []byte{0x3f, 0xff, 0xfd},
+		Len:   22,
+	}
+	t.Logf("%x", bs.GetValue())
+	newValue, err := bs.TruncateValue()
+	assert.NoError(t, err)
+	assert.EqualValues(t, []byte{0x3f, 0xff, 0xfc}, newValue)
+	t.Logf("%x", newValue)
+	assert.EqualValues(t, []byte{0x3f, 0xff, 0xfc}, bs.GetValue())
+	t.Logf("%x", bs.GetValue())
+
+	bs1 := BitString{
+		Value: []byte{0x3f, 0xff, 0xff, 0xfd},
+		Len:   28,
+	}
+	t.Logf("%x", bs1.GetValue())
+	newValue1, err := bs1.TruncateValue()
+	assert.NoError(t, err)
+	assert.EqualValues(t, []byte{0x3f, 0xff, 0xff, 0xf0}, newValue1)
+	t.Logf("%x", newValue1)
+	assert.EqualValues(t, []byte{0x3f, 0xff, 0xff, 0xf0}, bs1.GetValue())
+	t.Logf("%x", bs1.GetValue())
+
+	bs2 := BitString{
+		Value: []byte{0x3f, 0xff, 0xfd, 0xff},
+		Len:   25,
+	}
+	t.Logf("%x", bs2.GetValue())
+	newValue2, err := bs2.TruncateValue()
+	assert.NoError(t, err)
+	assert.EqualValues(t, []byte{0x3f, 0xff, 0xfd, 0x80}, newValue2)
+	t.Logf("%x", newValue2)
+	assert.EqualValues(t, []byte{0x3f, 0xff, 0xfd, 0x80}, bs2.GetValue())
+	t.Logf("%x", bs2.GetValue())
+
+	bs3 := BitString{
+		Value: []byte{0x3f, 0xff, 0xfd, 0xff, 0x55},
+		Len:   34,
+	}
+	t.Logf("%x", bs3.GetValue())
+	newValue3, err := bs3.TruncateValue()
+	assert.NoError(t, err)
+	assert.EqualValues(t, []byte{0x3f, 0xff, 0xfd, 0xff, 0x40}, newValue3)
+	t.Logf("%x", newValue3)
+	assert.EqualValues(t, []byte{0x3f, 0xff, 0xfd, 0xff, 0x40}, bs3.GetValue())
+	t.Logf("%x", bs3.GetValue())
+
+	bs4 := BitString{
+		Value: []byte{0x3f, 0xff, 0xfd},
+		Len:   17,
+	}
+	t.Logf("%x", bs4.GetValue())
+	newValue4, err := bs4.TruncateValue()
+	assert.NoError(t, err)
+	assert.EqualValues(t, []byte{0x3f, 0xff, 0x80}, newValue4)
+	t.Logf("%x", newValue4)
+	assert.EqualValues(t, []byte{0x3f, 0xff, 0x80}, bs4.GetValue())
+	t.Logf("%x", bs4.GetValue())
+}

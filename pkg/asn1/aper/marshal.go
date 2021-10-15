@@ -395,7 +395,8 @@ func (pd *perRawBitData) appendInteger(value int64, extensive bool, lowerBoundPt
 	}
 	if value < 0 {
 		y := value >> 63
-		unsignedValue = uint64(((value ^ y) - y)) - 1
+		valueXor := value ^ y
+		unsignedValue = uint64((valueXor - y))
 	}
 	if valueRange <= 0 {
 		unsignedValue >>= 7
@@ -410,6 +411,7 @@ func (pd *perRawBitData) appendInteger(value int64, extensive bool, lowerBoundPt
 		}
 		unsignedValue >>= 8
 	}
+
 	// putting length
 	if valueRange <= 0 {
 		// semi-constraint or unconstraint
@@ -436,11 +438,27 @@ func (pd *perRawBitData) appendInteger(value int64, extensive bool, lowerBoundPt
 				break
 			}
 		}
+
+		// New implementation of algorithm
+		absoluteDistanceToLB := value - lb
+		for rawLength = 1; rawLength <= 127; rawLength++ {
+			if absoluteDistanceToLB == 0 {
+				break
+			}
+			absoluteDistanceToLB >>= 8
+		}
+		if value-lb == 0 {
+			rawLength = 1
+		} else {
+			rawLength--
+		}
 		log.Debugf("Encoding INTEGER Length %d-1 in %d bits", rawLength, i)
 		if err := pd.putBitsValue(uint64(rawLength-1), i); err != nil {
 			return err
 		}
 	}
+
+	// ToDo - trace where and why rawLength is computed incorrectly
 	log.Debugf("Encoding INTEGER %d with %d bytes", value, rawLength)
 
 	rawLength *= 8
