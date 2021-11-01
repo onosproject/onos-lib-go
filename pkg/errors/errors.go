@@ -17,7 +17,6 @@ package errors
 import (
 	"fmt"
 	atomixerrors "github.com/atomix/atomix-go-framework/pkg/atomix/errors"
-	clienterrors "github.com/atomix/go-client/pkg/client/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -188,37 +187,6 @@ func FromGRPC(err error) error {
 func FromAtomix(err error) error {
 	if err == nil {
 		return nil
-	}
-
-	if typed, ok := err.(*clienterrors.TypedError); ok {
-		switch typed.Type {
-		case clienterrors.Unknown:
-			return New(Unknown, err.Error())
-		case clienterrors.Canceled:
-			return New(Canceled, err.Error())
-		case clienterrors.NotFound:
-			return New(NotFound, err.Error())
-		case clienterrors.AlreadyExists:
-			return New(AlreadyExists, err.Error())
-		case clienterrors.Unauthorized:
-			return New(Unauthorized, err.Error())
-		case clienterrors.Forbidden:
-			return New(Forbidden, err.Error())
-		case clienterrors.Conflict:
-			return New(Conflict, err.Error())
-		case clienterrors.Invalid:
-			return New(Invalid, err.Error())
-		case clienterrors.Unavailable:
-			return New(Unavailable, err.Error())
-		case clienterrors.NotSupported:
-			return New(NotSupported, err.Error())
-		case clienterrors.Timeout:
-			return New(Timeout, err.Error())
-		case clienterrors.Internal:
-			return New(Internal, err.Error())
-		default:
-			return New(Unknown, err.Error())
-		}
 	}
 
 	if typed, ok := err.(*atomixerrors.TypedError); ok {
