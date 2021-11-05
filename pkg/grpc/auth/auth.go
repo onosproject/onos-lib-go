@@ -70,6 +70,9 @@ func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 	if atHash, ok := authClaims["at_hash"]; ok {
 		niceMd.Set("at_hash", atHash.(string))
 	}
+	if preferred, ok := authClaims["preferred_username"]; ok {
+		niceMd.Set("preferred_username", preferred.(string))
+	}
 
 	groupsIf, ok := authClaims["groups"].([]interface{})
 	if ok {
@@ -78,6 +81,14 @@ func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 			groups = append(groups, g.(string))
 		}
 		niceMd.Set("groups", strings.Join(groups, ";"))
+	}
+	rolesIf, ok := authClaims["roles"].([]interface{})
+	if ok {
+		roles := make([]string, 0)
+		for _, r := range rolesIf {
+			roles = append(roles, r.(string))
+		}
+		niceMd.Set("roles", strings.Join(roles, ";"))
 	}
 	return niceMd.ToIncoming(ctx), nil
 }
