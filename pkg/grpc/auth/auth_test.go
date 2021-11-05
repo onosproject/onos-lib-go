@@ -41,7 +41,9 @@ func Test_AuthenticationInterceptor(t *testing.T) {
 	claims["exp"] = now + 100000
 	claims["iss"] = "http://dex:32000"
 	claims["sub"] = "Test_AuthenticationInterceptor"
+	claims["preferred_username"] = "a user name"
 	claims["groups"] = []string{"testGroup1", "testGroup2"}
+	claims["roles"] = []string{"testRole1", "testRole2"}
 	assert.NilError(t, claims.Valid())
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -58,4 +60,6 @@ func Test_AuthenticationInterceptor(t *testing.T) {
 	assert.Equal(t, "testname", md.Get("name"))
 	assert.Equal(t, "test1@opennetworking.org", md.Get("email"))
 	assert.Equal(t, "testGroup1;testGroup2", md.Get("groups"))
+	assert.Equal(t, "testRole1;testRole2", md.Get("roles"))
+	assert.Equal(t, "a user name", md.Get("preferred_username"))
 }
