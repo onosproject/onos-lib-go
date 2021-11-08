@@ -14,6 +14,10 @@
 
 package controller
 
+import (
+	"fmt"
+)
+
 // NewID creates a new object identifier
 func NewID(value interface{}) ID {
 	return ID{value}
@@ -57,5 +61,5 @@ func (i ID) Uint64() uint64 {
 
 // String returns the identifier as a string
 func (i ID) String() string {
-	return i.Value.(string)
+	return fmt.Sprintf("%s", i.Value)
 }
