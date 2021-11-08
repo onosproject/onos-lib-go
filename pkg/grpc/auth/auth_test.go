@@ -17,7 +17,7 @@ package auth
 import (
 	"context"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/onosproject/onos-lib-go/pkg/auth"
 	"google.golang.org/grpc/metadata"
@@ -37,13 +37,14 @@ func Test_AuthenticationInterceptor(t *testing.T) {
 	claims["name"] = "testname"
 	claims["email"] = "test1@opennetworking.org"
 	claims["aud"] = "testaudience"
-	claims["iat"] = now
-	claims["exp"] = now + 100000
+	claims["iat"] = float64(now)
+	claims["exp"] = float64(now + 100000)
 	claims["iss"] = "http://dex:32000"
 	claims["sub"] = "Test_AuthenticationInterceptor"
 	claims["preferred_username"] = "a user name"
 	claims["groups"] = []string{"testGroup1", "testGroup2"}
 	claims["roles"] = []string{"testRole1", "testRole2"}
+	claims["nbf"] = 0.0
 	assert.NilError(t, claims.Valid())
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

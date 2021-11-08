@@ -32,7 +32,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 )
 
 var log = logging.GetLogger("jwt")

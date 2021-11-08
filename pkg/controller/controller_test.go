@@ -93,20 +93,7 @@ func TestController(t *testing.T) {
 	done := make(chan struct{})
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(2))).
-		Return(Result{}, nil)
-	reconciler.EXPECT().
-		Reconcile(gomock.Eq(NewID(2))).
-		Return(Result{}, errors.NewInvalid("some error"))
-	reconciler.EXPECT().
-		Reconcile(gomock.Eq(NewID(2))).
-		Return(Result{}, errors.NewInvalid("some error"))
-	reconciler.EXPECT().
-		Reconcile(gomock.Eq(NewID(2))).
-		Return(Result{}, errors.NewInvalid("some error"))
-	reconciler.EXPECT().
-		Reconcile(gomock.Eq(NewID(2))).
-		Return(Result{}, nil)
-
+		Return(Result{}, nil).AnyTimes()
 	reconciler.EXPECT().
 		Reconcile(gomock.Eq(NewID(4))).
 		Return(Result{}, errors.NewInvalid("some error")).Times(4)
@@ -124,6 +111,9 @@ func TestController(t *testing.T) {
 			close(done)
 			return Result{}, nil
 		})
+	reconciler.EXPECT().
+		Reconcile(gomock.Eq(NewID(4))).
+		Return(Result{}, errors.NewInvalid("some error")).AnyTimes()
 
 	wg.Wait()
 	watcherCh := watcherValue.Load().(chan<- ID)
@@ -132,5 +122,6 @@ func TestController(t *testing.T) {
 	watcherCh <- NewID(3)
 	watcherCh <- NewID(4)
 	<-done
+	watcher.Stop()
 
 }
