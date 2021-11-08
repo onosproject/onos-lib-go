@@ -5,9 +5,6 @@ go 1.16
 require (
 	github.com/Shopify/sarama v1.29.1
 	github.com/atomix/atomix-go-framework v0.6.5
-	github.com/atomix/go-client v0.4.1
-	github.com/atomix/go-framework v0.5.1
-	github.com/atomix/go-local v0.5.1
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0

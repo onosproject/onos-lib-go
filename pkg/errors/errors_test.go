@@ -16,7 +16,7 @@ package errors
 
 import (
 	"errors"
-	atomixerrors "github.com/atomix/go-client/pkg/client/errors"
+	atomixerrors "github.com/atomix/atomix-go-framework/pkg/atomix/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
