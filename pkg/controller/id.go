@@ -61,5 +61,5 @@ func (i ID) Uint64() uint64 {
 
 // String returns the identifier as a string
 func (i ID) String() string {
-	return fmt.Sprintf("%s", i.Value)
+	return fmt.Sprint(i.Value)
 }
