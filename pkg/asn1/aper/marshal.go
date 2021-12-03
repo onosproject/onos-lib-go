@@ -573,6 +573,10 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, choiceBo
 	return nil
 }
 
+// ToDo - could possibly solve E2Ap encoding issues. OpenType and ObjectSet (ValueSet) are similar
+// https://www.oss.com/asn1/resources/books-whitepapers-pubs/larmouth-asn1-book.pdf - page 312
+// Here are unit tests:
+// https://github.com/free5gc/aper/blob/4705af7f96a794e3b65e928d503dac18120bdf40/aper_test.go#L892
 func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters) error {
 
 	pdOpenType := &perRawBitData{[]byte(""), 0}
@@ -618,7 +622,39 @@ func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters)
 	log.Debugf("Encoded OpenType %s", v.Type().String())
 	return nil
 }
+
+func (pd *perRawBitData) shiftLastByte() error {
+
+	log.Debugf("\n Entering shiftLastBit() function, byte lengths is %v\n", len(pd.bytes))
+	if len(pd.bytes) > 0 {
+		log.Debugf("Shifting bit 0x%v to the right on %v bits", pd.bytes[len(pd.bytes)-1], pd.bitsOffset)
+		res := pd.bytes[len(pd.bytes)-1] >> (8 - pd.bitsOffset)
+		log.Debugf("Result is 0x%v", res)
+		pd.bytes[len(pd.bytes)-1] = res
+
+		log.Debugf("Resulted set of bytes is \n%v", hex.Dump(pd.bytes))
+		pd.bitsOffset = 0
+	}
+
+	log.Debugf("\n ------------------------------------------------------\n")
+
+	return nil
+}
+
 func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) error {
+
+	//log.Debugf("Current bit offset is %v", pd.bitsOffset)
+	//if pd.bitsOffset != 0 {
+	//	log.Debugf("Shifting bits to the right explicitly..")
+	//	err := pd.shiftLastBit()
+	//	if err != nil {
+	//		return err
+	//	}
+	//	log.Debugf("Bits offset is %v, explicitly aligning bits", pd.bitsOffset)
+	//	pd.appendAlignBits()
+	//}
+	//log.Debugf("Current APER bytes with bits offset %v are \n%v", pd.bitsOffset, hex.Dump(pd.bytes))
+
 	log.Debugf("Encoding %s %s", v.Type().String(), v.Kind().String())
 	if !v.IsValid() {
 		return fmt.Errorf("aper: cannot marshal nil value")
@@ -665,8 +701,21 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		err := pd.appendBool(v.Bool())
 		return err
 	case reflect.Int, reflect.Int32, reflect.Int64:
-		err := pd.appendInteger(v.Int(), params.valueExtensible, params.valueLowerBound, params.valueUpperBound)
-		return err
+		if params.fullOctet {
+			pd.appendAlignBits()
+		}
+		if err := pd.appendInteger(v.Int(), params.valueExtensible, params.valueLowerBound, params.valueUpperBound); err != nil {
+			return err
+		}
+		if params.fullOctet {
+			if err := pd.shiftLastByte(); err != nil {
+				return err
+			}
+		}
+		if params.align {
+			pd.appendAlignBits()
+		}
+		return nil
 
 	case reflect.Struct:
 
@@ -787,8 +836,16 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				}
 				// When there is only one item in the choice, you don't need to encode choice index
 				if len(choiceMap) > 1 {
+					if params.fullOctetChoice {
+						pd.appendAlignBits()
+					}
 					if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, len(choiceMap)); err != nil {
 						return err
+					}
+					if params.fullOctetChoice {
+						if err := pd.shiftLastByte(); err != nil {
+							return err
+						}
 					}
 				}
 				tempParams := structParams[fieldIdx]
