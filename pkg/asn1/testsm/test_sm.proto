@@ -408,7 +408,7 @@ message CanonicalChoice {
         //@inject_tag: aper:"choiceIdx:5,valueExt"
         Item ch5 = 5;
         //@inject_tag: aper:"choiceIdx:6"
-        SampleNestedE2apPduChoice = 6;
+        SampleNestedE2apPduChoice ch6 = 6;
     }
 }
 
