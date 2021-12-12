@@ -34,9 +34,9 @@ type fieldParameters struct {
 	referenceFieldValue *int64 // the field value which map to this type(maybe nil).
 	choiceIndex         *uint8 // the choice index
 	oneofName           string // a oneof name if present
-	fullOctet           bool   // true iff full octet is needed to be allocated for structure encoding
-	fullOctetChoice     bool   // true iff full octet is needed to be allocated for the choice index encoding
 	align               bool   // flag to explicitly align structure
+	unique              bool   // true if item is used as an input for canonical ordering for CHOICE encoding
+	canonicalOrder      bool   // true, if CHOICE is needed to be encoded in canonical ordering
 }
 
 // Given a tag string with the format specified in the package comment,
@@ -47,10 +47,10 @@ func parseFieldParameters(str string) (params fieldParameters) {
 		switch {
 		case part == "align":
 			params.align = true
-		case part == "fullOctet":
-			params.fullOctet = true
-		case part == "fullOctetChoice":
-			params.fullOctetChoice = true
+		case part == "unique":
+			params.unique = true
+		case part == "canonicalOrder":
+			params.canonicalOrder = true
 		case part == "optional":
 			params.optional = true
 		case part == "sizeExt":

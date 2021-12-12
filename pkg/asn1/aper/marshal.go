@@ -573,10 +573,30 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, choiceBo
 	return nil
 }
 
-// ToDo - could possibly solve E2Ap encoding issues. OpenType and ObjectSet (ValueSet) are similar
-// https://www.oss.com/asn1/resources/books-whitepapers-pubs/larmouth-asn1-book.pdf - page 312
-// Here are unit tests:
-// https://github.com/free5gc/aper/blob/4705af7f96a794e3b65e928d503dac18120bdf40/aper_test.go#L892
+// Canonical CHOICE index is literally number of bytes which are following after current byte. Could be re-used as a checksum.
+// In fact, we don't even need to know about the structure in a CHOICE option, but it would be good to check it (especially for the decoding).
+func (pd *perRawBitData) appendCanonicalChoiceIndex(bytesBefore []byte, unique reflect.Value, v reflect.Value, params fieldParameters) error {
+
+	// ToDo - maybe it's not necessary to do that..
+	// aligning first
+	pd.appendAlignBits()
+
+	// ToDo - verify correctness of the CHOICE option (make use of a "unique" flag)
+	log.Debugf("Encoding Present index of CHOICE  %d - 1", present)
+	if err := pd.appendConstraintValue(int64(choiceBounds), uint64(rawChoice)); err != nil {
+		return err
+	}
+
+	//ToDo - proceed with encoding as it is and return
+	if err := pd.makeField(v.Field(i), structParams[fieldIdx]); err != nil {
+		return err
+	}
+
+	pd.bytes(len(bytesBefore) - 1)
+
+	return nil
+}
+
 func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters) error {
 
 	pdOpenType := &perRawBitData{[]byte(""), 0}
@@ -701,16 +721,8 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		err := pd.appendBool(v.Bool())
 		return err
 	case reflect.Int, reflect.Int32, reflect.Int64:
-		if params.fullOctet {
-			pd.appendAlignBits()
-		}
 		if err := pd.appendInteger(v.Int(), params.valueExtensible, params.valueLowerBound, params.valueUpperBound); err != nil {
 			return err
-		}
-		if params.fullOctet {
-			if err := pd.shiftLastByte(); err != nil {
-				return err
-			}
 		}
 		if params.align {
 			pd.appendAlignBits()
@@ -719,6 +731,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 
 	case reflect.Struct:
 
+		var choiceID reflect.Value
 		structType := fieldType
 		var structParams []fieldParameters
 		var optionalCount uint
@@ -825,6 +838,9 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			//	}
 			//	*structParams[fieldIdx].referenceFieldValue = value
 			//}
+			if params.unique {
+				choiceID = v.Field(i)
+			}
 			if structParams[fieldIdx].oneofName != "" {
 				if structParams[fieldIdx].choiceIndex == nil {
 					return fmt.Errorf("choice Index is nil at Field %v, Index %v.\n Make sure all aper tags are injected in your proto", v.Field(i).Type(), fieldIdx)
@@ -835,21 +851,20 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 					return errors.NewInvalid("Expected a choice map with %s", choiceType)
 				}
 				// When there is only one item in the choice, you don't need to encode choice index
-				if len(choiceMap) > 1 {
-					if params.fullOctetChoice {
-						pd.appendAlignBits()
-					}
-					if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, len(choiceMap)); err != nil {
+				if params.canonicalOrder {
+					if err := pd.appendCanonicalChoiceIndex(pd.bytes, choiceID, val.Field(i), structParams[fieldIdx]); err != nil {
 						return err
 					}
-					if params.fullOctetChoice {
-						if err := pd.shiftLastByte(); err != nil {
+				} else {
+					if len(choiceMap) > 1 {
+						if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, len(choiceMap)); err != nil {
 							return err
 						}
 					}
 				}
 				tempParams := structParams[fieldIdx]
 				tempParams.valueExtensible = false
+				// Here the CHOICE field is being encoded
 				if err := pd.makeField(reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
 					return err
 				}
