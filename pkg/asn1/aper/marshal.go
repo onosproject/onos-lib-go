@@ -28,6 +28,11 @@ type perRawBitData struct {
 	bitsOffset uint
 }
 
+type nestedBytes struct {
+	startIndex int
+	endIndex   int
+}
+
 func perRawBitLog(numBits uint64, byteLen int, bitsOffset uint, value interface{}) string {
 	if reflect.TypeOf(value).Kind() == reflect.Uint64 {
 		return fmt.Sprintf("  [PER put %2d bits, byteLen(after): %d, bitsOffset(after): %d, value: 0x%0x]",
@@ -575,24 +580,39 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, choiceBo
 
 // Canonical CHOICE index is literally number of bytes which are following after current byte. Could be re-used as a checksum.
 // In fact, we don't even need to know about the structure in a CHOICE option, but it would be good to check it (especially for the decoding).
-func (pd *perRawBitData) appendCanonicalChoiceIndex(bytesBefore []byte, unique reflect.Value, v reflect.Value, params fieldParameters) error {
+func (pd *perRawBitData) appendCanonicalChoiceIndex(bytesBefore []byte, v reflect.Value, params fieldParameters) error {
 
 	// ToDo - maybe it's not necessary to do that..
 	// aligning first
 	pd.appendAlignBits()
 
-	// ToDo - verify correctness of the CHOICE option (make use of a "unique" flag)
-	log.Debugf("Encoding Present index of CHOICE  %d - 1", present)
-	if err := pd.appendConstraintValue(int64(choiceBounds), uint64(rawChoice)); err != nil {
+	threadedBytes := &perRawBitData{}
+	if err := threadedBytes.makeField(v, params); err != nil {
 		return err
 	}
 
-	//ToDo - proceed with encoding as it is and return
-	if err := pd.makeField(v.Field(i), structParams[fieldIdx]); err != nil {
+	expectedBytes := int(math.Ceil(float64(len(threadedBytes.bytes)) / 255))
+
+	log.Debugf("\nEncoding length %v with bits of length %v\n", len(threadedBytes.bytes), uint(8*expectedBytes))
+
+	if err := pd.putBitsValue(uint64(len(threadedBytes.bytes)), uint(8*expectedBytes)); err != nil {
 		return err
 	}
+	// It is not necessary to put threadedBytes in the message, because they'll be encoded in the next step
+	//pd.bytes = append(pd.bytes, threadedBytes.bytes...)
 
-	pd.bytes(len(bytesBefore) - 1)
+	//// ToDo - verify correctness of the CHOICE option (make use of a "unique" flag)
+	//log.Debugf("Encoding Present index of CHOICE  %d - 1", present)
+	//if err := pd.appendConstraintValue(int64(choiceBounds), uint64(rawChoice)); err != nil {
+	//	return err
+	//}
+	//
+	////ToDo - proceed with encoding as it is and return
+	//if err := pd.makeField(v.Field(i), structParams[fieldIdx]); err != nil {
+	//	return err
+	//}
+
+	//pd.bytes(len(bytesBefore) - 1)
 
 	return nil
 }
@@ -640,24 +660,6 @@ func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters)
 	}
 
 	log.Debugf("Encoded OpenType %s", v.Type().String())
-	return nil
-}
-
-func (pd *perRawBitData) shiftLastByte() error {
-
-	log.Debugf("\n Entering shiftLastBit() function, byte lengths is %v\n", len(pd.bytes))
-	if len(pd.bytes) > 0 {
-		log.Debugf("Shifting bit 0x%v to the right on %v bits", pd.bytes[len(pd.bytes)-1], pd.bitsOffset)
-		res := pd.bytes[len(pd.bytes)-1] >> (8 - pd.bitsOffset)
-		log.Debugf("Result is 0x%v", res)
-		pd.bytes[len(pd.bytes)-1] = res
-
-		log.Debugf("Resulted set of bytes is \n%v", hex.Dump(pd.bytes))
-		pd.bitsOffset = 0
-	}
-
-	log.Debugf("\n ------------------------------------------------------\n")
-
 	return nil
 }
 
@@ -731,7 +733,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 
 	case reflect.Struct:
 
-		var choiceID reflect.Value
+		//var choiceID reflect.Value
 		structType := fieldType
 		var structParams []fieldParameters
 		var optionalCount uint
@@ -838,24 +840,26 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			//	}
 			//	*structParams[fieldIdx].referenceFieldValue = value
 			//}
-			if params.unique {
-				choiceID = v.Field(i)
-			}
+			//if params.unique {
+			//	choiceID = v.Field(i)
+			//}
 			if structParams[fieldIdx].oneofName != "" {
 				if structParams[fieldIdx].choiceIndex == nil {
 					return fmt.Errorf("choice Index is nil at Field %v, Index %v.\n Make sure all aper tags are injected in your proto", v.Field(i).Type(), fieldIdx)
 				}
 				present := int(*structParams[fieldIdx].choiceIndex)
 				choiceMap, ok := ChoiceMap[choiceType]
-				if !ok {
-					return errors.NewInvalid("Expected a choice map with %s", choiceType)
-				}
-				// When there is only one item in the choice, you don't need to encode choice index
+				//When there is only one item in the choice, you don't need to encode choice index
 				if params.canonicalOrder {
-					if err := pd.appendCanonicalChoiceIndex(pd.bytes, choiceID, val.Field(i), structParams[fieldIdx]); err != nil {
+					tempParams := structParams[fieldIdx]
+					tempParams.valueExtensible = false
+					if err := pd.appendCanonicalChoiceIndex(pd.bytes, reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
 						return err
 					}
 				} else {
+					if !ok {
+						return errors.NewInvalid("Expected a choice map with %s", choiceType)
+					}
 					if len(choiceMap) > 1 {
 						if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, len(choiceMap)); err != nil {
 							return err

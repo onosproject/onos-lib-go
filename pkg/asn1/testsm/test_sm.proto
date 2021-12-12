@@ -395,19 +395,15 @@ message SampleE2apPduChoice {
     CanonicalChoice ch = 3;
 }
 
+// Passing "choiceIdx" is not necessary, since CHOICE index is stored in ID
 message CanonicalChoice {
     oneof canonical_choice {
-        //@inject_tag: aper:"choiceIdx:1"
         SampleOctetString ch1 = 1;
-        //@inject_tag: aper:"choiceIdx:2"
         SampleConstrainedInteger ch2 = 2;
-        //@inject_tag: aper:"choiceIdx:3"
         SampleBitString ch3 = 3;
-        //@inject_tag: aper:"choiceIdx:4"
         TestListExtensible1 ch4 = 4;
-        //@inject_tag: aper:"choiceIdx:5,valueExt"
+        //@inject_tag: aper:"valueExt"
         Item ch5 = 5;
-        //@inject_tag: aper:"choiceIdx:6"
         SampleNestedE2apPduChoice ch6 = 6;
     }
 }
@@ -435,15 +431,12 @@ message SampleNestedE2apPduChoice {
     CanonicalNestedChoice ch = 3;
 }
 
+// Passing "choiceIdx" is not necessary, since CHOICE index is stored in ID
 message CanonicalNestedChoice {
     oneof canonical_nested_choice {
-        //@inject_tag: aper:"choiceIdx:1"
         SampleOctetString ch1 = 1;
-        //@inject_tag: aper:"choiceIdx:2"
         SampleConstrainedInteger ch2 = 2;
-        //@inject_tag: aper:"choiceIdx:3"
         SampleBitString ch3 = 3;
-        //@inject_tag: aper:"choiceIdx:4"
         TestListExtensible1 ch4 = 4;
     }
 }
