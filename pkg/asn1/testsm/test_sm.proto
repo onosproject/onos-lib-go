@@ -440,3 +440,12 @@ message CanonicalNestedChoice {
         TestListExtensible1 ch4 = 4;
     }
 }
+
+message MixedChoice {
+    oneof mixed_choice {
+        //@inject_tag: aper:"choiceIdx:1"
+        SampleE2apPduChoice ch1 = 1;
+        //@inject_tag: aper:"choiceIdx:2"
+        SampleConstrainedInteger ch2 = 2;
+    }
+}

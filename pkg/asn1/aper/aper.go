@@ -23,7 +23,7 @@ import (
 )
 
 func init() {
-	log.SetLevel(log.Info)
+	log.SetLevel(log.Debug)
 }
 
 // ChoiceMap - a global map of choices - specific to the Protobuf being handled
@@ -594,6 +594,25 @@ func (pd *perBitData) getChoiceIndex(extensed bool, upperBound int) (present int
 	return
 }
 
+//func (pd *perBitData) getCanonicalChoiceIndex(unique int) (present int, err error) {
+//
+//	//ToDo - think of how you can parse number of bytes
+//	err = pd.parseAlignBits()
+//	if err != nil {
+//		return 0, err
+//	}
+//
+//	log.Debugf("Parsing %v bytes", len(pd.bytes))
+//
+//	if rawChoice, err1 := pd.parseConstraintValue(int64(upperBound)); err1 != nil {
+//		err = err1
+//	} else {
+//		log.Debugf("Decoded Present index of CHOICE is %d + 1", rawChoice)
+//		present = int(rawChoice) + 1
+//	}
+//	return
+//}
+
 //func getReferenceFieldValue(v reflect.Value) (value int64, err error) {
 //	fieldType := v.Type()
 //	switch v.Kind() {
@@ -769,24 +788,33 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		}
 		choiceIdx := 1
 		var err error
-		if len(choiceMap) > 1 {
-			choiceIdx, err = pd.getChoiceIndex(params.valueExtensible, len(choiceMap))
-			if err != nil {
-				return err
+		var choiceStruct reflect.Value
+		if params.canonicalOrder {
+			//choiceIdx, err = pd.getCanonicalChoiceIndex(unique)
+			//if err != nil {
+			//	return err
+			//}
+		} else {
+			if len(choiceMap) > 1 {
+				choiceIdx, err = pd.getChoiceIndex(params.valueExtensible, len(choiceMap))
+				if err != nil {
+					return err
+				}
+
+				log.Debugf("Handling interface %s for 'oneof' %s %d/%d", v.Type().String(), params.oneofName, choiceIdx, len(choiceMap))
+				choiceType, ok := choiceMap[choiceIdx]
+				if !ok {
+					return errors.NewInvalid("Expected choice map %s to have index %d", params.oneofName, choiceIdx)
+				}
+				choiceStruct = reflect.New(choiceType)
+				if v.CanSet() {
+					v.Set(choiceStruct)
+				}
+
+				log.Debugf("type is %s", choiceType.String())
 			}
 		}
-		log.Debugf("Handling interface %s for 'oneof' %s %d/%d", v.Type().String(), params.oneofName, choiceIdx, len(choiceMap))
-		choiceType, ok := choiceMap[choiceIdx]
-		if !ok {
-			return errors.NewInvalid("Expected choice map %s to have index %d", params.oneofName, choiceIdx)
-		}
-		choiceStruct := reflect.New(choiceType)
 
-		if v.CanSet() {
-			v.Set(choiceStruct)
-		}
-
-		log.Debugf("type is %s", choiceType.String())
 		if err = parseField(choiceStruct.Elem(), pd, params); err != nil {
 			return err
 		}

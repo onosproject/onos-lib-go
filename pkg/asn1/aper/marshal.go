@@ -580,39 +580,29 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, choiceBo
 
 // Canonical CHOICE index is literally number of bytes which are following after current byte. Could be re-used as a checksum.
 // In fact, we don't even need to know about the structure in a CHOICE option, but it would be good to check it (especially for the decoding).
-func (pd *perRawBitData) appendCanonicalChoiceIndex(bytesBefore []byte, v reflect.Value, params fieldParameters) error {
+func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, v reflect.Value, params fieldParameters) error {
 
-	// ToDo - maybe it's not necessary to do that..
-	// aligning first
+	// ToDo - check encoded CHOICE is a correct one (make use of "unique" flag)
+	choiceOption := v.Elem().Field(0).Elem().Type().Name()
+	log.Debugf("\n\nSearching for %v in a map -- %v --\n", choiceOption, v.Elem().Type().Name())
+
+	// aligning bits first - necessary to encode in full byte
 	pd.appendAlignBits()
 
+	// ToDo - find workaround in logging
+	log.SetLevel(log.Info)
 	threadedBytes := &perRawBitData{}
 	if err := threadedBytes.makeField(v, params); err != nil {
 		return err
 	}
+	// ToDo - find workaround in logging
+	log.SetLevel(log.Debug)
 
 	expectedBytes := int(math.Ceil(float64(len(threadedBytes.bytes)) / 255))
-
-	log.Debugf("\nEncoding length %v with bits of length %v\n", len(threadedBytes.bytes), uint(8*expectedBytes))
-
+	log.Debugf("Encoding length %v in bits of length %v", len(threadedBytes.bytes), uint(8*expectedBytes))
 	if err := pd.putBitsValue(uint64(len(threadedBytes.bytes)), uint(8*expectedBytes)); err != nil {
 		return err
 	}
-	// It is not necessary to put threadedBytes in the message, because they'll be encoded in the next step
-	//pd.bytes = append(pd.bytes, threadedBytes.bytes...)
-
-	//// ToDo - verify correctness of the CHOICE option (make use of a "unique" flag)
-	//log.Debugf("Encoding Present index of CHOICE  %d - 1", present)
-	//if err := pd.appendConstraintValue(int64(choiceBounds), uint64(rawChoice)); err != nil {
-	//	return err
-	//}
-	//
-	////ToDo - proceed with encoding as it is and return
-	//if err := pd.makeField(v.Field(i), structParams[fieldIdx]); err != nil {
-	//	return err
-	//}
-
-	//pd.bytes(len(bytesBefore) - 1)
 
 	return nil
 }
@@ -733,7 +723,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 
 	case reflect.Struct:
 
-		//var choiceID reflect.Value
+		var unique int64
 		structType := fieldType
 		var structParams []fieldParameters
 		var optionalCount uint
@@ -757,6 +747,10 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			}
 			log.Debugf("Handling %s", structType.Field(i).Name)
 			tempParams := parseFieldParameters(structType.Field(i).Tag.Get("aper"))
+			if tempParams.unique {
+				unique = v.Field(i).Int()
+				log.Debugf("\n\nUnique was found, it is %v\nunique is %v\n", reflect.ValueOf(v.Field(i)), unique)
+			}
 			choiceType = structType.Field(i).Tag.Get("protobuf_oneof")
 			if choiceType == "" {
 				// for optional flag
@@ -844,19 +838,19 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			//	choiceID = v.Field(i)
 			//}
 			if structParams[fieldIdx].oneofName != "" {
-				if structParams[fieldIdx].choiceIndex == nil {
-					return fmt.Errorf("choice Index is nil at Field %v, Index %v.\n Make sure all aper tags are injected in your proto", v.Field(i).Type(), fieldIdx)
-				}
-				present := int(*structParams[fieldIdx].choiceIndex)
-				choiceMap, ok := ChoiceMap[choiceType]
-				//When there is only one item in the choice, you don't need to encode choice index
 				if params.canonicalOrder {
 					tempParams := structParams[fieldIdx]
 					tempParams.valueExtensible = false
-					if err := pd.appendCanonicalChoiceIndex(pd.bytes, reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
+					if err := pd.appendCanonicalChoiceIndex(unique, reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
 						return err
 					}
 				} else {
+					if structParams[fieldIdx].choiceIndex == nil {
+						return fmt.Errorf("choice Index is nil at Field %v, Index %v.\n Make sure all aper tags are injected in your proto", v.Field(i).Type(), fieldIdx)
+					}
+					present := int(*structParams[fieldIdx].choiceIndex)
+					choiceMap, ok := ChoiceMap[choiceType]
+					//When there is only one item in the choice, you don't need to encode choice index
 					if !ok {
 						return errors.NewInvalid("Expected a choice map with %s", choiceType)
 					}

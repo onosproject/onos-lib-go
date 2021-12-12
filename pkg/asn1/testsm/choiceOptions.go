@@ -54,4 +54,8 @@ var Choicemap = map[string]map[int]reflect.Type{
 		2: reflect.TypeOf(TestNestedChoice_Option2{}),
 		3: reflect.TypeOf(TestNestedChoice_Option3{}),
 	},
+	"mixed_choice": {
+		1: reflect.TypeOf(MixedChoice_Ch1{}),
+		2: reflect.TypeOf(MixedChoice_Ch2{}),
+	},
 }
