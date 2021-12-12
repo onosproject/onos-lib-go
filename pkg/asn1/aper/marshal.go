@@ -596,7 +596,7 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, v reflect.Valu
 		return err
 	}
 	// ToDo - find workaround in logging
-	log.SetLevel(log.Debug)
+	log.SetLevel(log.Info)
 
 	expectedBytes := int(math.Ceil(float64(len(threadedBytes.bytes)) / 255))
 	log.Debugf("Encoding length %v in bits of length %v", len(threadedBytes.bytes), uint(8*expectedBytes))

@@ -23,7 +23,7 @@ import (
 )
 
 func init() {
-	log.SetLevel(log.Debug)
+	log.SetLevel(log.Info)
 }
 
 // ChoiceMap - a global map of choices - specific to the Protobuf being handled
