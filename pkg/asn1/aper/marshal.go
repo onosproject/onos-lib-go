@@ -28,11 +28,6 @@ type perRawBitData struct {
 	bitsOffset uint
 }
 
-type nestedBytes struct {
-	startIndex int
-	endIndex   int
-}
-
 func perRawBitLog(numBits uint64, byteLen int, bitsOffset uint, value interface{}) string {
 	if reflect.TypeOf(value).Kind() == reflect.Uint64 {
 		return fmt.Sprintf("  [PER put %2d bits, byteLen(after): %d, bitsOffset(after): %d, value: 0x%0x]",

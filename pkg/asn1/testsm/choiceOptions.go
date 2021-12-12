@@ -59,3 +59,20 @@ var Choicemap = map[string]map[int]reflect.Type{
 		2: reflect.TypeOf(MixedChoice_Ch2{}),
 	},
 }
+
+var CanonicalChoicemap = map[string]map[string]reflect.Type{
+	"canonical_nested_choice": {
+		"SampleOctetString":        reflect.TypeOf(CanonicalNestedChoice_Ch1{}),
+		"SampleConstrainedInteger": reflect.TypeOf(CanonicalNestedChoice_Ch2{}),
+		"SampleBitString":          reflect.TypeOf(CanonicalNestedChoice_Ch3{}),
+		"TestListExtensible1":      reflect.TypeOf(CanonicalNestedChoice_Ch4{}),
+	},
+	"canonical_choice": {
+		"SampleOctetString":         reflect.TypeOf(CanonicalChoice_Ch1{}),
+		"SampleConstrainedInteger":  reflect.TypeOf(CanonicalChoice_Ch2{}),
+		"SampleBitString":           reflect.TypeOf(CanonicalChoice_Ch3{}),
+		"TestListExtensible1":       reflect.TypeOf(CanonicalChoice_Ch4{}),
+		"Item":                      reflect.TypeOf(CanonicalChoice_Ch5{}),
+		"SampleNestedE2apPduChoice": reflect.TypeOf(CanonicalChoice_Ch6{}),
+	},
+}
