@@ -385,3 +385,41 @@ message TestTopLevelPdu {
     // @inject_tag: aper:"valueExt"
     TestEnumeratedExtensible opt7 = 7 [json_name = "opt7"];
 };
+
+message sampleE2apPduChoice {
+    //@inject_tag: aper:"valueLB:0,valueUB:65535,unique"
+    int32 id = 1;
+    //@inject_tag: aper:"valueLB:0,valueUB:2"
+    int32 criticality = 2;
+    //@inject_tag: aper:"canonicalOrder"
+    CanonicalChoice ch = 3;
+}
+
+message CanonicalChoice {
+    oneof canonical_choice {
+        //@inject_tag: aper:"choiceIdx:1"
+        SampleOctetString ch1 = 1;
+        //@inject_tag: aper:"choiceIdx:2"
+        SampleConstrainedInteger ch2 = 2;
+        //@inject_tag: aper:"choiceIdx:3"
+        SampleBitString ch3 = 3;
+        //@inject_tag: aper:"choiceIdx:4"
+        TestListExtensible1 ch4 = 4;
+        //@inject_tag: aper:"choiceIdx:5,valueExt"
+        Item ch5 = 5;
+    }
+}
+
+message SampleOctetString {
+    bytes value = 1;
+}
+
+message SampleConstrainedInteger {
+    // @inject_tag: aper:"valueLB:0,valueUB:255,valueExt"
+    int32 value = 1;
+}
+
+message SampleBitString {
+    // @inject_tag: aper:"sizeLB:24,sizeUB:50,sizeExt"
+    asn1.v1.BitString value = 1;
+}
