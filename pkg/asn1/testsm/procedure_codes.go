@@ -17,6 +17,8 @@ package testsm
 // Driven from e2ap_constants.proto
 // TODO: Automate the generation of this file
 
+// CanonicalChoiceID - should be generated with protoc-gen-cgo.
+// It is a necessary prerequisite for canonical ordering in CHOICE encoding
 type CanonicalChoiceID int32
 
 const (
@@ -28,6 +30,8 @@ const (
 	CanonicalChoiceIDSampleNestedE2apPduChoice CanonicalChoiceID = 6
 )
 
+// CanonicalNestedChoiceID - should be generated with protoc-gen-cgo.
+// It is a necessary prerequisite for canonical ordering in CHOICE encoding
 type CanonicalNestedChoiceID int32
 
 const (

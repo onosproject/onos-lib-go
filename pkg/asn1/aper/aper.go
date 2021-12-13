@@ -786,7 +786,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		if !ok {
 			return errors.NewInvalid("Expected a choice map with %s", params.oneofName)
 		}
-		choiceIdx := 1
+		var choiceIdx int //:= 1
 		var err error
 		var choiceStruct reflect.Value
 		if params.canonicalOrder {

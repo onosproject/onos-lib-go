@@ -32,3 +32,6 @@ issues:
     - path: pkg/sctp/connection/socket.go
       linters:
         - errcheck
+    - path: pkg/asn1/testsm/procedure_codes.go
+      linters:
+        - revive

@@ -60,6 +60,7 @@ var Choicemap = map[string]map[int]reflect.Type{
 	},
 }
 
+// CanonicalChoicemap - Should be generated with protoc-gen-choice from proto or created by hand (necessary to understand how to point to correct choice)
 var CanonicalChoicemap = map[string]map[string]reflect.Type{
 	"canonical_nested_choice": {
 		"SampleOctetString":        reflect.TypeOf(CanonicalNestedChoice_Ch1{}),
