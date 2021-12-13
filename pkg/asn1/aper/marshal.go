@@ -578,8 +578,8 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, choiceBo
 func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, v reflect.Value, params fieldParameters) error {
 
 	// ToDo - check encoded CHOICE is a correct one (make use of "unique" flag)
-	choiceOption := v.Elem().Field(0).Elem().Type().Name()
-	log.Debugf("\n\nSearching for %v in a map -- %v --\n", choiceOption, v.Elem().Type().Name())
+	//choiceOption := v.Elem().Field(0).Elem().Type().Name()
+	//log.Debugf("\n\nSearching for %v in a map -- %v --\n", choiceOption, v.Elem().Type().Name())
 
 	// aligning bits first - necessary to encode in full byte
 	pd.appendAlignBits()
