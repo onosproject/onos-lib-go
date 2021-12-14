@@ -586,7 +586,7 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, v reflect.Valu
 
 	// ToDo - find workaround in logging
 	log.SetLevel(log.Info)
-	threadedBytes := &perRawBitData{}
+	threadedBytes := &perRawBitData{[]byte(""), 0}
 	if err := threadedBytes.makeField(v, params); err != nil {
 		return err
 	}
