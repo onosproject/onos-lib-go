@@ -573,6 +573,28 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, choiceBo
 	return nil
 }
 
+func (pd *perRawBitData) appendNormallySmallNonNegativeWholeNumber(value uint64) error {
+
+	if value > 127 {
+		if err := pd.putBitsValue(1, 1); err != nil {
+			return err
+		}
+		if value < 256 {
+			pd.appendAlignBits()
+			return pd.putBitsValue(uint64(value), 8)
+		} else {
+			return pd.putBitsValue(uint64(value), 15)
+		}
+	} else {
+		if err := pd.putBitsValue(0, 1); err != nil {
+			return err
+		}
+		return pd.putBitsValue(uint64(value), 7)
+	}
+
+	//return nil
+}
+
 // Canonical CHOICE index is literally number of bytes which are following after current byte. Could be re-used as a checksum.
 // In fact, we don't even need to know about the structure in a CHOICE option, but it would be good to check it (especially for the decoding).
 func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, v reflect.Value, params fieldParameters) error {
@@ -593,11 +615,30 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, v reflect.Valu
 	// ToDo - find workaround in logging
 	log.SetLevel(log.Info)
 
-	expectedBytes := int(math.Ceil(float64(len(threadedBytes.bytes)) / 255))
-	log.Debugf("Encoding length %v in bits of length %v", len(threadedBytes.bytes), uint(8*expectedBytes))
-	if err := pd.putBitsValue(uint64(len(threadedBytes.bytes)), uint(8*expectedBytes)); err != nil {
+	//expectedBits := int(math.Ceil(math.Logb(float64(len(threadedBytes.bytes)))))
+	//log.Debugf("Encoding length %v in bits of length %v", len(threadedBytes.bytes), uint(8*expectedBits))
+	//if err := pd.putBitsValue(uint64(len(threadedBytes.bytes)), uint(8*expectedBytes)); err != nil {
+	//	return err
+	//}
+
+	if err := pd.appendNormallySmallNonNegativeWholeNumber(uint64(len(threadedBytes.bytes))); err != nil {
 		return err
 	}
+
+	////Alternative solution, more generic - according to DuBuisson APER rules
+	////var lb int64 = 0
+	//length := uint64(len(threadedBytes.bytes))
+	////if err := pd.appendInteger(length, false, &lb, nil); err != nil {
+	////	return err
+	////}
+	//// putting 1 according to rules of encoding "Normally small non-negative whole number"
+	//if err := pd.putBitsValue(1, 1); err != nil {
+	//	return err
+	//}
+	//// Encoding value itself
+	//if err := pd.putBitsValue(length, uint(8*expectedBits)); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
