@@ -573,6 +573,15 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, choiceBo
 	return nil
 }
 
+// appendNormallySmallNonNegativeWholeNumber function does not fully correspond to its original definition
+// provided in chapter 20.4 of Olivier DuBuisson book "ASN.1. Communication between Heterogeneous systems".
+// Instead, this function was aligned to correspond to the needs of E2AP APER encoding handled by asn1c tool,
+// which is provided by Nokia (https://github.com/nokia/asn1c). In particular, it adds 1 in the header only
+// when the encoded number exceeds 127 (in decimal). If number is less than 128, then the rest the number
+// is encoded in 7 bits. In original definition it should treat the boundary 64 (and if the number is less than 64,
+// then it encodes the number in 6 bits). Also, no octet alignment when number is between 64 and 256 is needed.
+// Nokia's distribution is treating it in theirs way. Since theirs asn1c tool is officially recommended by O-RAN,
+// we need to be aligned with them.
 func (pd *perRawBitData) appendNormallySmallNonNegativeWholeNumber(value uint64) error {
 
 	if value > 32767 {
@@ -599,8 +608,6 @@ func (pd *perRawBitData) appendNormallySmallNonNegativeWholeNumber(value uint64)
 		}
 		return pd.putBitsValue(uint64(value), 7)
 	}
-
-	//return nil
 }
 
 // Canonical CHOICE index is literally number of bytes which are following after current byte. Could be re-used as a checksum.
@@ -623,30 +630,10 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, v reflect.Valu
 	// ToDo - find workaround in logging
 	log.SetLevel(log.Info)
 
-	//expectedBits := int(math.Ceil(math.Logb(float64(len(threadedBytes.bytes)))))
-	//log.Debugf("Encoding length %v in bits of length %v", len(threadedBytes.bytes), uint(8*expectedBits))
-	//if err := pd.putBitsValue(uint64(len(threadedBytes.bytes)), uint(8*expectedBytes)); err != nil {
-	//	return err
-	//}
-
+	// encoding the number of upcoming bytes
 	if err := pd.appendNormallySmallNonNegativeWholeNumber(uint64(len(threadedBytes.bytes))); err != nil {
 		return err
 	}
-
-	////Alternative solution, more generic - according to DuBuisson APER rules
-	////var lb int64 = 0
-	//length := uint64(len(threadedBytes.bytes))
-	////if err := pd.appendInteger(length, false, &lb, nil); err != nil {
-	////	return err
-	////}
-	//// putting 1 according to rules of encoding "Normally small non-negative whole number"
-	//if err := pd.putBitsValue(1, 1); err != nil {
-	//	return err
-	//}
-	//// Encoding value itself
-	//if err := pd.putBitsValue(length, uint(8*expectedBits)); err != nil {
-	//	return err
-	//}
 
 	return nil
 }
