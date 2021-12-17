@@ -575,6 +575,14 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, choiceBo
 
 func (pd *perRawBitData) appendNormallySmallNonNegativeWholeNumber(value uint64) error {
 
+	if value > 32767 {
+		return fmt.Errorf("aper: Value %v has exceeded its possible upperbound and shouldn't be encoded as "+
+			"Normally small non-negative whole number. If this issue is related to the E2AP then it is a PANIC!! T_T", value)
+	}
+	if value < 0 {
+		return fmt.Errorf("aper: Value %v has exceeded its possible lowerbound and shouldn't be encoded as "+
+			"Normally small non-negative whole number. For some reason it is negative. If this issue is related to the E2AP then it is a PANIC!! T_T", value)
+	}
 	if value > 127 {
 		if err := pd.putBitsValue(1, 1); err != nil {
 			return err
