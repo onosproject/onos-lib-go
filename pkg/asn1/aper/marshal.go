@@ -588,26 +588,20 @@ func (pd *perRawBitData) appendNormallySmallNonNegativeWholeNumber(value uint64)
 		return fmt.Errorf("aper: Value %v has exceeded its possible upperbound and shouldn't be encoded as "+
 			"Normally small non-negative whole number. If this issue is related to the E2AP then it is a PANIC!! T_T", value)
 	}
-	if value < 0 {
-		return fmt.Errorf("aper: Value %v has exceeded its possible lowerbound and shouldn't be encoded as "+
-			"Normally small non-negative whole number. For some reason it is negative. If this issue is related to the E2AP then it is a PANIC!! T_T", value)
-	}
 	if value > 127 {
 		if err := pd.putBitsValue(1, 1); err != nil {
 			return err
 		}
 		if value < 256 {
 			pd.appendAlignBits()
-			return pd.putBitsValue(uint64(value), 8)
-		} else {
-			return pd.putBitsValue(uint64(value), 15)
+			return pd.putBitsValue(value, 8)
 		}
-	} else {
-		if err := pd.putBitsValue(0, 1); err != nil {
-			return err
-		}
-		return pd.putBitsValue(uint64(value), 7)
+		return pd.putBitsValue(value, 15)
 	}
+	if err := pd.putBitsValue(0, 1); err != nil {
+		return err
+	}
+	return pd.putBitsValue(value, 7)
 }
 
 // Canonical CHOICE index is literally number of bytes which are following after current byte. Could be re-used as a checksum.
