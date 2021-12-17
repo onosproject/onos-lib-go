@@ -385,3 +385,67 @@ message TestTopLevelPdu {
     // @inject_tag: aper:"valueExt"
     TestEnumeratedExtensible opt7 = 7 [json_name = "opt7"];
 };
+
+message SampleE2apPduChoice {
+    //@inject_tag: aper:"valueLB:0,valueUB:65535,unique"
+    int32 id = 1;
+    //@inject_tag: aper:"valueLB:0,valueUB:2"
+    int32 criticality = 2;
+    //@inject_tag: aper:"canonicalOrder"
+    CanonicalChoice ch = 3;
+}
+
+// Passing "choiceIdx" is not necessary, since CHOICE index is stored in ID
+message CanonicalChoice {
+    oneof canonical_choice {
+        SampleOctetString ch1 = 1;
+        SampleConstrainedInteger ch2 = 2;
+        SampleBitString ch3 = 3;
+        TestListExtensible1 ch4 = 4;
+        //@inject_tag: aper:"valueExt"
+        Item ch5 = 5;
+        SampleNestedE2apPduChoice ch6 = 6;
+    }
+}
+
+message SampleOctetString {
+    bytes value = 1;
+}
+
+message SampleConstrainedInteger {
+    // @inject_tag: aper:"valueLB:0,valueUB:255,valueExt"
+    int32 value = 1;
+}
+
+message SampleBitString {
+    // @inject_tag: aper:"sizeLB:24,sizeUB:50,sizeExt"
+    asn1.v1.BitString value = 1;
+}
+
+message SampleNestedE2apPduChoice {
+    //@inject_tag: aper:"valueLB:0,valueUB:65535,unique"
+    int32 id = 1;
+    //@inject_tag: aper:"valueLB:0,valueUB:2"
+    int32 criticality = 2;
+    //@inject_tag: aper:"canonicalOrder"
+    CanonicalNestedChoice ch = 3;
+}
+
+// Passing "choiceIdx" is not necessary, since CHOICE index is stored in ID
+message CanonicalNestedChoice {
+    oneof canonical_nested_choice {
+        SampleOctetString ch1 = 1;
+        SampleConstrainedInteger ch2 = 2;
+        SampleBitString ch3 = 3;
+        TestListExtensible1 ch4 = 4;
+    }
+}
+
+message MixedChoice {
+    oneof mixed_choice {
+        //@inject_tag: aper:"choiceIdx:1"
+        SampleE2apPduChoice ch1 = 1;
+        //@inject_tag: aper:"choiceIdx:2"
+        SampleConstrainedInteger ch2 = 2;
+    }
+}

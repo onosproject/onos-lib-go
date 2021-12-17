@@ -573,6 +573,65 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, choiceBo
 	return nil
 }
 
+// appendNormallySmallNonNegativeWholeNumber function does not fully correspond to its original definition
+// provided in chapter 20.4 of Olivier DuBuisson book "ASN.1. Communication between Heterogeneous systems".
+// Instead, this function was aligned to correspond to the needs of E2AP APER encoding handled by asn1c tool,
+// which is provided by Nokia (https://github.com/nokia/asn1c). In particular, it adds 1 in the header only
+// when the encoded number exceeds 127 (in decimal). If number is less than 128, then the rest the number
+// is encoded in 7 bits. In original definition it should treat the boundary 64 (and if the number is less than 64,
+// then it encodes the number in 6 bits). Also, no octet alignment when number is between 64 and 256 is needed.
+// Nokia's distribution is treating it in theirs way. Since theirs asn1c tool is officially recommended by O-RAN,
+// we need to be aligned with them.
+func (pd *perRawBitData) appendNormallySmallNonNegativeWholeNumber(value uint64) error {
+
+	if value > 32767 {
+		return fmt.Errorf("aper: Value %v has exceeded its possible upperbound and shouldn't be encoded as "+
+			"Normally small non-negative whole number. If this issue is related to the E2AP then it is a PANIC!! T_T", value)
+	}
+	if value > 127 {
+		if err := pd.putBitsValue(1, 1); err != nil {
+			return err
+		}
+		if value < 256 {
+			pd.appendAlignBits()
+			return pd.putBitsValue(value, 8)
+		}
+		return pd.putBitsValue(value, 15)
+	}
+	if err := pd.putBitsValue(0, 1); err != nil {
+		return err
+	}
+	return pd.putBitsValue(value, 7)
+}
+
+// Canonical CHOICE index is literally number of bytes which are following after current byte. Could be re-used as a checksum.
+// In fact, we don't even need to know about the structure in a CHOICE option, but it would be good to check it (especially for the decoding).
+func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, v reflect.Value, params fieldParameters) error {
+
+	// ToDo - check encoded CHOICE is a correct one (make use of "unique" flag)
+	//choiceOption := v.Elem().Field(0).Elem().Type().Name()
+	//log.Debugf("\n\nSearching for %v in a map -- %v --\n", choiceOption, v.Elem().Type().Name())
+
+	// aligning bits first - necessary to encode in full byte
+	pd.appendAlignBits()
+
+	// ToDo - find workaround in logging
+	log.SetLevel(log.Info)
+	threadedBytes := &perRawBitData{[]byte(""), 0}
+	if err := threadedBytes.makeField(v, params); err != nil {
+		return err
+	}
+	// ToDo - find workaround in logging
+	log.SetLevel(log.Info)
+
+	// encoding the number of upcoming bytes
+	if err := pd.appendNormallySmallNonNegativeWholeNumber(uint64(len(threadedBytes.bytes))); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters) error {
 
 	pdOpenType := &perRawBitData{[]byte(""), 0}
@@ -618,7 +677,21 @@ func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters)
 	log.Debugf("Encoded OpenType %s", v.Type().String())
 	return nil
 }
+
 func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) error {
+
+	//log.Debugf("Current bit offset is %v", pd.bitsOffset)
+	//if pd.bitsOffset != 0 {
+	//	log.Debugf("Shifting bits to the right explicitly..")
+	//	err := pd.shiftLastBit()
+	//	if err != nil {
+	//		return err
+	//	}
+	//	log.Debugf("Bits offset is %v, explicitly aligning bits", pd.bitsOffset)
+	//	pd.appendAlignBits()
+	//}
+	//log.Debugf("Current APER bytes with bits offset %v are \n%v", pd.bitsOffset, hex.Dump(pd.bytes))
+
 	log.Debugf("Encoding %s %s", v.Type().String(), v.Kind().String())
 	if !v.IsValid() {
 		return fmt.Errorf("aper: cannot marshal nil value")
@@ -665,11 +738,17 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		err := pd.appendBool(v.Bool())
 		return err
 	case reflect.Int, reflect.Int32, reflect.Int64:
-		err := pd.appendInteger(v.Int(), params.valueExtensible, params.valueLowerBound, params.valueUpperBound)
-		return err
+		if err := pd.appendInteger(v.Int(), params.valueExtensible, params.valueLowerBound, params.valueUpperBound); err != nil {
+			return err
+		}
+		if params.align {
+			pd.appendAlignBits()
+		}
+		return nil
 
 	case reflect.Struct:
 
+		var unique int64
 		structType := fieldType
 		var structParams []fieldParameters
 		var optionalCount uint
@@ -693,6 +772,10 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			}
 			log.Debugf("Handling %s", structType.Field(i).Name)
 			tempParams := parseFieldParameters(structType.Field(i).Tag.Get("aper"))
+			if tempParams.unique {
+				unique = v.Field(i).Int()
+				log.Debugf("\n\nUnique was found, it is %v\nunique is %v\n", reflect.ValueOf(v.Field(i)), unique)
+			}
 			choiceType = structType.Field(i).Tag.Get("protobuf_oneof")
 			if choiceType == "" {
 				// for optional flag
@@ -776,23 +859,35 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			//	}
 			//	*structParams[fieldIdx].referenceFieldValue = value
 			//}
+			//if params.unique {
+			//	choiceID = v.Field(i)
+			//}
 			if structParams[fieldIdx].oneofName != "" {
-				if structParams[fieldIdx].choiceIndex == nil {
-					return fmt.Errorf("choice Index is nil at Field %v, Index %v.\n Make sure all aper tags are injected in your proto", v.Field(i).Type(), fieldIdx)
-				}
-				present := int(*structParams[fieldIdx].choiceIndex)
-				choiceMap, ok := ChoiceMap[choiceType]
-				if !ok {
-					return errors.NewInvalid("Expected a choice map with %s", choiceType)
-				}
-				// When there is only one item in the choice, you don't need to encode choice index
-				if len(choiceMap) > 1 {
-					if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, len(choiceMap)); err != nil {
+				if params.canonicalOrder {
+					tempParams := structParams[fieldIdx]
+					tempParams.valueExtensible = false
+					if err := pd.appendCanonicalChoiceIndex(unique, reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
 						return err
+					}
+				} else {
+					if structParams[fieldIdx].choiceIndex == nil {
+						return fmt.Errorf("choice Index is nil at Field %v, Index %v.\n Make sure all aper tags are injected in your proto", v.Field(i).Type(), fieldIdx)
+					}
+					present := int(*structParams[fieldIdx].choiceIndex)
+					choiceMap, ok := ChoiceMap[choiceType]
+					//When there is only one item in the choice, you don't need to encode choice index
+					if !ok {
+						return errors.NewInvalid("Expected a choice map with %s", choiceType)
+					}
+					if len(choiceMap) > 1 {
+						if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, len(choiceMap)); err != nil {
+							return err
+						}
 					}
 				}
 				tempParams := structParams[fieldIdx]
 				tempParams.valueExtensible = false
+				// Here the CHOICE field is being encoded
 				if err := pd.makeField(reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
 					return err
 				}
