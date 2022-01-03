@@ -29,6 +29,11 @@ func init() {
 // ChoiceMap - a global map of choices - specific to the Protobuf being handled
 var ChoiceMap = map[string]map[int]reflect.Type{}
 
+// CanonicalChoiceMap - a global map of choices in canonical ordering - specific to the Protobuf being handled
+var CanonicalChoiceMap = map[string]map[int64]reflect.Type{}
+
+var canonicalOrdering = false
+
 type perBitData struct {
 	bytes      []byte
 	byteOffset uint64
@@ -594,24 +599,41 @@ func (pd *perBitData) getChoiceIndex(extensed bool, upperBound int) (present int
 	return
 }
 
-//func (pd *perBitData) getCanonicalChoiceIndex(unique int) (present int, err error) {
-//
-//	//ToDo - think of how you can parse number of bytes
-//	err = pd.parseAlignBits()
-//	if err != nil {
-//		return 0, err
-//	}
-//
-//	log.Debugf("Parsing %v bytes", len(pd.bytes))
-//
-//	if rawChoice, err1 := pd.parseConstraintValue(int64(upperBound)); err1 != nil {
-//		err = err1
-//	} else {
-//		log.Debugf("Decoded Present index of CHOICE is %d + 1", rawChoice)
-//		present = int(rawChoice) + 1
-//	}
-//	return
-//}
+func (pd *perBitData) getCanonicalChoiceIndex() error {
+
+	err := pd.parseAlignBits()
+	if err != nil {
+		return err
+	}
+	log.Debugf("Parsing %v bytes", len(pd.bytes[pd.byteOffset:]))
+
+	ext, err := pd.getBitsValue(1)
+	if err != nil {
+		return err
+	}
+
+	if ext == 0 {
+		numBytes, err := pd.getBitsValue(7)
+		if err != nil {
+			return err
+		}
+		if numBytes != uint64(len(pd.bytes[pd.byteOffset:])) {
+			return errors.NewInvalid("Checksum didn't pass. Expecting %v bytes, but have %v bytes to decode", numBytes, len(pd.bytes[pd.byteOffset:]))
+		}
+		log.Debugf("Decoding %v bytes", numBytes)
+	} else if ext == 1 {
+		numBytes, err := pd.getBitsValue(15)
+		if err != nil {
+			return err
+		}
+		if numBytes != uint64(len(pd.bytes[pd.byteOffset:])) {
+			return errors.NewInvalid("Checksum didn't pass. Expecting %v bytes, but have %v bytes to decode", numBytes, len(pd.bytes[pd.byteOffset:]))
+		}
+		log.Debugf("Decoding %v bytes", numBytes)
+	}
+
+	return nil
+}
 
 //func getReferenceFieldValue(v reflect.Value) (value int64, err error) {
 //	fieldType := v.Type()
@@ -672,6 +694,13 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		log.Debugf("Decoded Value Extensive Bit : %t", valueExtensible)
 	}
 
+	// Setting explicitly flag for canonical ordering here due to the specificity of passing flags to choices
+	// (canonicalOrder flag is being set one level above than for regular choice)
+	if params.canonicalOrder {
+		canonicalOrdering = true
+		log.Debugf("Setting canonicalOrdering flag to true. Next CHOICE is expected to be in canonical ordering")
+	}
+
 	// We deal with the structures defined in this package first.
 	switch fieldType {
 	case BitStringType:
@@ -707,6 +736,10 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		}
 		val.SetInt(parsedInt)
 		log.Debugf("Decoded INTEGER Value: %d", parsedInt)
+		if params.unique {
+			unique = parsedInt
+			log.Debugf("UNIQUE flag was found, it is %v", unique)
+		}
 		return nil
 	case reflect.Struct:
 		structType := fieldType
@@ -782,19 +815,44 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		log.Debugf("Decoded PrintableString : \"%s\"", printableString)
 		return nil
 	case reflect.Interface:
-		choiceMap, ok := ChoiceMap[params.oneofName]
-		if !ok {
-			return errors.NewInvalid("Expected a choice map with %s", params.oneofName)
-		}
 		var choiceIdx int //:= 1
 		var err error
 		var choiceStruct reflect.Value
-		if params.canonicalOrder {
-			//choiceIdx, err = pd.getCanonicalChoiceIndex(unique)
-			//if err != nil {
-			//	return err
-			//}
+		if canonicalOrdering {
+			canonicalChoiceMap, ok := CanonicalChoiceMap[params.oneofName]
+			if !ok {
+				return errors.NewInvalid("Expected a choice map with %s", params.oneofName)
+			}
+			// Parsing number of bytes which are following and verifying checksum
+			err := pd.getCanonicalChoiceIndex()
+			if err != nil {
+				return err
+			}
+
+			if unique == -1 {
+				return errors.NewInvalid("Didn't find UNIQUE flag. Please revisit ASN1 definition")
+			}
+
+			choiceType, ok := canonicalChoiceMap[unique]
+			if !ok {
+				return errors.NewInvalid("Expected choice map %s to have index %d", params.oneofName, unique)
+			}
+			choiceStruct = reflect.New(choiceType)
+			if v.CanSet() {
+				v.Set(choiceStruct)
+			}
+
+			log.Debugf("type is %s", choiceType.String())
+
+			// Setting unique to -1 in order to reset CHOICE value (since we've already extracted it)
+			unique = -1
+			// Setting this flag back to false in order to indicate the next CHOICE in canonical ordering
+			canonicalOrdering = false
 		} else {
+			choiceMap, ok := ChoiceMap[params.oneofName]
+			if !ok {
+				return errors.NewInvalid("Expected a choice map with %s", params.oneofName)
+			}
 			if len(choiceMap) > 1 {
 				choiceIdx, err = pd.getChoiceIndex(params.valueExtensible, len(choiceMap))
 				if err != nil {

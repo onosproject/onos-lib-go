@@ -26,6 +26,7 @@ func Test_CanonicalChoice(t *testing.T) {
 
 	// Satisfying a ChoiceMap constraint
 	aper.ChoiceMap = Choicemap
+	aper.CanonicalChoiceMap = CanonicalChoicemap
 
 	for i := 1; i <= 4; i++ {
 		msg := &SampleE2ApPduChoice{
@@ -44,11 +45,12 @@ func Test_CanonicalChoice(t *testing.T) {
 		t.Logf("APER \n%s", hex.Dump(aperBytes))
 
 		// Now decode the bytes and compare messages
-		//result := &SampleNestedE2ApPduChoice{}
-		//err = aper.Unmarshal(aperBytes, result)
-		//assert.NilError(t, err)
-		//assert.Assert(t, result != nil)
-		//assert.Equal(t, t, msg, result)
+		result := &SampleE2ApPduChoice{}
+		err = aper.Unmarshal(aperBytes, result)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, msg.String(), result.String())
+		//t.Logf("Decoded message is\n%v", result)
 	}
 
 	var ie21 int32 = -56
@@ -76,9 +78,10 @@ func Test_CanonicalChoice(t *testing.T) {
 	t.Logf("APER \n%s", hex.Dump(aperBytes))
 
 	// Now decode the bytes and compare messages
-	//result := &SampleNestedE2ApPduChoice{}
-	//err = aper.Unmarshal(aperBytes, result)
-	//assert.NoError(t, err)
-	//assert.NotNil(t, result)
-	//assert.Equal(t, t, msg, result)
+	result := &SampleE2ApPduChoice{}
+	err = aper.Unmarshal(aperBytes, result)
+	assert.NilError(t, err)
+	assert.Assert(t, result != nil)
+	assert.Equal(t, msg.String(), result.String())
+	//t.Logf("Decoded message is\n%v", result)
 }

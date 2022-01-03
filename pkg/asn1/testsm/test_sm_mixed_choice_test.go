@@ -25,6 +25,7 @@ func Test_MixedChoice(t *testing.T) {
 
 	// Satisfying a ChoiceMap constraint
 	aper.ChoiceMap = Choicemap
+	aper.CanonicalChoiceMap = CanonicalChoicemap
 
 	msg1 := &MixedChoice{
 		MixedChoice: &MixedChoice_Ch1{
@@ -46,11 +47,11 @@ func Test_MixedChoice(t *testing.T) {
 	t.Logf("APER \n%s", hex.Dump(aperBytes1))
 
 	// Now decode the bytes and compare messages
-	//result1 := &SampleNestedE2ApPduChoice{}
-	//err = aper.Unmarshal(aperBytes1, result1)
-	//assert.NilError(t, err)
-	//assert.Assert(t, result1 != nil)
-	//assert.Equal(t, t, msg1, result1)
+	result1 := &MixedChoice{}
+	err = aper.Unmarshal(aperBytes1, result1)
+	assert.NilError(t, err)
+	assert.Assert(t, result1 != nil)
+	assert.Equal(t, msg1.String(), result1.String())
 
 	msg2 := &MixedChoice{
 		MixedChoice: &MixedChoice_Ch1{
@@ -72,11 +73,11 @@ func Test_MixedChoice(t *testing.T) {
 	t.Logf("APER \n%s", hex.Dump(aperBytes2))
 
 	// Now decode the bytes and compare messages
-	//result2 := &SampleNestedE2ApPduChoice{}
-	//err = aper.Unmarshal(aperBytes2, result2)
-	//assert.NilError(t, err)
-	//assert.Assert(t, result2 != nil)
-	//assert.Equal(t, t, msg2, result2)
+	result2 := &MixedChoice{}
+	err = aper.Unmarshal(aperBytes2, result2)
+	assert.NilError(t, err)
+	assert.Assert(t, result2 != nil)
+	assert.Equal(t, msg2.String(), result2.String())
 
 	msg3 := &MixedChoice{
 		MixedChoice: &MixedChoice_Ch2{
@@ -92,9 +93,9 @@ func Test_MixedChoice(t *testing.T) {
 	t.Logf("APER \n%s", hex.Dump(aperBytes3))
 
 	// Now decode the bytes and compare messages
-	//result3 := &SampleNestedE2ApPduChoice{}
-	//err = aper.Unmarshal(aperBytes3, result3)
-	//assert.NilError(t, err)
-	//assert.Assert(t, result3 != nil)
-	//assert.Equal(t, t, msg3, result3)
+	result3 := &MixedChoice{}
+	err = aper.Unmarshal(aperBytes3, result3)
+	assert.NilError(t, err)
+	assert.Assert(t, result3 != nil)
+	assert.Equal(t, msg3.String(), result3.String())
 }

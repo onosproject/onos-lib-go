@@ -61,19 +61,19 @@ var Choicemap = map[string]map[int]reflect.Type{
 }
 
 // CanonicalChoicemap - Should be generated with protoc-gen-choice from proto or created by hand (necessary to understand how to point to correct choice)
-var CanonicalChoicemap = map[string]map[string]reflect.Type{
+var CanonicalChoicemap = map[string]map[int64]reflect.Type{
 	"canonical_nested_choice": {
-		"SampleOctetString":        reflect.TypeOf(CanonicalNestedChoice_Ch1{}),
-		"SampleConstrainedInteger": reflect.TypeOf(CanonicalNestedChoice_Ch2{}),
-		"SampleBitString":          reflect.TypeOf(CanonicalNestedChoice_Ch3{}),
-		"TestListExtensible1":      reflect.TypeOf(CanonicalNestedChoice_Ch4{}),
+		11: reflect.TypeOf(CanonicalNestedChoice_Ch1{}),
+		21: reflect.TypeOf(CanonicalNestedChoice_Ch2{}),
+		31: reflect.TypeOf(CanonicalNestedChoice_Ch3{}),
+		41: reflect.TypeOf(CanonicalNestedChoice_Ch4{}),
 	},
 	"canonical_choice": {
-		"SampleOctetString":         reflect.TypeOf(CanonicalChoice_Ch1{}),
-		"SampleConstrainedInteger":  reflect.TypeOf(CanonicalChoice_Ch2{}),
-		"SampleBitString":           reflect.TypeOf(CanonicalChoice_Ch3{}),
-		"TestListExtensible1":       reflect.TypeOf(CanonicalChoice_Ch4{}),
-		"Item":                      reflect.TypeOf(CanonicalChoice_Ch5{}),
-		"SampleNestedE2apPduChoice": reflect.TypeOf(CanonicalChoice_Ch6{}),
+		10: reflect.TypeOf(CanonicalChoice_Ch1{}),
+		20: reflect.TypeOf(CanonicalChoice_Ch2{}),
+		30: reflect.TypeOf(CanonicalChoice_Ch3{}),
+		40: reflect.TypeOf(CanonicalChoice_Ch4{}),
+		50: reflect.TypeOf(CanonicalChoice_Ch5{}),
+		60: reflect.TypeOf(CanonicalChoice_Ch6{}),
 	},
 }

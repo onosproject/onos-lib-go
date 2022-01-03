@@ -28,6 +28,10 @@ type perRawBitData struct {
 	bitsOffset uint
 }
 
+// Assuming that UNIQUE ID is being treated as INTEGER
+// By default, we don't know if UNIQUE items are present in ASN.1 definition
+var unique int64 = -1
+
 func perRawBitLog(numBits uint64, byteLen int, bitsOffset uint, value interface{}) string {
 	if reflect.TypeOf(value).Kind() == reflect.Uint64 {
 		return fmt.Sprintf("  [PER put %2d bits, byteLen(after): %d, bitsOffset(after): %d, value: 0x%0x]",
@@ -606,23 +610,38 @@ func (pd *perRawBitData) appendNormallySmallNonNegativeWholeNumber(value uint64)
 
 // Canonical CHOICE index is literally number of bytes which are following after current byte. Could be re-used as a checksum.
 // In fact, we don't even need to know about the structure in a CHOICE option, but it would be good to check it (especially for the decoding).
-func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, v reflect.Value, params fieldParameters) error {
+func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, canonicalChoiceMap map[int64]reflect.Type, v reflect.Value, params fieldParameters) error {
 
-	// ToDo - check encoded CHOICE is a correct one (make use of "unique" flag)
-	//choiceOption := v.Elem().Field(0).Elem().Type().Name()
-	//log.Debugf("\n\nSearching for %v in a map -- %v --\n", choiceOption, v.Elem().Type().Name())
+	if unique == -1 {
+		return fmt.Errorf("CHOICE index in canonical ordering for %v was not passed, please check encoding schema", v.Type())
+	}
+	log.Debugf("UNIQUE index is %v", unique)
+
+	// Verifying that this CHOICE option exists in a CanonicalChoiceMap
+	val, ok := canonicalChoiceMap[unique]
+	if !ok {
+		return errors.NewInvalid("Incorrect key (%v) in CanonicalChoiceMap", unique)
+	}
+
+	//Now comparing obtained CHOICE option with actually passed CHOICE option
+	if val.Name() != v.Elem().Type().Name() {
+		return errors.NewInvalid("UNIQUE ID (%v) doesn't correspond to it's choice option (%v), got %v", unique, canonicalChoiceMap[unique].Name(), v.Elem().Type().Name())
+	}
+
+	// Verification of correct CHOICE option was done, now setting unique variable back to -1 and waiting for the other CHOICE to come
+	unique = -1
 
 	// aligning bits first - necessary to encode in full byte
 	pd.appendAlignBits()
 
 	// ToDo - find workaround in logging
-	log.SetLevel(log.Info)
+	//log.SetLevel(log.Info)
 	threadedBytes := &perRawBitData{[]byte(""), 0}
 	if err := threadedBytes.makeField(v, params); err != nil {
 		return err
 	}
 	// ToDo - find workaround in logging
-	log.SetLevel(log.Info)
+	//log.SetLevel(log.Debug)
 
 	// encoding the number of upcoming bytes
 	if err := pd.appendNormallySmallNonNegativeWholeNumber(uint64(len(threadedBytes.bytes))); err != nil {
@@ -741,6 +760,9 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		if err := pd.appendInteger(v.Int(), params.valueExtensible, params.valueLowerBound, params.valueUpperBound); err != nil {
 			return err
 		}
+		if params.unique && v.Int() > 0 {
+			unique = v.Int()
+		}
 		if params.align {
 			pd.appendAlignBits()
 		}
@@ -748,7 +770,6 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 
 	case reflect.Struct:
 
-		var unique int64
 		structType := fieldType
 		var structParams []fieldParameters
 		var optionalCount uint
@@ -774,7 +795,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			tempParams := parseFieldParameters(structType.Field(i).Tag.Get("aper"))
 			if tempParams.unique {
 				unique = v.Field(i).Int()
-				log.Debugf("\n\nUnique was found, it is %v\nunique is %v\n", reflect.ValueOf(v.Field(i)), unique)
+				log.Debugf("Unique of type %v was found - it is %v", reflect.ValueOf(v.Field(i)), unique)
 			}
 			choiceType = structType.Field(i).Tag.Get("protobuf_oneof")
 			if choiceType == "" {
@@ -866,7 +887,11 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				if params.canonicalOrder {
 					tempParams := structParams[fieldIdx]
 					tempParams.valueExtensible = false
-					if err := pd.appendCanonicalChoiceIndex(unique, reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
+					canonicalChoiceMap, ok := CanonicalChoiceMap[choiceType]
+					if !ok {
+						return errors.NewInvalid("Expected a (canonical) choice map with %s", choiceType)
+					}
+					if err := pd.appendCanonicalChoiceIndex(unique, canonicalChoiceMap, reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
 						return err
 					}
 				} else {

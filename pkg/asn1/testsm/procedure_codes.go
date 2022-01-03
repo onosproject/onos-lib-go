@@ -22,12 +22,12 @@ package testsm
 type CanonicalChoiceID int32
 
 const (
-	CanonicalChoiceIDSampleOctetString         CanonicalChoiceID = 1
-	CanonicalChoiceIDSampleConstrainedInteger  CanonicalChoiceID = 2
-	CanonicalChoiceIDSampleBitString           CanonicalChoiceID = 3
-	CanonicalChoiceIDTestListExtensible1       CanonicalChoiceID = 4
-	CanonicalChoiceIDItem                      CanonicalChoiceID = 5
-	CanonicalChoiceIDSampleNestedE2apPduChoice CanonicalChoiceID = 6
+	CanonicalChoiceIDSampleOctetString         CanonicalChoiceID = 10
+	CanonicalChoiceIDSampleConstrainedInteger  CanonicalChoiceID = 20
+	CanonicalChoiceIDSampleBitString           CanonicalChoiceID = 30
+	CanonicalChoiceIDTestListExtensible1       CanonicalChoiceID = 40
+	CanonicalChoiceIDItem                      CanonicalChoiceID = 50
+	CanonicalChoiceIDSampleNestedE2apPduChoice CanonicalChoiceID = 60
 )
 
 // CanonicalNestedChoiceID - should be generated with protoc-gen-cgo.
@@ -35,8 +35,8 @@ const (
 type CanonicalNestedChoiceID int32
 
 const (
-	CanonicalNestedChoiceIDSampleOctetString        CanonicalNestedChoiceID = 1
-	CanonicalNestedChoiceIDSampleConstrainedInteger CanonicalNestedChoiceID = 2
-	CanonicalNestedChoiceIDSampleBitString          CanonicalNestedChoiceID = 3
-	CanonicalNestedChoiceIDTestListExtensible1      CanonicalNestedChoiceID = 4
+	CanonicalNestedChoiceIDSampleOctetString        CanonicalNestedChoiceID = 11
+	CanonicalNestedChoiceIDSampleConstrainedInteger CanonicalNestedChoiceID = 21
+	CanonicalNestedChoiceIDSampleBitString          CanonicalNestedChoiceID = 31
+	CanonicalNestedChoiceIDTestListExtensible1      CanonicalNestedChoiceID = 41
 )
