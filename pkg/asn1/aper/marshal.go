@@ -627,7 +627,7 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, canonicalChoic
 		return errors.NewInvalid("UNIQUE ID (%v) doesn't correspond to it's choice option (%v), got %v", unique, canonicalChoiceMap[unique].Name(), v.Elem().Type().Name())
 	}
 
-	// Verification of correct CHOICE option was done, now setting unique variable to -1 and waiting for the other CHOICE to come
+	// Verification of correct CHOICE option was done, now setting unique variable back to -1 and waiting for the other CHOICE to come
 	unique = -1
 
 	// aligning bits first - necessary to encode in full byte

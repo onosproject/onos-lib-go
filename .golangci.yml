@@ -35,3 +35,6 @@ issues:
     - path: pkg/asn1/testsm/procedure_codes.go
       linters:
         - revive
+    - path: pkg/asn1/aper/marshal.go
+      linters:
+        - ineffassign
