@@ -119,7 +119,7 @@ func Test_CanonicalNestedChoice(t *testing.T) {
 		assert.NilError(t, err)
 		assert.Assert(t, result != nil)
 		assert.Equal(t, msg.String(), result.String())
-		//t.Logf("Decoded messsage is\n%v", result)
+		//t.Logf("Decoded message is\n%v", result)
 	}
 }
 

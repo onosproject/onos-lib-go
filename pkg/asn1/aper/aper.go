@@ -698,6 +698,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 	// (canonicalOrder flag is being set one level above than for regular choice)
 	if params.canonicalOrder {
 		canonicalOrdering = true
+		log.Debugf("Setting canonicalOrdering flag to true. Next CHOICE is expected to be in canonical ordering")
 	}
 
 	// We deal with the structures defined in this package first.

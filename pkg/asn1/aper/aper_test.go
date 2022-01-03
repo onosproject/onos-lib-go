@@ -37,4 +37,13 @@ func Test_getCanonicalChoiceIndexError(t *testing.T) {
 
 	err2 := pd2.getCanonicalChoiceIndex()
 	assert.EqualError(t, err2, "Checksum didn't pass. Expecting 15 bytes, but have 0 bytes to decode")
+
+	pd3 := perBitData{
+		bytes:      []byte{0x40, 0x7F, 0x00, 0x00, 0x00},
+		byteOffset: 0,
+		bitsOffset: 2,
+	}
+
+	err3 := pd3.getCanonicalChoiceIndex()
+	assert.EqualError(t, err3, "Checksum didn't pass. Expecting 127 bytes, but have 3 bytes to decode")
 }

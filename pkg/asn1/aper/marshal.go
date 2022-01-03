@@ -889,7 +889,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 					tempParams.valueExtensible = false
 					canonicalChoiceMap, ok := CanonicalChoiceMap[choiceType]
 					if !ok {
-						return errors.NewInvalid("Expected a choice map with %s", choiceType)
+						return errors.NewInvalid("Expected a (canonical) choice map with %s", choiceType)
 					}
 					if err := pd.appendCanonicalChoiceIndex(unique, canonicalChoiceMap, reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
 						return err
