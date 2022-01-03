@@ -617,18 +617,20 @@ func (pd *perBitData) getCanonicalChoiceIndex() error {
 		if err != nil {
 			return err
 		}
-		if numBytes != uint64(len(pd.bytes[pd.byteOffset:])) {
-			return errors.NewInvalid("Checksum didn't pass. Expecting %v bytes, but have %v bytes to decode", numBytes, len(pd.bytes[pd.byteOffset:]))
-		}
+		//ToDo - valid only when Canonical CHOICE is the last part of the message
+		//if numBytes != uint64(len(pd.bytes[pd.byteOffset:])) {
+		//	return errors.NewInvalid("Checksum didn't pass. Expecting %v bytes, but have %v bytes to decode", numBytes, len(pd.bytes[pd.byteOffset:]))
+		//}
 		log.Debugf("Decoding %v bytes", numBytes)
 	} else if ext == 1 {
 		numBytes, err := pd.getBitsValue(15)
 		if err != nil {
 			return err
 		}
-		if numBytes != uint64(len(pd.bytes[pd.byteOffset:])) {
-			return errors.NewInvalid("Checksum didn't pass. Expecting %v bytes, but have %v bytes to decode", numBytes, len(pd.bytes[pd.byteOffset:]))
-		}
+		//ToDo - valid only when Canonical CHOICE is the last part of the message
+		//if numBytes != uint64(len(pd.bytes[pd.byteOffset:])) {
+		//	return errors.NewInvalid("Checksum didn't pass. Expecting %v bytes, but have %v bytes to decode", numBytes, len(pd.bytes[pd.byteOffset:]))
+		//}
 		log.Debugf("Decoding %v bytes", numBytes)
 	}
 
