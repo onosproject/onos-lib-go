@@ -635,13 +635,13 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, canonicalChoic
 	pd.appendAlignBits()
 
 	// ToDo - find workaround in logging
-	log.SetLevel(log.Info)
+	//log.SetLevel(log.Info)
 	threadedBytes := &perRawBitData{[]byte(""), 0}
 	if err := threadedBytes.makeField(v, params); err != nil {
 		return err
 	}
 	// ToDo - find workaround in logging
-	log.SetLevel(log.Debug)
+	//log.SetLevel(log.Debug)
 
 	// encoding the number of upcoming bytes
 	if err := pd.appendNormallySmallNonNegativeWholeNumber(uint64(len(threadedBytes.bytes))); err != nil {
