@@ -29,6 +29,9 @@ func init() {
 // ChoiceMap - a global map of choices - specific to the Protobuf being handled
 var ChoiceMap = map[string]map[int]reflect.Type{}
 
+// CanonicalChoiceMap - a global map of choices in canonical ordering - specific to the Protobuf being handled
+var CanonicalChoiceMap = map[string]map[int64]reflect.Type{}
+
 type perBitData struct {
 	bytes      []byte
 	byteOffset uint64

@@ -102,6 +102,7 @@ func Test_CanonicalNestedChoice(t *testing.T) {
 
 	// Satisfying a ChoiceMap constraint
 	aper.ChoiceMap = Choicemap
+	aper.CanonicalChoiceMap = CanonicalChoicemap
 
 	for i := 1; i <= 4; i++ {
 
@@ -119,4 +120,41 @@ func Test_CanonicalNestedChoice(t *testing.T) {
 		//assert.NotNil(t, result)
 		//assert.Equal(t, t, msg, result)
 	}
+}
+
+func Test_CanonicalNestedChoiceIncorrectMapping(t *testing.T) {
+
+	// Satisfying a ChoiceMap constraint
+	aper.ChoiceMap = Choicemap
+	aper.CanonicalChoiceMap = CanonicalChoicemap
+
+	msg1 := &SampleNestedE2ApPduChoice{
+		Id:          12,
+		Criticality: 1,
+		Ch: &CanonicalNestedChoice{
+			CanonicalNestedChoice: &CanonicalNestedChoice_Ch1{
+				Ch1: &SampleOctetString{
+					Value: []byte{0x23, 0x64, 0x81, 0x37},
+				},
+			},
+		},
+	}
+
+	_, err := aper.Marshal(msg1)
+	assert.ErrorContains(t, err, "Incorrect key (12) in CanonicalChoiceMap")
+
+	msg2 := &SampleNestedE2ApPduChoice{
+		Id:          21,
+		Criticality: 1,
+		Ch: &CanonicalNestedChoice{
+			CanonicalNestedChoice: &CanonicalNestedChoice_Ch1{
+				Ch1: &SampleOctetString{
+					Value: []byte{0x23, 0x64, 0x81, 0x37},
+				},
+			},
+		},
+	}
+
+	_, err = aper.Marshal(msg2)
+	assert.ErrorContains(t, err, "UNIQUE ID (21) doesn't correspond to it's choice option (CanonicalNestedChoice_Ch2), got CanonicalNestedChoice_Ch1")
 }
