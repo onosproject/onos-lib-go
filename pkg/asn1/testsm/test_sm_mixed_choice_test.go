@@ -25,6 +25,7 @@ func Test_MixedChoice(t *testing.T) {
 
 	// Satisfying a ChoiceMap constraint
 	aper.ChoiceMap = Choicemap
+	aper.CanonicalChoiceMap = CanonicalChoicemap
 
 	msg1 := &MixedChoice{
 		MixedChoice: &MixedChoice_Ch1{

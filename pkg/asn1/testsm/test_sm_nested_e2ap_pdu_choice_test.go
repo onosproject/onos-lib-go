@@ -104,7 +104,7 @@ func Test_CanonicalNestedChoice(t *testing.T) {
 	aper.ChoiceMap = Choicemap
 	aper.CanonicalChoiceMap = CanonicalChoicemap
 
-	for i := 1; i <= 4; i++ {
+	for i := 1; i <= 5; i++ {
 
 		msg := createSampleNestedE2ApPduChoice(i)
 
@@ -114,11 +114,12 @@ func Test_CanonicalNestedChoice(t *testing.T) {
 		t.Logf("APER \n%s", hex.Dump(aperBytes))
 
 		// Now decode the bytes and compare messages
-		//result := &SampleNestedE2ApPduChoice{}
-		//err = aper.Unmarshal(aperBytes, result)
-		//assert.NoError(t, err)
-		//assert.NotNil(t, result)
-		//assert.Equal(t, t, msg, result)
+		result := &SampleNestedE2ApPduChoice{}
+		err = aper.Unmarshal(aperBytes, result)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, msg.String(), result.String())
+		//t.Logf("Decoded messsage is\n%v", result)
 	}
 }
 

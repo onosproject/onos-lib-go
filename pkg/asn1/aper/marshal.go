@@ -28,7 +28,8 @@ type perRawBitData struct {
 	bitsOffset uint
 }
 
-// By default we don't know if UNIQUE items are present in ASN.1 definition
+// Assuming that UNIQUE ID is being treated as INTEGER
+// By default, we don't know if UNIQUE items are present in ASN.1 definition
 var unique int64 = -1
 
 func perRawBitLog(numBits uint64, byteLen int, bitsOffset uint, value interface{}) string {
@@ -697,9 +698,6 @@ func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters)
 }
 
 func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) error {
-
-	// ToDo - remove once all testing is done
-	log.SetLevel(log.Debug)
 
 	//log.Debugf("Current bit offset is %v", pd.bitsOffset)
 	//if pd.bitsOffset != 0 {
