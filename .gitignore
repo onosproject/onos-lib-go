@@ -20,3 +20,7 @@
 *coverage*.xml
 *-output.out
 
+# build tools
+build/build-tools
+
+
