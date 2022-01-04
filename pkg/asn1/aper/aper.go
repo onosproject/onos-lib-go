@@ -23,7 +23,7 @@ import (
 )
 
 func init() {
-	log.SetLevel(log.Info)
+	log.SetLevel(log.Debug)
 }
 
 // ChoiceMap - a global map of choices - specific to the Protobuf being handled
@@ -585,17 +585,55 @@ func (pd *perBitData) parseSequenceOf(sizeExtensed bool, params fieldParameters,
 	return sliceContent, nil
 }
 
-func (pd *perBitData) getChoiceIndex(extensed bool, upperBound int) (present int, err error) {
-	if extensed {
-		err = fmt.Errorf("unsupported value of CHOICE type is in Extensed")
-	} else if upperBound < 1 {
-		err = fmt.Errorf("the upper bound of CHOICE is missing")
-	} else if rawChoice, err1 := pd.parseConstraintValue(int64(upperBound)); err1 != nil {
-		err = err1
+func (pd *perBitData) getChoiceIndex(extensed bool, fromChoiceExtension bool, numItemsNotInExtension int, choiceCanBeExtended bool, choiceMapLen int) (present int, err error) {
+
+	if choiceCanBeExtended {
+		isExtended := false
+		if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
+			err = err1
+		} else if bitsValue != 0 {
+			isExtended = true
+		}
+
+		if isExtended {
+			upperBound := choiceMapLen - numItemsNotInExtension
+			if upperBound == 1 {
+				present = upperBound + 1
+			} else {
+				if upperBound < 1 {
+					err = fmt.Errorf("the upper bound of CHOICE is missing")
+				} else if rawChoice, err1 := pd.parseConstraintValue(int64(upperBound)); err1 != nil {
+					err = err1
+				} else {
+					present = int(rawChoice) + 1 + numItemsNotInExtension
+				}
+			}
+		} else {
+			if numItemsNotInExtension == 1 {
+				present = 1
+			} else {
+				upperBound := numItemsNotInExtension
+				if upperBound < 1 {
+					err = fmt.Errorf("the upper bound of CHOICE is missing")
+				} else if rawChoice, err1 := pd.parseConstraintValue(int64(numItemsNotInExtension)); err1 != nil {
+					err = err1
+				} else {
+					present = int(rawChoice) + 1
+				}
+			}
+		}
 	} else {
-		log.Debugf("Decoded Present index of CHOICE is %d + 1", rawChoice)
-		present = int(rawChoice) + 1
+		upperBound := choiceMapLen
+		if upperBound < 1 {
+			err = fmt.Errorf("the upper bound of CHOICE is missing")
+		} else if rawChoice, err1 := pd.parseConstraintValue(int64(upperBound)); err1 != nil {
+			err = err1
+		} else {
+			log.Debugf("Decoded Present index of CHOICE is %d + 1", rawChoice)
+			present = int(rawChoice) + 1
+		}
 	}
+
 	return
 }
 
@@ -679,6 +717,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 	}
 	sizeExtensible := false
 	valueExtensible := false
+	var choiceCanBeExtended bool = false
 	if params.sizeExtensible {
 		if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
 			return err1
@@ -694,6 +733,9 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			valueExtensible = true
 		}
 		log.Debugf("Decoded Value Extensive Bit : %t", valueExtensible)
+	} else if params.choiceExt {
+		choiceCanBeExtended = true
+		log.Debugf("CHOICE can be extended")
 	}
 
 	// Setting explicitly flag for canonical ordering here due to the specificity of passing flags to choices
@@ -856,7 +898,29 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				return errors.NewInvalid("Expected a choice map with %s", params.oneofName)
 			}
 			if len(choiceMap) > 1 {
-				choiceIdx, err = pd.getChoiceIndex(params.valueExtensible, len(choiceMap))
+				var ieNotInExt int = 0
+				// Initiating flag which will indicate whether any extension item is presented in CHOICE
+				var flag bool = false
+				// Getting number of items in choice extension, if it exists
+				// Assuming that items in CHOICE are sorted: firstly coming main items, then coming items from extension
+				for j := 1; j <= len(choiceMap); j++ {
+					ie, ok := choiceMap[j]
+					if !ok {
+						return errors.NewInvalid("Expected an index %d in a choice map with %s", j, params.oneofName)
+					}
+					log.Debugf("\n\n Found %v item\n", j)
+					itemParams := parseFieldParameters(ie.Field(0).Tag.Get("aper"))
+					if itemParams.fromChoiceExt {
+						flag = true
+						ieNotInExt = j - 1
+						break
+					}
+				}
+				// When no items in extensions are found
+				if !flag {
+					ieNotInExt = len(choiceMap)
+				}
+				choiceIdx, err = pd.getChoiceIndex(params.valueExtensible, params.fromChoiceExt, ieNotInExt, choiceCanBeExtended, len(choiceMap))
 				if err != nil {
 					return err
 				}
@@ -874,16 +938,36 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				log.Debugf("type is %s", choiceType.String())
 			} else {
 				// treating the case when there is only single option
-				choiceType, ok := choiceMap[1]
-				if !ok {
-					return errors.NewInvalid("Expected choice map %s to have index %d", params.oneofName, 1)
-				}
-				choiceStruct = reflect.New(choiceType)
-				if v.CanSet() {
-					v.Set(choiceStruct)
-				}
+				// Firstly checking extension bit, if it is defined in the encoding schema
+				if choiceCanBeExtended {
+					if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
+						err = err1
+					} else if bitsValue != 0 {
+						return errors.NewInvalid("unsupported value of CHOICE type is in Extensed was found. It's not possible to decode it without knowing it")
+					}
+					choiceType, ok := choiceMap[1]
+					if !ok {
+						return errors.NewInvalid("Expected choice map %s to have index %d", params.oneofName, 1)
+					}
+					choiceStruct = reflect.New(choiceType)
+					if v.CanSet() {
+						v.Set(choiceStruct)
+					}
 
-				log.Debugf("type is %s", choiceType.String())
+					log.Debugf("type is %s", choiceType.String())
+
+				} else {
+					choiceType, ok := choiceMap[1]
+					if !ok {
+						return errors.NewInvalid("Expected choice map %s to have index %d", params.oneofName, 1)
+					}
+					choiceStruct = reflect.New(choiceType)
+					if v.CanSet() {
+						v.Set(choiceStruct)
+					}
+
+					log.Debugf("type is %s", choiceType.String())
+				}
 			}
 		}
 

@@ -58,6 +58,12 @@ var Choicemap = map[string]map[int]reflect.Type{
 		1: reflect.TypeOf(MixedChoice_Ch1{}),
 		2: reflect.TypeOf(MixedChoice_Ch2{}),
 	},
+	"choice_extended": {
+		1: reflect.TypeOf(ChoiceExtended_ChoiceExtendedA{}),
+		2: reflect.TypeOf(ChoiceExtended_ChoiceExtendedB{}),
+		3: reflect.TypeOf(ChoiceExtended_ChoiceExtendedC{}),
+		4: reflect.TypeOf(ChoiceExtended_ChoiceExtendedD{}),
+	},
 }
 
 // CanonicalChoicemap - Should be generated with protoc-gen-choice from proto or created by hand (necessary to understand how to point to correct choice)
