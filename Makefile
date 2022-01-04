@@ -5,6 +5,10 @@ export GO111MODULE=on
 
 ONOS_PROTOC_VERSION := v0.6.9
 
+build: # @HELP build the Go binaries and run all validations (default)
+build:
+	go build github.com/onosproject/onos-lib-go/pkg/...
+
 test: # @HELP run the unit tests and source code validation  producing a golang style report
 test: deps license_check linters
 	go test -race github.com/onosproject/onos-lib-go/pkg/...
@@ -12,10 +16,6 @@ test: deps license_check linters
 jenkins-test:  # @HELP run the unit tests and source code validation producing a junit style report for Jenkins
 jenkins-test: build-tools build deps license_check linters
 	TEST_PACKAGES=github.com/onosproject/onos-lib-go/pkg/... ./../build-tools/build/jenkins/make-unit
-
-coverage: # @HELP generate unit test coverage data
-coverage: deps linters license_check
-	# ./build/bin/coveralls-coverage
 
 deps: # @HELP ensure that the required dependencies are in place
 	go build -v ./...
