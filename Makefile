@@ -5,7 +5,7 @@ export GO111MODULE=on
 
 ONOS_PROTOC_VERSION := v0.6.9
 
-build: # @HELP build the Go binaries and run all validations (default)
+build: # @HELP build the Go binaries (default)
 build:
 	go build github.com/onosproject/onos-lib-go/pkg/...
 
@@ -18,7 +18,7 @@ test: build deps license_check linters
 
 jenkins-test:  # @HELP run the unit tests and source code validation producing a junit style report for Jenkins
 jenkins-test: build deps license_check linters
-	TEST_PACKAGES=github.com/onosproject/onos-lib-go/pkg/... ./../build-tools/build/jenkins/make-unit
+	TEST_PACKAGES=github.com/onosproject/onos-lib-go/pkg/... ./build/build-tools/build/jenkins/make-unit
 
 protos: # @HELP compile the protobuf files (using protoc-go Docker)
 	docker run -it -v `pwd`:/go/src/github.com/onosproject/onos-lib-go \
