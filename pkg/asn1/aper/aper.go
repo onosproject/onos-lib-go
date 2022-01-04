@@ -872,6 +872,18 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				}
 
 				log.Debugf("type is %s", choiceType.String())
+			} else {
+				// treating the case when there is only single option
+				choiceType, ok := choiceMap[1]
+				if !ok {
+					return errors.NewInvalid("Expected choice map %s to have index %d", params.oneofName, 1)
+				}
+				choiceStruct = reflect.New(choiceType)
+				if v.CanSet() {
+					v.Set(choiceStruct)
+				}
+
+				log.Debugf("type is %s", choiceType.String())
 			}
 		}
 
