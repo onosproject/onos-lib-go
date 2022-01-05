@@ -805,14 +805,17 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		var optionalCount uint
 		var optionalPresents uint64
 		var choiceType string
-		var choiceCanBeExtended bool = false
+		choiceCanBeExtended = false
+		// ToDo - currently this is an incorrect treatment of possible extensions with structs.
+		// It is only possible to decode extension which is defined in the encoding schema
 		// struct extensive TODO: support extensed type
 		if params.valueExtensible && !params.choiceExt {
 			log.Debugf("Encoding Value Extensive Bit : true")
 			if err := pd.putBitsValue(0, 1); err != nil {
 				return err
 			}
-		} else if params.choiceExt {
+		}
+		if params.choiceExt {
 			choiceCanBeExtended = true
 			log.Debugf("CHOICE can be extended")
 		}
@@ -939,9 +942,9 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 						return errors.NewInvalid("Expected a choice map with %s", choiceType)
 					}
 					if len(choiceMap) > 1 {
-						var ieNotInExt int = 0
+						var ieNotInExt = 0
 						// Initiating flag which will indicate whether any extension item is presented in CHOICE
-						var flag bool = false
+						var flag = false
 						// Getting number of items in choice extension, if it exists
 						// Assuming that items in CHOICE are sorted: firstly coming main items, then coming items from extension
 						for j := 1; j <= len(choiceMap); j++ {

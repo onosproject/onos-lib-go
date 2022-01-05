@@ -23,7 +23,7 @@ import (
 )
 
 func init() {
-	log.SetLevel(log.Debug)
+	log.SetLevel(log.Info)
 }
 
 // ChoiceMap - a global map of choices - specific to the Protobuf being handled
@@ -33,6 +33,7 @@ var ChoiceMap = map[string]map[int]reflect.Type{}
 var CanonicalChoiceMap = map[string]map[int64]reflect.Type{}
 
 var canonicalOrdering = false
+var choiceCanBeExtended = false
 
 type perBitData struct {
 	bytes      []byte
@@ -588,6 +589,9 @@ func (pd *perBitData) parseSequenceOf(sizeExtensed bool, params fieldParameters,
 func (pd *perBitData) getChoiceIndex(extensed bool, fromChoiceExtension bool, numItemsNotInExtension int, choiceCanBeExtended bool, choiceMapLen int) (present int, err error) {
 
 	if choiceCanBeExtended {
+		// This flag has already served for its purpose. Setting it back to its initial value
+		choiceCanBeExtended = false
+
 		isExtended := false
 		if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
 			err = err1
@@ -596,6 +600,7 @@ func (pd *perBitData) getChoiceIndex(extensed bool, fromChoiceExtension bool, nu
 		}
 
 		if isExtended {
+			log.Debugf("Choice is extended. Parsing items from extension")
 			upperBound := choiceMapLen - numItemsNotInExtension
 			if upperBound == 1 {
 				present = upperBound + 1
@@ -609,6 +614,7 @@ func (pd *perBitData) getChoiceIndex(extensed bool, fromChoiceExtension bool, nu
 				}
 			}
 		} else {
+			log.Debugf("Choice is not extended. Parsing main items")
 			if numItemsNotInExtension == 1 {
 				present = 1
 			} else {
@@ -634,7 +640,7 @@ func (pd *perBitData) getChoiceIndex(extensed bool, fromChoiceExtension bool, nu
 		}
 	}
 
-	return
+	return present, err
 }
 
 func (pd *perBitData) getCanonicalChoiceIndex() error {
@@ -717,7 +723,6 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 	}
 	sizeExtensible := false
 	valueExtensible := false
-	var choiceCanBeExtended bool = false
 	if params.sizeExtensible {
 		if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
 			return err1
@@ -726,14 +731,17 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		}
 		log.Debugf("Decoded Size Extensive Bit : %t", sizeExtensible)
 	}
-	if params.valueExtensible && v.Kind() != reflect.Slice {
+	if params.valueExtensible && v.Kind() != reflect.Slice && !params.choiceExt {
 		if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
 			return err1
 		} else if bitsValue != 0 {
 			valueExtensible = true
 		}
 		log.Debugf("Decoded Value Extensive Bit : %t", valueExtensible)
-	} else if params.choiceExt {
+	}
+	if params.choiceExt && v.Kind() != reflect.Slice {
+		// We have to make this variable global. In the decoding we§re parsing parent structure first
+		// and then drilling down to its child.  Once we've drilled down, we don't see previous (local) flag anymore.
 		choiceCanBeExtended = true
 		log.Debugf("CHOICE can be extended")
 	}
@@ -898,9 +906,9 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				return errors.NewInvalid("Expected a choice map with %s", params.oneofName)
 			}
 			if len(choiceMap) > 1 {
-				var ieNotInExt int = 0
+				var ieNotInExt = 0
 				// Initiating flag which will indicate whether any extension item is presented in CHOICE
-				var flag bool = false
+				var flag = false
 				// Getting number of items in choice extension, if it exists
 				// Assuming that items in CHOICE are sorted: firstly coming main items, then coming items from extension
 				for j := 1; j <= len(choiceMap); j++ {
@@ -920,6 +928,12 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				if !flag {
 					ieNotInExt = len(choiceMap)
 				}
+
+				log.Debugf("\n\n ValueExt is %v \n", params.valueExtensible)
+				log.Debugf("\n\n FromChoiceExt is %v \n", params.fromChoiceExt)
+				log.Debugf("\n\n Amount of values which are not in extension is %v\n", ieNotInExt)
+				log.Debugf("\n\n Choice can be extended is %v\n", choiceCanBeExtended)
+
 				choiceIdx, err = pd.getChoiceIndex(params.valueExtensible, params.fromChoiceExt, ieNotInExt, choiceCanBeExtended, len(choiceMap))
 				if err != nil {
 					return err
@@ -941,7 +955,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				// Firstly checking extension bit, if it is defined in the encoding schema
 				if choiceCanBeExtended {
 					if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
-						err = err1
+						return err1
 					} else if bitsValue != 0 {
 						return errors.NewInvalid("unsupported value of CHOICE type is in Extensed was found. It's not possible to decode it without knowing it")
 					}
