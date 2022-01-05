@@ -134,7 +134,7 @@ message TestChoices {
     Choice1 choice1 = 2 [json_name = "choice1"];
     Choice2 choice2 = 3 [json_name = "choice2"];
     Choice3 choice3 = 4 [json_name = "choice3"];
-    // @inject_tag: aper:"valueExt"
+    // @inject_tag: aper:"choiceExt"
     Choice4 choice4 = 5 [json_name = "choice4"];
 };
 
@@ -449,3 +449,18 @@ message MixedChoice {
         SampleConstrainedInteger ch2 = 2;
     }
 }
+
+// {ConstrainedChoice3}
+message ChoiceExtended {
+    // choice from tes_sm.asn1:99
+    oneof choice_extended {
+        // @inject_tag: aper:"choiceIdx:1,valueExt"
+        int32 choice_extended_a = 1 [json_name = "constrainedChoice3A"];
+        // @inject_tag: aper:"choiceIdx:2,valueLB:0,valueUB:15,valueExt"
+        int32 choice_extended_b = 2 [json_name = "constrainedChoice3B"];
+        // @inject_tag: aper:"choiceIdx:3,valueLB:1,valueUB:4294967295,valueExt,fromChoiceExt"
+        int32 choice_extended_c = 3 [json_name = "constrainedChoice3C"];
+        // @inject_tag: aper:"choiceIdx:4,valueLB:1,valueUB:1,valueExt,fromChoiceExt"
+        int32 choice_extended_d = 4 [json_name = "constrainedChoice3D"];
+    }
+};

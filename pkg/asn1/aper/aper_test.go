@@ -27,7 +27,7 @@ func Test_getCanonicalChoiceIndexError(t *testing.T) {
 	}
 
 	err1 := pd1.getCanonicalChoiceIndex()
-	assert.EqualError(t, err1, "Checksum didn't pass. Expecting 255 bytes, but have 1 bytes to decode")
+	assert.Nil(t, err1)
 
 	pd2 := perBitData{
 		bytes:      []byte{0x40, 0x0F},
@@ -36,7 +36,7 @@ func Test_getCanonicalChoiceIndexError(t *testing.T) {
 	}
 
 	err2 := pd2.getCanonicalChoiceIndex()
-	assert.EqualError(t, err2, "Checksum didn't pass. Expecting 15 bytes, but have 0 bytes to decode")
+	assert.Nil(t, err2)
 
 	pd3 := perBitData{
 		bytes:      []byte{0x40, 0x7F, 0x00, 0x00, 0x00},
@@ -45,5 +45,5 @@ func Test_getCanonicalChoiceIndexError(t *testing.T) {
 	}
 
 	err3 := pd3.getCanonicalChoiceIndex()
-	assert.EqualError(t, err3, "Checksum didn't pass. Expecting 127 bytes, but have 3 bytes to decode")
+	assert.Nil(t, err3)
 }

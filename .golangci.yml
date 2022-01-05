@@ -38,3 +38,6 @@ issues:
     - path: pkg/asn1/aper/marshal.go
       linters:
         - ineffassign
+    - path: pkg/asn1/aper/aper.go
+      linters:
+        - ineffassign

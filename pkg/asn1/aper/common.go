@@ -37,6 +37,8 @@ type fieldParameters struct {
 	align               bool   // flag to explicitly align structure
 	unique              bool   // true if item is used as an input for canonical ordering for CHOICE encoding
 	canonicalOrder      bool   // true, if CHOICE is needed to be encoded in canonical ordering
+	fromChoiceExt       bool   // true, if CHOICE item belongs to CHOICE extension
+	choiceExt           bool   // true, if CHOICE can be extended with other items
 }
 
 // Given a tag string with the format specified in the package comment,
@@ -45,6 +47,10 @@ type fieldParameters struct {
 func parseFieldParameters(str string) (params fieldParameters) {
 	for _, part := range strings.Split(str, ",") {
 		switch {
+		case part == "choiceExt":
+			params.choiceExt = true
+		case part == "fromChoiceExt":
+			params.fromChoiceExt = true
 		case part == "align":
 			params.align = true
 		case part == "unique":
