@@ -142,7 +142,7 @@ func Test_CanonicalNestedChoiceIncorrectMapping(t *testing.T) {
 	}
 
 	_, err := aper.Marshal(msg1)
-	assert.ErrorContains(t, err, "Incorrect key (12) in CanonicalChoiceMap")
+	assert.ErrorContains(t, err, "Expected to have key (12) in CanonicalChoiceMap\nmap[11:testsm.CanonicalNestedChoice_Ch1 21:testsm.CanonicalNestedChoice_Ch2 31:testsm.CanonicalNestedChoice_Ch3 41:testsm.CanonicalNestedChoice_Ch4]")
 
 	msg2 := &SampleNestedE2ApPduChoice{
 		Id:          21,

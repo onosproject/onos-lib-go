@@ -916,7 +916,6 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					if !ok {
 						return errors.NewInvalid("Expected an index %d in a choice map with %s", j, params.oneofName)
 					}
-					log.Debugf("\n\n Found %v item\n", j)
 					itemParams := parseFieldParameters(ie.Field(0).Tag.Get("aper"))
 					if itemParams.fromChoiceExt {
 						flag = true
@@ -929,10 +928,10 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					ieNotInExt = len(choiceMap)
 				}
 
-				log.Debugf("\n\n ValueExt is %v \n", params.valueExtensible)
-				log.Debugf("\n\n FromChoiceExt is %v \n", params.fromChoiceExt)
-				log.Debugf("\n\n Amount of values which are not in extension is %v\n", ieNotInExt)
-				log.Debugf("\n\n Choice can be extended is %v\n", choiceCanBeExtended)
+				log.Debugf("ValueExt is %v", params.valueExtensible)
+				log.Debugf("FromChoiceExt is %v", params.fromChoiceExt)
+				log.Debugf("Amount of values which are not in extension is %v", ieNotInExt)
+				log.Debugf("Choice can be extended is %v", choiceCanBeExtended)
 
 				choiceIdx, err = pd.getChoiceIndex(params.valueExtensible, params.fromChoiceExt, ieNotInExt, choiceCanBeExtended, len(choiceMap))
 				if err != nil {
