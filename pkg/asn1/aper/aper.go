@@ -15,6 +15,7 @@
 package aper
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/google/martian/log"
 	"github.com/onosproject/onos-lib-go/api/asn1/v1/asn1"
@@ -1046,6 +1047,9 @@ func Unmarshal(b []byte, value interface{}) error {
 func UnmarshalWithParams(b []byte, value interface{}, params string) error {
 	v := reflect.ValueOf(value).Elem()
 	pd := &perBitData{b, 0, 0}
-	return parseField(v, pd, parseFieldParameters(params))
-
+	err := parseField(v, pd, parseFieldParameters(params))
+	if err != nil {
+		return fmt.Errorf("Decoding failed with error %v\n%v", err, hex.Dump(b))
+	}
+	return nil
 }
