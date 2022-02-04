@@ -101,21 +101,21 @@ func createSampleNestedE2ApPduChoice(i int) *SampleNestedE2ApPduChoice {
 func Test_CanonicalNestedChoice(t *testing.T) {
 
 	// Satisfying a ChoiceMap constraint
-	aper.ChoiceMap = Choicemap
-	aper.CanonicalChoiceMap = CanonicalChoicemap
+	//aper.ChoiceMap = Choicemap
+	//aper.CanonicalChoiceMap = CanonicalChoicemap
 
 	for i := 1; i <= 5; i++ {
 
 		msg := createSampleNestedE2ApPduChoice(i)
 
-		aperBytes, err := aper.Marshal(msg)
+		aperBytes, err := aper.Marshal(msg, Choicemap, CanonicalChoicemap)
 		assert.NilError(t, err)
 		assert.Assert(t, aperBytes != nil)
 		t.Logf("APER \n%s", hex.Dump(aperBytes))
 
 		// Now decode the bytes and compare messages
 		result := &SampleNestedE2ApPduChoice{}
-		err = aper.Unmarshal(aperBytes, result)
+		err = aper.Unmarshal(aperBytes, result, Choicemap, CanonicalChoicemap)
 		assert.NilError(t, err)
 		assert.Assert(t, result != nil)
 		assert.Equal(t, msg.String(), result.String())
@@ -126,8 +126,8 @@ func Test_CanonicalNestedChoice(t *testing.T) {
 func Test_CanonicalNestedChoiceIncorrectMapping(t *testing.T) {
 
 	// Satisfying a ChoiceMap constraint
-	aper.ChoiceMap = Choicemap
-	aper.CanonicalChoiceMap = CanonicalChoicemap
+	//aper.ChoiceMap = Choicemap
+	//aper.CanonicalChoiceMap = CanonicalChoicemap
 
 	msg1 := &SampleNestedE2ApPduChoice{
 		Id:          12,
@@ -141,7 +141,7 @@ func Test_CanonicalNestedChoiceIncorrectMapping(t *testing.T) {
 		},
 	}
 
-	_, err := aper.Marshal(msg1)
+	_, err := aper.Marshal(msg1, Choicemap, CanonicalChoicemap)
 	assert.ErrorContains(t, err, "Expected to have key (12) in CanonicalChoiceMap\nmap[11:testsm.CanonicalNestedChoice_Ch1 21:testsm.CanonicalNestedChoice_Ch2 31:testsm.CanonicalNestedChoice_Ch3 41:testsm.CanonicalNestedChoice_Ch4]")
 
 	msg2 := &SampleNestedE2ApPduChoice{
@@ -156,6 +156,6 @@ func Test_CanonicalNestedChoiceIncorrectMapping(t *testing.T) {
 		},
 	}
 
-	_, err = aper.Marshal(msg2)
+	_, err = aper.Marshal(msg2, Choicemap, CanonicalChoicemap)
 	assert.ErrorContains(t, err, "UNIQUE ID (21) doesn't correspond to it's choice option (CanonicalNestedChoice_Ch2), got CanonicalNestedChoice_Ch1")
 }

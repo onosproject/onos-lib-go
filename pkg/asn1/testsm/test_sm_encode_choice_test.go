@@ -62,7 +62,7 @@ func Test_encodeChoice1(t *testing.T) {
 		0x0a, // Value of Choice 4a int = 10
 	}
 
-	aper, err := aper.Marshal(testChoice1)
+	aper, err := aper.Marshal(testChoice1, Choicemap, CanonicalChoicemap)
 	assert.NoError(t, err)
 	assert.NotNil(t, aper)
 	t.Logf("Choice 1 APER %s", hex.Dump(aper))

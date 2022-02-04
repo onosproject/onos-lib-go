@@ -45,7 +45,7 @@ func Test_TestUnconstrainedRealEncode(t *testing.T) {
 			AttrUcrB: b,
 		}
 		assert.NotNil(t, tc.expected)
-		aper, err := aper.Marshal(test1)
+		aper, err := aper.Marshal(test1, Choicemap, CanonicalChoicemap)
 		assert.Nil(t, aper)
 		assert.EqualError(t, err, "unsupported: Type:float64 Kind:float64")
 	}

@@ -24,13 +24,17 @@ import (
 )
 
 type perRawBitData struct {
-	bytes      []byte
-	bitsOffset uint
+	bytes               []byte
+	bitsOffset          uint
+	choiceMap           map[string]map[int]reflect.Type
+	unique              int64
+	canonicalChoiceMap  map[string]map[int64]reflect.Type
+	choiceCanBeExtended bool
 }
 
 // Assuming that UNIQUE ID is being treated as INTEGER
 // By default, we don't know if UNIQUE items are present in ASN.1 definition
-var unique int64 = -1
+//var unique int64 = -1
 
 func perRawBitLog(numBits uint64, byteLen int, bitsOffset uint, value interface{}) string {
 	if reflect.TypeOf(value).Kind() == reflect.Uint64 {
@@ -563,7 +567,7 @@ func (pd *perRawBitData) parseSequenceOf(v reflect.Value, params fieldParameters
 	return nil
 }
 
-func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, fromChoiceExtension bool, numItemsNotInExtension int, choiceCanBeExtended bool, choiceMapLen int) error {
+func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, fromChoiceExtension bool, numItemsNotInExtension int, choiceMapLen int) error {
 	log.Debugf("Current present is %v", present)
 	if fromChoiceExtension {
 		// putting an extensive bit first
@@ -584,7 +588,7 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, fromChoi
 			}
 		}
 	} else {
-		if choiceCanBeExtended {
+		if pd.choiceCanBeExtended {
 			if err := pd.putBitsValue(0, 1); err != nil {
 				return err
 			}
@@ -640,33 +644,33 @@ func (pd *perRawBitData) appendNormallySmallNonNegativeWholeNumber(value uint64)
 
 // Canonical CHOICE index is literally number of bytes which are following after current byte. Could be re-used as a checksum.
 // In fact, we don't even need to know about the structure in a CHOICE option, but it would be good to check it (especially for the decoding).
-func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, canonicalChoiceMap map[int64]reflect.Type, v reflect.Value, params fieldParameters) error {
+func (pd *perRawBitData) appendCanonicalChoiceIndex(canonicalChoiceMap map[int64]reflect.Type, v reflect.Value, params fieldParameters) error {
 
-	if unique == -1 {
+	if pd.unique == -1 {
 		return fmt.Errorf("CHOICE index in canonical ordering for %v was not passed, please check encoding schema", v.Type())
 	}
-	log.Debugf("UNIQUE index is %v", unique)
+	log.Debugf("UNIQUE index is %v", pd.unique)
 
 	// Verifying that this CHOICE option exists in a CanonicalChoiceMap
-	val, ok := canonicalChoiceMap[unique]
+	val, ok := canonicalChoiceMap[pd.unique]
 	if !ok {
-		return errors.NewInvalid("Expected to have key (%v) in CanonicalChoiceMap\n%v", unique, canonicalChoiceMap)
+		return errors.NewInvalid("Expected to have key (%v) in CanonicalChoiceMap\n%v", pd.unique, canonicalChoiceMap)
 	}
 
 	//Now comparing obtained CHOICE option with actually passed CHOICE option
 	if val.Name() != v.Elem().Type().Name() {
-		return errors.NewInvalid("UNIQUE ID (%v) doesn't correspond to it's choice option (%v), got %v", unique, canonicalChoiceMap[unique].Name(), v.Elem().Type().Name())
+		return errors.NewInvalid("UNIQUE ID (%v) doesn't correspond to it's choice option (%v), got %v", pd.unique, canonicalChoiceMap[pd.unique].Name(), v.Elem().Type().Name())
 	}
 
 	// Verification of correct CHOICE option was done, now setting unique variable back to -1 and waiting for the other CHOICE to come
-	unique = -1
+	pd.unique = -1
 
 	// aligning bits first - necessary to encode in full byte
 	pd.appendAlignBits()
 
 	// ToDo - find workaround in logging
 	//log.SetLevel(log.Info)
-	threadedBytes := &perRawBitData{[]byte(""), 0}
+	threadedBytes := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false}
 	if err := threadedBytes.makeField(v, params); err != nil {
 		return err
 	}
@@ -683,7 +687,7 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(unique int64, canonicalChoic
 
 func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters) error {
 
-	pdOpenType := &perRawBitData{[]byte(""), 0}
+	pdOpenType := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false}
 	log.Debugf("Encoding OpenType %s to temp RawData", v.Type().String())
 	if err := pdOpenType.makeField(v, params); err != nil {
 		return err
@@ -791,7 +795,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			return err
 		}
 		if params.unique && v.Int() > 0 {
-			unique = v.Int()
+			pd.unique = v.Int()
 		}
 		if params.align {
 			pd.appendAlignBits()
@@ -805,7 +809,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		var optionalCount uint
 		var optionalPresents uint64
 		var choiceType string
-		choiceCanBeExtended = false
+		pd.choiceCanBeExtended = false
 		// ToDo - currently this is an incorrect treatment of possible extensions with structs.
 		// It is only possible to decode extension which is defined in the encoding schema
 		// struct extensive TODO: support extensed type
@@ -816,7 +820,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			}
 		}
 		if params.choiceExt {
-			choiceCanBeExtended = true
+			pd.choiceCanBeExtended = true
 			log.Debugf("CHOICE can be extended")
 		}
 		//sequenceType = structType.NumField() <= 0 || structType.Field(0).Name != "Present"
@@ -831,8 +835,8 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			log.Debugf("Handling %s", structType.Field(i).Name)
 			tempParams := parseFieldParameters(structType.Field(i).Tag.Get("aper"))
 			if tempParams.unique {
-				unique = v.Field(i).Int()
-				log.Debugf("Unique of type %v was found - it is %v", reflect.ValueOf(v.Field(i)), unique)
+				pd.unique = v.Field(i).Int()
+				log.Debugf("Unique of type %v was found - it is %v", reflect.ValueOf(v.Field(i)), pd.unique)
 			}
 			choiceType = structType.Field(i).Tag.Get("protobuf_oneof")
 			if choiceType == "" {
@@ -924,11 +928,11 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				if params.canonicalOrder {
 					tempParams := structParams[fieldIdx]
 					tempParams.valueExtensible = false
-					canonicalChoiceMap, ok := CanonicalChoiceMap[choiceType]
+					canonicalChoices, ok := pd.canonicalChoiceMap[choiceType]
 					if !ok {
 						return errors.NewInvalid("Expected a (canonical) choice map with %s", choiceType)
 					}
-					if err := pd.appendCanonicalChoiceIndex(unique, canonicalChoiceMap, reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
+					if err := pd.appendCanonicalChoiceIndex(canonicalChoices, reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
 						return err
 					}
 				} else {
@@ -936,19 +940,19 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 						return fmt.Errorf("choice Index is nil at Field %v, Index %v.\n Make sure all aper tags are injected in your proto", v.Field(i).Type(), fieldIdx)
 					}
 					present := int(*structParams[fieldIdx].choiceIndex)
-					choiceMap, ok := ChoiceMap[choiceType]
+					choices, ok := pd.choiceMap[choiceType]
 					//When there is only one item in the choice, you don't need to encode choice index
 					if !ok {
 						return errors.NewInvalid("Expected a choice map with %s", choiceType)
 					}
-					if len(choiceMap) > 1 {
+					if len(choices) > 1 {
 						var ieNotInExt = 0
 						// Initiating flag which will indicate whether any extension item is presented in CHOICE
 						var flag = false
 						// Getting number of items in choice extension, if it exists
 						// Assuming that items in CHOICE are sorted: firstly coming main items, then coming items from extension
-						for j := 1; j <= len(choiceMap); j++ {
-							ie, ok := choiceMap[j]
+						for j := 1; j <= len(choices); j++ {
+							ie, ok := choices[j]
 							if !ok {
 								return errors.NewInvalid("Expected an index %d in a choice map with %s", j, choiceType)
 							}
@@ -961,19 +965,19 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 						}
 						// When no items in extensions are found
 						if !flag {
-							ieNotInExt = len(choiceMap)
+							ieNotInExt = len(choices)
 						}
 
 						log.Debugf("ValueExt is %v", structParams[fieldIdx].valueExtensible)
 						log.Debugf("FromChoiceExt is %v", structParams[fieldIdx].fromChoiceExt)
 						log.Debugf("Amount of values which are not in extension is %v", ieNotInExt)
-						log.Debugf("Choice can be extended is %v", choiceCanBeExtended)
-						if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, structParams[fieldIdx].fromChoiceExt, ieNotInExt, choiceCanBeExtended, len(choiceMap)); err != nil {
+						log.Debugf("Choice can be extended is %v", pd.choiceCanBeExtended)
+						if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, structParams[fieldIdx].fromChoiceExt, ieNotInExt, len(choices)); err != nil {
 							return err
 						}
 					} else {
 						// ToDo - test if choice can be extensed or not and put and Extensed bit
-						if choiceCanBeExtended {
+						if pd.choiceCanBeExtended {
 							log.Debugf("CHOICE can be potentially extensed, putting 0 bit to indicate that")
 							if err := pd.putBitsValue(0, 1); err != nil {
 								return err
@@ -1013,14 +1017,14 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 }
 
 // Marshal returns the ASN.1 encoding of val.
-func Marshal(val interface{}) ([]byte, error) {
-	return MarshalWithParams(val, "")
+func Marshal(val interface{}, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) ([]byte, error) {
+	return MarshalWithParams(val, "", choiceMap, canonicalChoiceMap)
 }
 
 // MarshalWithParams allows field parameters to be specified for the
 // top-level element. The form of the params is the same as the field tags.
-func MarshalWithParams(val interface{}, params string) ([]byte, error) {
-	pd := &perRawBitData{[]byte(""), 0}
+func MarshalWithParams(val interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) ([]byte, error) {
+	pd := &perRawBitData{[]byte(""), 0, choiceMap, -1, canonicalChoiceMap, false}
 	err := pd.makeField(reflect.ValueOf(val), parseFieldParameters(params))
 	if err != nil {
 		return nil, err

@@ -26,7 +26,7 @@ import (
 func TestMain(m *testing.M) {
 	log := logging.GetLogger("asn1")
 	log.SetLevel(logging.DebugLevel)
-	aper.ChoiceMap = Choicemap // from choiceOptions.go - generated with protoc-gen-choice
+	//aper.ChoiceMap = Choicemap // from choiceOptions.go - generated with protoc-gen-choice
 	os.Exit(m.Run())
 }
 
@@ -59,7 +59,7 @@ func Test_TestUnconstrainedIntEncode(t *testing.T) {
 			AttrUciB: b,
 		}
 
-		aper, err := aper.Marshal(test1)
+		aper, err := aper.Marshal(test1, Choicemap, CanonicalChoicemap)
 		assert.NoError(t, err)
 		assert.NotNil(t, aper)
 		t.Logf("%d %d gives APER %s", a, b, hex.Dump(aper))
@@ -149,7 +149,7 @@ func Test_TestConstrainedIntEncode(t *testing.T) {
 			AttrCiG: g,
 		}
 
-		aper, err := aper.Marshal(test1)
+		aper, err := aper.Marshal(test1, Choicemap, CanonicalChoicemap)
 		assert.NoError(t, err)
 		assert.NotNil(t, aper)
 		t.Logf("%d %d %d %d %d %d gives APER %s", a, b, c, d, e, f, hex.Dump(aper))

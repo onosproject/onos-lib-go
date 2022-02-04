@@ -100,7 +100,7 @@ func Test_BitString(t *testing.T) {
 			AttrBs6: attrBs6,
 			AttrBs7: attrBs7,
 		}
-		aper, err := aper.Marshal(tbs)
+		aper, err := aper.Marshal(tbs, Choicemap, CanonicalChoicemap)
 		assert.NoError(t, err)
 		assert.NotNil(t, aper)
 		t.Logf("APER \n%s", hex.Dump(aper))
