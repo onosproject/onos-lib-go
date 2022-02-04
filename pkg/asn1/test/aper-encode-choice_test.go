@@ -48,7 +48,7 @@ func Test_encodeChoice1(t *testing.T) {
 		0x74, 0x65, 0x73, 0x74, 0x33, // Value of Choice 3b string = test3
 	}
 
-	aper, err := aper.Marshal(testChoice1)
+	aper, err := aper.Marshal(testChoice1, Choicemap, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, aper)
 	t.Logf("Choice 1 APER %s", hex.Dump(aper))

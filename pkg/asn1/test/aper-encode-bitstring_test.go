@@ -86,7 +86,7 @@ func Test_BitString(t *testing.T) {
 			AttrBs4: attrBs4,
 			AttrBs5: attrBs5,
 		}
-		aper, err := aper.Marshal(tbs)
+		aper, err := aper.Marshal(tbs, nil, nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, aper)
 		t.Logf("%v %v %v gives APER %s", attrBs1, attrBs2, attrBs3, hex.Dump(aper))
