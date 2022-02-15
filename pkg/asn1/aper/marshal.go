@@ -17,7 +17,6 @@ package aper
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/google/martian/log"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"math"
 	"reflect"
