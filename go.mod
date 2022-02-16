@@ -3,7 +3,7 @@ module github.com/onosproject/onos-lib-go
 go 1.16
 
 require (
-	github.com/Shopify/sarama v1.29.1
+	github.com/Shopify/sarama v1.31.1
 	github.com/atomix/atomix-go-framework v0.10.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
@@ -11,7 +11,6 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/mock v1.6.0
-	github.com/google/martian v2.1.0+incompatible
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
@@ -22,9 +21,8 @@ require (
 	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.17.0
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
-	golang.org/x/sys v0.0.0-20211101204403-39c9dd37992c
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e
 	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/square/go-jose.v1 v1.1.2 // indirect
