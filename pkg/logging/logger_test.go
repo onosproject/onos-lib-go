@@ -23,6 +23,7 @@ import (
 
 func TestDefaultLogger(t *testing.T) {
 	logger := GetLogger()
+	assert.Equal(t, "github.com/onosproject/onos-lib-go/pkg/logging", logger.Name())
 	logger.Info("foo: bar")
 	logger.Info("bar: baz")
 	logger.Debug("baz: bar")
