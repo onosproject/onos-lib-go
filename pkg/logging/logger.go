@@ -16,6 +16,7 @@ package logging
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -45,8 +46,37 @@ func configure(config Config) error {
 }
 
 // GetLogger gets a logger by name
+// If no name is provided, the caller's package name will be used if available.
+// If a single name is provided, the ancestry will be determined by splitting the
+// string on backslashes.
+// If multiple names are provided, the set of names defines the logger ancestry.
 func GetLogger(names ...string) Logger {
+	if len(names) == 0 {
+		pkg, ok := getCallerPackage()
+		if !ok {
+			panic("could not retrieve logger package")
+		}
+		names = []string{pkg}
+	}
 	return root.GetLogger(names...)
+}
+
+// getCallerPackage gets the package name of the calling function'ss caller
+func getCallerPackage() (string, bool) {
+	var pkg string
+	pc, _, _, ok := runtime.Caller(2)
+	if !ok {
+		return pkg, false
+	}
+	parts := strings.Split(runtime.FuncForPC(pc).Name(), ".")
+	name := parts[len(parts)-1]
+	if parts[len(parts)-2][0] == '(' {
+		name = parts[len(parts)-2] + "." + name
+		pkg = strings.Join(parts[0:len(parts)-2], ".")
+	} else {
+		pkg = strings.Join(parts[0:len(parts)-1], ".")
+	}
+	return pkg, true
 }
 
 // SetLevel sets the root logger level
