@@ -69,9 +69,7 @@ func getCallerPackage() (string, bool) {
 		return pkg, false
 	}
 	parts := strings.Split(runtime.FuncForPC(pc).Name(), ".")
-	name := parts[len(parts)-1]
 	if parts[len(parts)-2][0] == '(' {
-		name = parts[len(parts)-2] + "." + name
 		pkg = strings.Join(parts[0:len(parts)-2], ".")
 	} else {
 		pkg = strings.Join(parts[0:len(parts)-1], ".")
