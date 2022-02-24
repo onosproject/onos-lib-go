@@ -16,18 +16,19 @@ package retry
 
 import (
 	"context"
+	"io"
+	"sync"
+	"time"
+
 	"github.com/cenkalti/backoff"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"io"
-	"sync"
-	"time"
 )
 
-var log = logging.GetLogger("onos", "grpc", "retry")
+var log = logging.GetLogger()
 
 var defaultOptions = &callOptions{
 	codes: []codes.Code{
