@@ -19,8 +19,9 @@ package northbound
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/onosproject/onos-lib-go/pkg/grpc/auth"
 	"net"
+
+	"github.com/onosproject/onos-lib-go/pkg/grpc/auth"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -32,7 +33,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var log = logging.GetLogger("northbound")
+var log = logging.GetLogger()
 
 // Service provides service-specific registration for grpc services.
 type Service interface {

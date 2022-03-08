@@ -28,7 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var log = logging.GetLogger("onos", "grpc", "retry")
+var log = logging.GetLogger()
 
 var defaultOptions = &callOptions{
 	codes: []codes.Code{

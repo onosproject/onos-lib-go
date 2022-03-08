@@ -17,13 +17,14 @@ package aper
 import (
 	"encoding/hex"
 	"fmt"
+	"reflect"
+
 	"github.com/onosproject/onos-lib-go/api/asn1/v1/asn1"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
-	"reflect"
 )
 
-var log = logging.GetLogger("asn1", "aper")
+var log = logging.GetLogger()
 
 // ChoiceMap - a global map of choices - specific to the Protobuf being handled
 //var ChoiceMap = map[string]map[int]reflect.Type{}

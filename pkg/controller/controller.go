@@ -22,7 +22,7 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 )
 
-var log = logging.GetLogger("controller")
+var log = logging.GetLogger()
 
 const (
 	maxRetryDelayDefault = 5 * time.Second
