@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/atomix/atomix-go-framework/pkg/atomix/logging"
 	"github.com/cenkalti/backoff"
+	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
