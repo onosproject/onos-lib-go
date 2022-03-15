@@ -6,6 +6,7 @@ package errors
 
 import (
 	"fmt"
+
 	atomixerrors "github.com/atomix/atomix-go-framework/pkg/atomix/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -39,6 +40,8 @@ const (
 	Timeout
 	// Internal indicates an unexpected internal error occurred
 	Internal
+	// Aborted indicates a request is aborted
+	Aborted
 )
 
 // TypedError is an typed error
@@ -91,6 +94,8 @@ func Status(err error) *status.Status {
 		return status.New(codes.DeadlineExceeded, typed.Message)
 	case Internal:
 		return status.New(codes.Internal, typed.Message)
+	case Aborted:
+		return status.New(codes.Aborted, typed.Message)
 	default:
 		return status.New(codes.Internal, err.Error())
 	}
@@ -125,6 +130,9 @@ func FromStatus(status *status.Status) error {
 		return NewTimeout(status.Message())
 	case codes.Internal:
 		return NewInternal(status.Message())
+	case codes.Aborted:
+		return NewAborted(status.Message())
+
 	default:
 		return NewUnknown(status.Message())
 	}
@@ -168,6 +176,8 @@ func FromGRPC(err error) error {
 		return New(Timeout, stat.Message())
 	case codes.Internal:
 		return New(Internal, stat.Message())
+	case codes.Aborted:
+		return New(Aborted, stat.Message())
 	default:
 		return New(Unknown, stat.Message())
 	}
@@ -205,6 +215,7 @@ func FromAtomix(err error) error {
 			return New(Timeout, err.Error())
 		case atomixerrors.Internal:
 			return New(Internal, err.Error())
+		// TODO Add aborted case
 		default:
 			return New(Unknown, err.Error())
 		}
@@ -283,6 +294,11 @@ func NewInternal(msg string, args ...interface{}) error {
 	return New(Internal, msg, args...)
 }
 
+// NewAborted returns a new Aborted error
+func NewAborted(msg string, args ...interface{}) error {
+	return New(Aborted, msg, args...)
+}
+
 // TypeOf returns the type of the given error
 func TypeOf(err error) Type {
 	if typed, ok := err.(*TypedError); ok {
@@ -357,4 +373,9 @@ func IsTimeout(err error) bool {
 // IsInternal checks whether the given error is an Internal error
 func IsInternal(err error) bool {
 	return IsType(err, Internal)
+}
+
+// IsAborted checkes whether the given error is an Aborted error
+func IsAborted(err error) bool {
+	return IsType(err, Aborted)
 }
