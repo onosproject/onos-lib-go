@@ -16,11 +16,12 @@ package errors
 
 import (
 	"errors"
+	"testing"
+
 	atomixerrors "github.com/atomix/atomix-go-framework/pkg/atomix/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"testing"
 )
 
 func TestFactories(t *testing.T) {
@@ -48,6 +49,8 @@ func TestFactories(t *testing.T) {
 	assert.Equal(t, "Timeout", NewTimeout("Timeout").Error())
 	assert.Equal(t, Internal, NewInternal("").(*TypedError).Type)
 	assert.Equal(t, "Internal", NewInternal("Internal").Error())
+	assert.Equal(t, Aborted, NewAborted("").(*TypedError).Type)
+	assert.Equal(t, "Aborted", NewAborted("Aborted").Error())
 }
 
 func TestPredicates(t *testing.T) {
@@ -75,6 +78,8 @@ func TestPredicates(t *testing.T) {
 	assert.True(t, IsTimeout(NewTimeout("Timeout")))
 	assert.False(t, IsInternal(errors.New("Internal")))
 	assert.True(t, IsInternal(NewInternal("Internal")))
+	assert.False(t, IsAborted(errors.New("Aborted")))
+	assert.True(t, IsAborted(NewAborted("Aborted")))
 }
 
 func TestErrorToStatus(t *testing.T) {
@@ -104,6 +109,8 @@ func TestErrorToStatus(t *testing.T) {
 	assert.Equal(t, "Timeout", Status(NewTimeout("Timeout")).Message())
 	assert.Equal(t, codes.Internal, Status(NewInternal("")).Code())
 	assert.Equal(t, "Internal", Status(NewInternal("Internal")).Message())
+	assert.Equal(t, codes.Aborted, Status(NewAborted("")).Code())
+	assert.Equal(t, "Aborted", Status(NewAborted("Aborted")).Message())
 }
 
 func TestStatusToError(t *testing.T) {
@@ -132,6 +139,8 @@ func TestStatusToError(t *testing.T) {
 	assert.Equal(t, "DeadlineExceeded", FromStatus(status.New(codes.DeadlineExceeded, "DeadlineExceeded")).Error())
 	assert.True(t, IsInternal(FromStatus(status.New(codes.Internal, ""))))
 	assert.Equal(t, "Internal", FromStatus(status.New(codes.Internal, "Internal")).Error())
+	assert.True(t, IsAborted(FromStatus(status.New(codes.Aborted, ""))))
+	assert.Equal(t, "Aborted", FromStatus(status.New(codes.Aborted, "Aborted")).Error())
 }
 
 func TestGRPCToError(t *testing.T) {
@@ -160,6 +169,8 @@ func TestGRPCToError(t *testing.T) {
 	assert.Equal(t, "DeadlineExceeded", FromGRPC(status.New(codes.DeadlineExceeded, "DeadlineExceeded").Err()).Error())
 	assert.True(t, IsInternal(FromGRPC(status.New(codes.Internal, "").Err())))
 	assert.Equal(t, "Internal", FromGRPC(status.New(codes.Internal, "Internal").Err()).Error())
+	assert.True(t, IsAborted(FromGRPC(status.New(codes.Aborted, "").Err())))
+	assert.Equal(t, "Aborted", FromGRPC(status.New(codes.Aborted, "Aborted").Err()).Error())
 }
 
 func TestAtomixToError(t *testing.T) {
