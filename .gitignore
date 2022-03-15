@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -22,5 +26,6 @@
 
 # build tools
 build/build-tools
+vendor
 
 

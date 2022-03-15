@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2021-present Open Networking Foundation <info@opennetworking.org>
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Free 5GC "aper" project
 
 This library provides encoding and decoding of ASN.1 structs to APER encoding format.

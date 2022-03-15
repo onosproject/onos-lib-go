@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Hierarchical Logging Library Package 
 Package [logging] implements a hierarchical logging package using [Zap] logging library
 that is designed for fast, structured, leveled logging but it does not support 
