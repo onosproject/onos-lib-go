@@ -25,14 +25,15 @@ var log = logging.GetLogger("asn1", "aper")
 //var choiceCanBeExtended = false
 
 type perBitData struct {
-	bytes               []byte
-	byteOffset          uint64
-	bitsOffset          uint
-	choiceMap           map[string]map[int]reflect.Type
-	unique              int64
-	canonicalOrdering   bool
-	canonicalChoiceMap  map[string]map[int64]reflect.Type
-	choiceCanBeExtended bool
+	bytes                 []byte
+	byteOffset            uint64
+	bitsOffset            uint
+	choiceMap             map[string]map[int]reflect.Type
+	unique                int64
+	canonicalOrdering     bool
+	canonicalChoiceMap    map[string]map[int64]reflect.Type
+	choiceCanBeExtended   bool
+	sequenceCanBeExtended bool
 }
 
 func perBitLog(numBits uint64, byteOffset uint64, bitsOffset uint, value interface{}) string {
@@ -790,6 +791,8 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 	case reflect.Struct:
 		structType := fieldType
 		var structParams []fieldParameters
+		pd.sequenceCanBeExtended = false
+		sequenceCanBeExtendedPresence := false
 		var optionalCount uint
 		var optionalPresents uint64
 
@@ -803,11 +806,30 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			fieldIdx++
 			tempParams := parseFieldParameters(structType.Field(i).Tag.Get("aper"))
 			tempParams.oneofName = structType.Field(i).Tag.Get("protobuf_oneof")
+
+			if tempParams.fromValueExt {
+				pd.sequenceCanBeExtended = true
+				log.Debugf("This SEQUENCE %v can be extended", structType.Field(i).Name)
+			}
+
 			// for optional flag
 			if tempParams.optional {
 				optionalCount++
 			}
 			structParams = append(structParams, tempParams)
+		}
+
+		if pd.sequenceCanBeExtended {
+			sequenceExtendedPresenceTmp, err := pd.getBitsValue(1)
+			if err != nil {
+				return err
+			}
+			if sequenceExtendedPresenceTmp == 1 {
+				sequenceCanBeExtendedPresence = true
+				log.Debugf("Item from SEQUENCE extension is present")
+			} else {
+				log.Debugf("Item from SEQUENCE extension is not present")
+			}
 		}
 
 		if optionalCount > 0 {
@@ -834,6 +856,14 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				} else {
 					log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(i).Name, structType)
 				}
+			}
+
+			// ToDo - does it affect something?
+			if structParams[fieldIdx].fromValueExt && sequenceCanBeExtendedPresence {
+				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and present", structType.Field(i).Name, structType)
+			} else {
+				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and not present", structType.Field(i).Name, structType)
+				continue
 			}
 
 			if err := parseField(val.Field(i), pd, structParams[fieldIdx]); err != nil {
@@ -1039,7 +1069,8 @@ func Unmarshal(b []byte, value interface{}, choiceMap map[string]map[int]reflect
 // top-level element. The form of the params is the same as the field tags.
 func UnmarshalWithParams(b []byte, value interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) error {
 	v := reflect.ValueOf(value).Elem()
-	pd := &perBitData{b, 0, 0, choiceMap, -1, false, canonicalChoiceMap, false}
+	// ToDo - sequenceCanBeExtended may cause potential problems
+	pd := &perBitData{b, 0, 0, choiceMap, -1, false, canonicalChoiceMap, false, false}
 	err := parseField(v, pd, parseFieldParameters(params))
 	if err != nil {
 		return fmt.Errorf("Decoding failed with error %v\n%v", err, hex.Dump(b))

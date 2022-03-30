@@ -1,0 +1,94 @@
+package testsm
+
+import (
+	"encoding/hex"
+	"github.com/onosproject/onos-lib-go/pkg/asn1/aper"
+	"gotest.tools/assert"
+	"testing"
+)
+
+func Test_SequenceExtended(t *testing.T) {
+
+	list := &TestList2{
+		Value: make([]*ItemExtensible, 0),
+	}
+	item := &ItemExtensible{
+		Item1: 1234,
+		Item2: []byte{0xaa, 0xbb, 0xcc},
+	}
+	list.Value = append(list.Value, item)
+
+	msg1 := &SequenceExtended{
+		Se1: &SampleConstrainedInteger{
+			Value: 256,
+		},
+		Se2: &TestOctetString{
+			AttrOs1: []byte{0xff, 0xac, 0xbd, 0xef, 0x3d},
+			AttrOs2: []byte{0xff, 0xac},
+			AttrOs3: []byte{0xff, 0xac, 0xbd},
+			AttrOs4: []byte{0xff, 0xac, 0xbd},
+			AttrOs5: []byte{0xff, 0xac, 0xbd},
+			AttrOs6: []byte{0xff, 0xac, 0xbd, 0xef, 0x3d},
+		},
+		Se3: list,
+		Se4: &TestConstrainedInt{
+			AttrCiA: 11,
+			AttrCiB: 256,
+			AttrCiC: 99,
+			AttrCiD: -21,
+			AttrCiE: 20,
+			AttrCiF: 10,
+			AttrCiG: 11,
+		},
+	}
+
+	aperBytes1, err := aper.MarshalWithParams(msg1, "valueExt", Choicemap, CanonicalChoicemap)
+	assert.NilError(t, err)
+	assert.Assert(t, aperBytes1 != nil)
+	t.Logf("APER \n%s", hex.Dump(aperBytes1))
+
+	// Now decode the bytes and compare messages
+	result1 := &SequenceExtended{}
+	err = aper.UnmarshalWithParams(aperBytes1, result1, "valueExt", Choicemap, CanonicalChoicemap)
+	assert.NilError(t, err)
+	assert.Assert(t, result1 != nil)
+	assert.Equal(t, msg1.String(), result1.String())
+	t.Logf("Decoded message is\n%v", result1)
+
+	msg2 := &SequenceExtended{
+		Se1: &SampleConstrainedInteger{
+			Value: 256,
+		},
+		Se2: &TestOctetString{
+			AttrOs1: []byte{0xff, 0xac, 0xbd, 0xef, 0x3d},
+			AttrOs2: []byte{0xff, 0xac},
+			AttrOs3: []byte{0xff, 0xac, 0xbd},
+			AttrOs4: []byte{0xff, 0xac, 0xbd},
+			AttrOs5: []byte{0xff, 0xac, 0xbd},
+			AttrOs6: []byte{0xff, 0xac, 0xbd, 0xef, 0x3d},
+		},
+		Se3: list,
+		Se4: &TestConstrainedInt{
+			AttrCiA: 11,
+			AttrCiB: 256,
+			AttrCiC: 99,
+			AttrCiD: -21,
+			AttrCiE: 20,
+			AttrCiF: 10,
+			AttrCiG: 11,
+		},
+	}
+
+	aperBytes2, err := aper.MarshalWithParams(msg2, "valueExt", Choicemap, CanonicalChoicemap)
+	assert.NilError(t, err)
+	assert.Assert(t, aperBytes2 != nil)
+	t.Logf("APER \n%s", hex.Dump(aperBytes2))
+
+	// Now decode the bytes and compare messages
+	result2 := &SequenceExtended{}
+	err = aper.UnmarshalWithParams(aperBytes2, result2, "valueExt", Choicemap, CanonicalChoicemap)
+	assert.NilError(t, err)
+	assert.Assert(t, result2 != nil)
+	assert.Equal(t, msg2.String(), result2.String())
+	t.Logf("Decoded message is\n%v", result2)
+}

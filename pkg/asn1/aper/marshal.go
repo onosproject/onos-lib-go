@@ -13,12 +13,13 @@ import (
 )
 
 type perRawBitData struct {
-	bytes               []byte
-	bitsOffset          uint
-	choiceMap           map[string]map[int]reflect.Type
-	unique              int64
-	canonicalChoiceMap  map[string]map[int64]reflect.Type
-	choiceCanBeExtended bool
+	bytes                 []byte
+	bitsOffset            uint
+	choiceMap             map[string]map[int]reflect.Type
+	unique                int64
+	canonicalChoiceMap    map[string]map[int64]reflect.Type
+	choiceCanBeExtended   bool
+	sequenceCanBeExtended bool
 }
 
 // Assuming that UNIQUE ID is being treated as INTEGER
@@ -659,7 +660,8 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(canonicalChoiceMap map[int64
 
 	// ToDo - find workaround in logging
 	//log.SetLevel(log.Info)
-	threadedBytes := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false}
+	// ToDo - sequenceCanBeExtended may cause potential problems
+	threadedBytes := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false, false}
 	if err := threadedBytes.makeField(v, params); err != nil {
 		return err
 	}
@@ -676,7 +678,8 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(canonicalChoiceMap map[int64
 
 func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters) error {
 
-	pdOpenType := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false}
+	// ToDo - sequenceCanBeExtended may cause potential problems
+	pdOpenType := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false, false}
 	log.Debugf("Encoding OpenType %s to temp RawData", v.Type().String())
 	if err := pdOpenType.makeField(v, params); err != nil {
 		return err
@@ -796,17 +799,21 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		structType := fieldType
 		var structParams []fieldParameters
 		var optionalCount uint
+		fromValueExtPresent := false
 		var optionalPresents uint64
 		var choiceType string
 		pd.choiceCanBeExtended = false
+		pd.sequenceCanBeExtended = false
 		// ToDo - currently this is an incorrect treatment of possible extensions with structs.
 		// It is only possible to decode extension which is defined in the encoding schema
 		// struct extensive TODO: support extensed type
 		if params.valueExtensible && !params.choiceExt {
-			log.Debugf("Encoding Value Extensive Bit : true")
-			if err := pd.putBitsValue(0, 1); err != nil {
-				return err
-			}
+			pd.sequenceCanBeExtended = true
+			log.Debugf("SEQUENCE can be extended")
+			//log.Debugf("Encoding Value Extensive Bit : true")
+			//if err := pd.putBitsValue(0, 1); err != nil {
+			//	return err
+			//}
 		}
 		if params.choiceExt {
 			pd.choiceCanBeExtended = true
@@ -826,6 +833,10 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			if tempParams.unique {
 				pd.unique = v.Field(i).Int()
 				log.Debugf("Unique of type %v was found - it is %v", reflect.ValueOf(v.Field(i)), pd.unique)
+			}
+			if tempParams.fromValueExt && v.Field(i).Type().Kind() == reflect.Ptr && v.Field(i).IsNil() {
+				log.Debugf("%v is from SEQUENCE extension and present", v.Field(i).Type().Name())
+				fromValueExtPresent = true
 			}
 			choiceType = structType.Field(i).Tag.Get("protobuf_oneof")
 			if choiceType == "" {
@@ -849,6 +860,18 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			}
 
 			structParams = append(structParams, tempParams)
+		}
+
+		if fromValueExtPresent {
+			log.Debugf("SEQUENCE extension is present. Encoding Value Extensive Bit: true")
+			if err := pd.putBitsValue(1, 1); err != nil {
+				return err
+			}
+		} else {
+			log.Debugf("SEQUENCE extension is present. Encoding Value Extensive Bit: false")
+			if err := pd.putBitsValue(0, 1); err != nil {
+				return err
+			}
 		}
 		if optionalCount > 0 {
 			log.Debugf("putting optional(%d), optionalPresents is %0b", optionalCount, optionalPresents)
@@ -1013,7 +1036,8 @@ func Marshal(val interface{}, choiceMap map[string]map[int]reflect.Type, canonic
 // MarshalWithParams allows field parameters to be specified for the
 // top-level element. The form of the params is the same as the field tags.
 func MarshalWithParams(val interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) ([]byte, error) {
-	pd := &perRawBitData{[]byte(""), 0, choiceMap, -1, canonicalChoiceMap, false}
+	// ToDo - sequenceCanBeExtended may cause potential problems
+	pd := &perRawBitData{[]byte(""), 0, choiceMap, -1, canonicalChoiceMap, false, false}
 	err := pd.makeField(reflect.ValueOf(val), parseFieldParameters(params))
 	if err != nil {
 		return nil, err

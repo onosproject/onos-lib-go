@@ -29,6 +29,7 @@ type fieldParameters struct {
 	canonicalOrder      bool   // true, if CHOICE is needed to be encoded in canonical ordering
 	fromChoiceExt       bool   // true, if CHOICE item belongs to CHOICE extension
 	choiceExt           bool   // true, if CHOICE can be extended with other items
+	fromValueExt        bool   // true, if item in SEQUENCE belongs to SEQUENCE extension
 }
 
 // Given a tag string with the format specified in the package comment,
@@ -37,6 +38,8 @@ type fieldParameters struct {
 func parseFieldParameters(str string) (params fieldParameters) {
 	for _, part := range strings.Split(str, ",") {
 		switch {
+		case part == "fromValueExt":
+			params.fromValueExt = true
 		case part == "choiceExt":
 			params.choiceExt = true
 		case part == "fromChoiceExt":
