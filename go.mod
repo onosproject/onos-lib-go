@@ -8,11 +8,9 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
 	github.com/ericchiang/oidc v0.0.0-20160908143337-11f62933e071
-	github.com/favadi/protoc-go-inject-tag v1.3.0 // indirect
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/mock v1.6.0
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1

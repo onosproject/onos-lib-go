@@ -31,15 +31,15 @@ func Test_SequenceExtended(t *testing.T) {
 			AttrOs6: []byte{0xff, 0xac, 0xbd, 0xef, 0x3d},
 		},
 		Se3: list,
-		Se4: &TestConstrainedInt{
-			AttrCiA: 11,
-			AttrCiB: 256,
-			AttrCiC: 99,
-			AttrCiD: -21,
-			AttrCiE: 20,
-			AttrCiF: 10,
-			AttrCiG: 11,
-		},
+		//Se4: &TestConstrainedInt{
+		//	AttrCiA: 11,
+		//	AttrCiB: 256,
+		//	AttrCiC: 99,
+		//	AttrCiD: -21,
+		//	AttrCiE: 20,
+		//	AttrCiF: 10,
+		//	AttrCiG: 11,
+		//},
 	}
 
 	aperBytes1, err := aper.MarshalWithParams(msg1, "valueExt", Choicemap, CanonicalChoicemap)
@@ -52,8 +52,8 @@ func Test_SequenceExtended(t *testing.T) {
 	err = aper.UnmarshalWithParams(aperBytes1, result1, "valueExt", Choicemap, CanonicalChoicemap)
 	assert.NilError(t, err)
 	assert.Assert(t, result1 != nil)
-	assert.Equal(t, msg1.String(), result1.String())
 	t.Logf("Decoded message is\n%v", result1)
+	assert.Equal(t, msg1.String(), result1.String())
 
 	msg2 := &SequenceExtended{
 		Se1: &SampleConstrainedInteger{
@@ -89,6 +89,6 @@ func Test_SequenceExtended(t *testing.T) {
 	err = aper.UnmarshalWithParams(aperBytes2, result2, "valueExt", Choicemap, CanonicalChoicemap)
 	assert.NilError(t, err)
 	assert.Assert(t, result2 != nil)
-	assert.Equal(t, msg2.String(), result2.String())
 	t.Logf("Decoded message is\n%v", result2)
+	assert.Equal(t, msg2.String(), result2.String())
 }

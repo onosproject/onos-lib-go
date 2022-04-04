@@ -834,9 +834,11 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				pd.unique = v.Field(i).Int()
 				log.Debugf("Unique of type %v was found - it is %v", reflect.ValueOf(v.Field(i)), pd.unique)
 			}
-			if tempParams.fromValueExt && v.Field(i).Type().Kind() == reflect.Ptr && v.Field(i).IsNil() {
-				log.Debugf("%v is from SEQUENCE extension and present", v.Field(i).Type().Name())
+			if tempParams.fromValueExt && v.Field(i).Type().Kind() == reflect.Ptr && !v.Field(i).IsNil() {
+				log.Debugf("%v is from SEQUENCE extension and present", structType.Field(i).Name)
 				fromValueExtPresent = true
+			} else if v.Field(i).Type().Kind() == reflect.Ptr && !v.Field(i).IsNil() {
+				log.Debugf("%v is from SEQUENCE extension and not present", structType.Field(i).Name)
 			}
 			choiceType = structType.Field(i).Tag.Get("protobuf_oneof")
 			if choiceType == "" {
@@ -847,7 +849,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 					if !v.Field(i).IsNil() {
 						optionalPresents++
 					}
-				} else if v.Field(i).Type().Kind() == reflect.Ptr && v.Field(i).IsNil() {
+				} else if v.Field(i).Type().Kind() == reflect.Ptr && v.Field(i).IsNil() && !tempParams.fromValueExt {
 					return fmt.Errorf("nil element in SEQUENCE type %v", v.Field(i).Type())
 				}
 			} else {
@@ -867,8 +869,8 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			if err := pd.putBitsValue(1, 1); err != nil {
 				return err
 			}
-		} else {
-			log.Debugf("SEQUENCE extension is present. Encoding Value Extensive Bit: false")
+		} else if pd.sequenceCanBeExtended {
+			log.Debugf("SEQUENCE extension is not present. Encoding Value Extensive Bit: false")
 			if err := pd.putBitsValue(0, 1); err != nil {
 				return err
 			}
@@ -879,20 +881,6 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				return err
 			}
 		}
-
-		//// CHOICE or OpenType
-		//if choiceType != "" { // TODO: remove hard coding
-		//	present := int(*structParams[0].choiceIndex)
-		//	ub := structParams[0].valueUpperBound
-		//	if err := pd.appendChoiceIndex(present, structParams[0].valueExtensible, ub); err != nil {
-		//		return err
-		//	}
-		//
-		//	if err := pd.makeField(val.Field(fieldIdx), structParams[0]); err != nil {
-		//		return err
-		//	}
-		//	return nil
-		//}
 
 		fieldIdx = -1
 		for i := 0; i < structType.NumField(); i++ {
@@ -905,6 +893,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			if len(structParams) <= fieldIdx {
 				continue
 			}
+
 			if structParams[fieldIdx].optional && optionalCount > 0 {
 				optionalCount--
 				if optionalPresents&(1<<optionalCount) == 0 {
@@ -1004,8 +993,12 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 					return err
 				}
 			} else {
-				if err := pd.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
-					return err
+				if structParams[fieldIdx].fromValueExt && val.Field(i).IsNil() {
+					return nil
+				} else {
+					if err := pd.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
+						return err
+					}
 				}
 			}
 		}

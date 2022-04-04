@@ -807,7 +807,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			tempParams := parseFieldParameters(structType.Field(i).Tag.Get("aper"))
 			tempParams.oneofName = structType.Field(i).Tag.Get("protobuf_oneof")
 
-			if tempParams.fromValueExt {
+			if tempParams.valueExtensible {
 				pd.sequenceCanBeExtended = true
 				log.Debugf("This SEQUENCE %v can be extended", structType.Field(i).Name)
 			}
@@ -824,7 +824,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			if err != nil {
 				return err
 			}
-			if sequenceExtendedPresenceTmp == 1 {
+			if sequenceExtendedPresenceTmp > 0 {
 				sequenceCanBeExtendedPresence = true
 				log.Debugf("Item from SEQUENCE extension is present")
 			} else {
@@ -848,6 +848,13 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				continue
 			}
 			fieldIdx++
+			// ToDo - does it affect something?
+			if structParams[fieldIdx].fromValueExt && sequenceCanBeExtendedPresence {
+				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and present", structType.Field(i).Name, structType)
+			} else {
+				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and not present", structType.Field(i).Name, structType)
+				continue
+			}
 			if structParams[fieldIdx].optional && optionalCount > 0 {
 				optionalCount--
 				if optionalPresents&(1<<optionalCount) == 0 {
@@ -856,14 +863,6 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				} else {
 					log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(i).Name, structType)
 				}
-			}
-
-			// ToDo - does it affect something?
-			if structParams[fieldIdx].fromValueExt && sequenceCanBeExtendedPresence {
-				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and present", structType.Field(i).Name, structType)
-			} else {
-				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and not present", structType.Field(i).Name, structType)
-				continue
 			}
 
 			if err := parseField(val.Field(i), pd, structParams[fieldIdx]); err != nil {
