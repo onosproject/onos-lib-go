@@ -719,6 +719,8 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 	sizeExtensible := false
 	valueExtensible := false
 	if params.sizeExtensible {
+		//ToDo - probably, there is no need to process this bit here,
+		// it'll be done inside case for slice, bitstring, string or []byte (did I forget something?)
 		if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
 			return err1
 		} else if bitsValue != 0 {
@@ -727,15 +729,17 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		log.Debugf("Decoded Size Extensive Bit : %t", sizeExtensible)
 	}
 	if params.valueExtensible && v.Kind() != reflect.Slice && !params.choiceExt {
-		if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
-			return err1
-		} else if bitsValue != 0 {
-			valueExtensible = true
-		}
-		log.Debugf("Decoded Value Extensive Bit : %t", valueExtensible)
+		//No need to process bit here, it'll be done inside case for struct
+		//if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
+		//	return err1
+		//} else if bitsValue != 0 {
+		//	pd.sequenceCanBeExtended = true
+		//}
+		pd.sequenceCanBeExtended = true
+		log.Debugf("Decoded Value Extensive Bit : %t", pd.sequenceCanBeExtended)
 	}
 	if params.choiceExt && v.Kind() != reflect.Slice {
-		// We have to make this variable global. In the decoding we§re parsing parent structure first
+		// We have to make this variable global. In the decoding we're parsing parent structure first
 		// and then drilling down to its child.  Once we've drilled down, we don't see previous (local) flag anymore.
 		pd.choiceCanBeExtended = true
 		log.Debugf("CHOICE can be extended")
@@ -791,7 +795,6 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 	case reflect.Struct:
 		structType := fieldType
 		var structParams []fieldParameters
-		pd.sequenceCanBeExtended = false
 		sequenceCanBeExtendedPresence := false
 		var optionalCount uint
 		var optionalPresents uint64
@@ -820,11 +823,14 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		}
 
 		if pd.sequenceCanBeExtended {
+			// This flag has already served for its purpose. Setting it back to its initial value
+			pd.sequenceCanBeExtended = false
+
 			sequenceExtendedPresenceTmp, err := pd.getBitsValue(1)
 			if err != nil {
 				return err
 			}
-			if sequenceExtendedPresenceTmp > 0 {
+			if sequenceExtendedPresenceTmp != 0 {
 				sequenceCanBeExtendedPresence = true
 				log.Debugf("Item from SEQUENCE extension is present")
 			} else {
@@ -851,9 +857,8 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			// ToDo - does it affect something?
 			if structParams[fieldIdx].fromValueExt && sequenceCanBeExtendedPresence {
 				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and present", structType.Field(i).Name, structType)
-			} else {
+			} else if structParams[fieldIdx].fromValueExt {
 				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and not present", structType.Field(i).Name, structType)
-				continue
 			}
 			if structParams[fieldIdx].optional && optionalCount > 0 {
 				optionalCount--
