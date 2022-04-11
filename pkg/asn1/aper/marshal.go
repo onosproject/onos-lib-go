@@ -725,18 +725,6 @@ func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters)
 
 func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) error {
 
-	//log.Debugf("Current bit offset is %v", pd.bitsOffset)
-	//if pd.bitsOffset != 0 {
-	//	log.Debugf("Shifting bits to the right explicitly..")
-	//	err := pd.shiftLastBit()
-	//	if err != nil {
-	//		return err
-	//	}
-	//	log.Debugf("Bits offset is %v, explicitly aligning bits", pd.bitsOffset)
-	//	pd.appendAlignBits()
-	//}
-	//log.Debugf("Current APER bytes with bits offset %v are \n%v", pd.bitsOffset, hex.Dump(pd.bytes))
-
 	log.Debugf("Encoding %s %s", v.Type().String(), v.Kind().String())
 	if !v.IsValid() {
 		return fmt.Errorf("aper: cannot marshal nil value")
@@ -977,7 +965,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 							return err
 						}
 					} else {
-						// ToDo - test if choice can be extensed or not and put and Extensed bit
+						// ToDo - test if choice can be extended or not and put an Extensed bit
 						if pd.choiceCanBeExtended {
 							log.Debugf("CHOICE can be potentially extensed, putting 0 bit to indicate that")
 							if err := pd.putBitsValue(0, 1); err != nil {
