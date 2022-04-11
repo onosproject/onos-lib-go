@@ -995,10 +995,8 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			} else {
 				if structParams[fieldIdx].fromValueExt && val.Field(i).IsNil() {
 					return nil
-				} else {
-					if err := pd.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
-						return err
-					}
+				} else if err := pd.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
+					return err
 				}
 			}
 		}
