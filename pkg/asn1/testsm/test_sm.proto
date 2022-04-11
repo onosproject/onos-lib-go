@@ -452,3 +452,14 @@ message ChoiceExtended {
         int32 choice_extended_d = 4 [json_name = "constrainedChoice3D"];
     }
 };
+
+message SequenceExtended {
+    SampleConstrainedInteger se1 = 1;
+    // @inject_tag: aper:"optional"
+    optional TestOctetString se2 = 2;
+    TestList2 se3 = 3;
+    // @inject_tag: aper:"fromValueExt"
+    TestConstrainedInt se4 = 4;
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:2,sizeUB:6,sizeExt"
+    optional string se5 = 5 [json_name = "attrPs7"];
+}
