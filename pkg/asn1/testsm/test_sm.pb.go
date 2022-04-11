@@ -3085,8 +3085,8 @@ type SequenceExtended struct {
 	Se3 *TestList2       `protobuf:"bytes,3,opt,name=se3,proto3" json:"se3,omitempty"`
 	// @inject_tag: aper:"fromValueExt"
 	Se4 *TestConstrainedInt `protobuf:"bytes,4,opt,name=se4,proto3" json:"se4,omitempty" aper:"fromValueExt"`
-	// @inject_tag: aper:"fromValueExt,optional,sizeLB:2,sizeUB:6"
-	Se5 *string `protobuf:"bytes,5,opt,name=se5,json=attrPs7,proto3,oneof" json:"se5,omitempty" aper:"fromValueExt,optional,sizeLB:2,sizeUB:6"`
+	// @inject_tag: aper:"fromValueExt,optional,sizeLB:2,sizeUB:6,sizeExt"
+	Se5 *string `protobuf:"bytes,5,opt,name=se5,json=attrPs7,proto3,oneof" json:"se5,omitempty" aper:"fromValueExt,optional,sizeLB:2,sizeUB:6,sizeExt"`
 }
 
 func (x *SequenceExtended) Reset() {

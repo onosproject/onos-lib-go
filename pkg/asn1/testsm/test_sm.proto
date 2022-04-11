@@ -460,6 +460,6 @@ message SequenceExtended {
     TestList2 se3 = 3;
     // @inject_tag: aper:"fromValueExt"
     TestConstrainedInt se4 = 4;
-    // @inject_tag: aper:"fromValueExt,optional,sizeLB:2,sizeUB:6"
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:2,sizeUB:6,sizeExt"
     optional string se5 = 5 [json_name = "attrPs7"];
 }

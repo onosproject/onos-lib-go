@@ -718,17 +718,37 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		return parseField(v.Elem(), pd, params)
 	}
 
+	sizeExtensible := false
 	if params.sizeExtensible {
-		// leaving it here for future improvement (can't imagine the case now)
-		pd.sizeCanBeExtended = true
-		log.Debugf("Indicating Size Extensive Bit: %t", pd.sizeCanBeExtended)
+		if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
+			return err1
+		} else if bitsValue != 0 {
+			sizeExtensible = true
+		}
+		log.Debugf("Decoded Size Extensive Bit: %t", sizeExtensible)
 	}
+	//if params.sizeExtensible {
+	//	// leaving it here for future improvement (can't imagine the case now)
+	//	pd.sizeCanBeExtended = true
+	//	log.Debugf("Indicating Size Extensive Bit: %t", pd.sizeCanBeExtended)
+	//}
 
+	valueExtensible := false
+	//pd.sequenceCanBeExtended = false
 	if params.valueExtensible && v.Kind() != reflect.Slice && !params.choiceExt {
+		if params.valueExtensible && v.Kind() != reflect.Slice && !params.choiceExt {
+			if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
+				return err1
+			} else if bitsValue != 0 {
+				valueExtensible = true
+			}
+			log.Debugf("Decoded Value Extensive Bit: %t", pd.sequenceCanBeExtended)
+		}
 		//No need to process bit here, it'll be done inside the case for struct
-		pd.sequenceCanBeExtended = true
+		//pd.sequenceCanBeExtended = true
 		log.Debugf("Indicating Value Extensive Bit: %t", pd.sequenceCanBeExtended)
 	}
+
 	if params.choiceExt && v.Kind() != reflect.Slice {
 		// We have to make this variable global. In the decoding we're parsing parent structure first
 		// and then drilling down to its child.  Once we've drilled down, we don't see previous (local) flag anymore.
@@ -746,15 +766,15 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 	// We deal with the structures defined in this package first.
 	switch fieldType {
 	case BitStringType:
-		sizeExtensible := false
-		if params.sizeExtensible {
-			if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
-				return err1
-			} else if bitsValue != 0 {
-				sizeExtensible = true
-			}
-			log.Debugf("Decoded Size Extensive Bit: %t", sizeExtensible)
-		}
+		//sizeExtensible := false
+		//if params.sizeExtensible {
+		//	if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
+		//		return err1
+		//	} else if bitsValue != 0 {
+		//		sizeExtensible = true
+		//	}
+		//	log.Debugf("Decoded Size Extensive Bit: %t", sizeExtensible)
+		//}
 		bitString, err1 := pd.parseBitString(sizeExtensible, params.sizeLowerBound, params.sizeUpperBound)
 		if err1 != nil {
 			return err1
@@ -763,15 +783,15 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		v.Field(4).Set(reflect.ValueOf(bitString.Len))
 		return nil
 	case reflect.TypeOf([]uint8{}):
-		sizeExtensible := false
-		if params.sizeExtensible {
-			if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
-				return err1
-			} else if bitsValue != 0 {
-				sizeExtensible = true
-			}
-			log.Debugf("Decoded Size Extensive Bit: %t", sizeExtensible)
-		}
+		//sizeExtensible := false
+		//if params.sizeExtensible {
+		//	if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
+		//		return err1
+		//	} else if bitsValue != 0 {
+		//		sizeExtensible = true
+		//	}
+		//	log.Debugf("Decoded Size Extensive Bit: %t", sizeExtensible)
+		//}
 		octetString, err := pd.parseOctetString(sizeExtensible, params.sizeLowerBound, params.sizeUpperBound)
 		if err != nil {
 			return err
@@ -790,15 +810,15 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		val.SetBool(parsedBool)
 		return nil
 	case reflect.Int, reflect.Int32, reflect.Int64:
-		valueExtensible := false // this is to carry flag that value could be extensed
-		if params.valueExtensible && v.Kind() != reflect.Slice && !params.choiceExt {
-			if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
-				return err1
-			} else if bitsValue != 0 {
-				valueExtensible = true
-			}
-			log.Debugf("Decoded Value Extensive Bit: %t", pd.sequenceCanBeExtended)
-		}
+		//valueExtensible := false // this is to carry flag that value could be extensed
+		//if params.valueExtensible && v.Kind() != reflect.Slice && !params.choiceExt {
+		//	if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
+		//		return err1
+		//	} else if bitsValue != 0 {
+		//		valueExtensible = true
+		//	}
+		//	log.Debugf("Decoded Value Extensive Bit: %t", pd.sequenceCanBeExtended)
+		//}
 		parsedInt, err := pd.parseInteger(valueExtensible, params.valueLowerBound, params.valueUpperBound)
 		if err != nil {
 			return err
@@ -813,7 +833,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 	case reflect.Struct:
 		structType := fieldType
 		var structParams []fieldParameters
-		sequenceCanBeExtendedPresence := false
+		//sequenceCanBeExtendedPresence := false
 		var optionalCount uint
 		var optionalPresents uint64
 
@@ -841,32 +861,32 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		}
 
 		// If structure points to basic type (int32, string, etc), then no need to process Extension bits..
-		if structType.NumField() != 4 {
-			if pd.sequenceCanBeExtended {
-				// This flag has already served for its purpose. Setting it back to its initial value
-				pd.sequenceCanBeExtended = false
+		//if structType.NumField() != 4 {
+		//	if pd.sequenceCanBeExtended {
+		//		// This flag has already served for its purpose. Setting it back to its initial value
+		//		pd.sequenceCanBeExtended = false
+		//
+		//		sequenceExtendedPresenceTmp, err := pd.getBitsValue(1)
+		//		if err != nil {
+		//			return err
+		//		}
+		//		if sequenceExtendedPresenceTmp != 0 {
+		//			sequenceCanBeExtendedPresence = true
+		//			log.Debugf("Item from SEQUENCE extension is present")
+		//		} else {
+		//			log.Debugf("Item from SEQUENCE extension is not present")
+		//		}
+		//	}
 
-				sequenceExtendedPresenceTmp, err := pd.getBitsValue(1)
-				if err != nil {
-					return err
-				}
-				if sequenceExtendedPresenceTmp != 0 {
-					sequenceCanBeExtendedPresence = true
-					log.Debugf("Item from SEQUENCE extension is present")
-				} else {
-					log.Debugf("Item from SEQUENCE extension is not present")
-				}
+		if optionalCount > 0 {
+			optionalPresentsTmp, err := pd.getBitsValue(optionalCount)
+			if err != nil {
+				return err
 			}
-
-			if optionalCount > 0 {
-				optionalPresentsTmp, err := pd.getBitsValue(optionalCount)
-				if err != nil {
-					return err
-				}
-				optionalPresents = optionalPresentsTmp
-				log.Debugf("optionalPresents is %0b", optionalPresents)
-			}
+			optionalPresents = optionalPresentsTmp
+			log.Debugf("optionalPresents is %0b", optionalPresents)
 		}
+		//}
 
 		fieldIdx = -1
 		for i := 0; i < structType.NumField(); i++ {
@@ -876,7 +896,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			}
 			fieldIdx++
 			// ToDo - does it affect something?
-			if structParams[fieldIdx].fromValueExt && sequenceCanBeExtendedPresence {
+			if structParams[fieldIdx].fromValueExt && valueExtensible {
 				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and present", structType.Field(i).Name, structType)
 			} else if structParams[fieldIdx].fromValueExt {
 				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and not present", structType.Field(i).Name, structType)
@@ -891,7 +911,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				}
 			}
 
-			// In case there could be a sequence extension and it's not present, checking if we have any bytes to decode
+			// In case there could be a sequence extension, and it's not present, checking if we have any bytes to decode
 			if pd.byteOffset != uint64(len(pd.bytes)) {
 				if err := parseField(val.Field(i), pd, structParams[fieldIdx]); err != nil {
 					return err
@@ -901,15 +921,15 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		return nil
 	case reflect.Slice:
 		sliceType := fieldType
-		sizeExtensible := false
-		if params.sizeExtensible {
-			if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
-				return err1
-			} else if bitsValue != 0 {
-				sizeExtensible = true
-			}
-			log.Debugf("Decoded Size Extensive Bit: %t", sizeExtensible)
-		}
+		//sizeExtensible := false
+		//if params.sizeExtensible {
+		//	if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
+		//		return err1
+		//	} else if bitsValue != 0 {
+		//		sizeExtensible = true
+		//	}
+		//	log.Debugf("Decoded Size Extensive Bit: %t", sizeExtensible)
+		//}
 		newSlice, err := pd.parseSequenceOf(sizeExtensible, params, sliceType)
 		if err != nil {
 			return err
@@ -918,15 +938,15 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		return nil
 	case reflect.String:
 		log.Debugf("Decoding PrintableString using Octet String decoding method")
-		sizeExtensible := false
-		if params.sizeExtensible {
-			if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
-				return err1
-			} else if bitsValue != 0 {
-				sizeExtensible = true
-			}
-			log.Debugf("Decoded Size Extensive Bit: %t", sizeExtensible)
-		}
+		//sizeExtensible := false
+		//if params.sizeExtensible {
+		//	if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
+		//		return err1
+		//	} else if bitsValue != 0 {
+		//		sizeExtensible = true
+		//	}
+		//	log.Debugf("Decoded Size Extensive Bit: %t", sizeExtensible)
+		//}
 
 		octetString, err := pd.parseOctetString(sizeExtensible, params.sizeLowerBound, params.sizeUpperBound)
 		if err != nil {
