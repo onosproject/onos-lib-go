@@ -33,6 +33,7 @@ generates the same APER bytes as [this asn1c](https://github.com/nokia/asn1c) to
 * Introduced encoding and decoding for `CHOICEs` in Canonical ordering (used in O-RAN's E2AP)
 * Introduced encoding of normally small non-negative `Integers`
 * Fixed race condition issue
+* Implemented possibility to encode `SEQUENCE` structures with defined extension
 
 All of the aforementioned changes were verified with unit tests.
 
@@ -41,6 +42,7 @@ All of the aforementioned changes were verified with unit tests.
 * `choiceIdx` specifies the `CHOICE` index
 * `choiceExt` specifies that the `CHOICE` structure can contain items in its extension
 * `fromChoiceExt` specifies the item which belongs to the extension of `CHOICE`
+* `fromValueExt` specifies the item which belongs to the extension of `SEQUENCE`
 * `valueExt` specifies that the ASN.1 structure like `SEQUENCE`, `ENUMERATED`, `INTEGER` can be extended
 * `valueUB` specifies the upperbound of the `INTEGER`
 * `valueLB` specifies the lowerbound of the `INTEGER`
