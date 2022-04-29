@@ -346,6 +346,222 @@ func (pd *perRawBitData) appendBool(value bool) (err error) {
 	return
 }
 
+func howManyBitsNeeded(value int64) (bitAmount int32) {
+
+	//log.Debugf("Starting to compute how many bits are needed to store value of %v", value)
+	for {
+		bitAmount++
+		value = value >> 1
+		//log.Debugf("Current bit amount is %v", bitAmount)
+		//log.Debugf("Value is %v", value)
+		if value == 0 {
+			//log.Debugf("We've reached the bottom of the value, bit amount is %v", bitAmount)
+			break
+		}
+	}
+
+	return
+}
+
+func howManyBytesNeeded(value int64) (byteAmount int) {
+
+	//log.Debugf("Starting to compute how many bytes are needed to store value of %v", value)
+	bitAmount := howManyBitsNeeded(value)
+
+	for {
+		if bitAmount > 8 {
+			bitAmount = bitAmount - 8
+			byteAmount++
+		} else {
+			break
+		}
+		//log.Debugf("Current byte amount is %v", byteAmount)
+	}
+	byteAmount++
+	//log.Debugf("Final byte amount is %v", byteAmount)
+
+	return
+}
+
+func (pd *perRawBitData) appendReal(value float64) (err error) {
+
+	log.Debugf("Encoding REAL number %v", value)
+	var mantissa int64
+	var exponent int64 = 0
+	var p int = 0
+	var n int = 0
+	negativeExponent := false
+
+	// ToDo - split value on mantissa and exponent with base 2 (default in CER/DER and APER)
+	// Valid for whole numbers: divide value on 2 until the result is odd, once result is even, stop.
+	// Encode power of 2 (obtained from division) as exponent and encode result of division as a mantissa
+	// If the number is even at the beginning, then encode 0 as an exponent and encode
+	// number as a mantissa (don't forget to put 00 octet in the beginning, for some reason I don't understand (yet))
+
+	// First, checking whether we encode a whole number
+	if value == math.Trunc(value) {
+		log.Debugf("We're encoding a whole number")
+		mantissa = int64(value)
+		for {
+			if mantissa%2 != 0 {
+				break
+			}
+			exponent++
+			mantissa = mantissa / 2
+		}
+		log.Debugf("Obtained mantissa is %v, exponent is %v", mantissa, exponent)
+	} else {
+		log.Debugf("We're encoding a number with a floating point")
+		// For values with numbers after decimal dot (radix), representation is different -- ToDo should be reversed engineered
+		// Steps are - multiply initial number by two until it becomes a whole number
+		// if the number is not becoming a whole one, then multiply by 2 (max. 51 times) and then
+		// round(?) the resulting number and encode it as a whole number
+
+		val := value
+		for i := 0; i < 52; i++ { // 52 bits is maximum size of float
+			if val == math.Trunc(val) {
+				break
+			}
+			val = val * 2
+			exponent++
+		}
+		// get the mantissa
+		mantissa = int64(math.Trunc(val))
+		negativeExponent = true
+		log.Debugf("Obtained mantissa is %v, value in computations is %v. Exponent is %v, it is negative (%v)", mantissa, val, exponent, negativeExponent)
+	}
+
+	p = howManyBytesNeeded(mantissa)
+	n = howManyBytesNeeded(exponent) // should be always 1
+
+	// computing length of the bytes needed to encode a number
+	byteLength := n + p + 1
+	if p < 7 { // 7 is the maximum number of bytes to carry mantissa (because of max. 51 multiplication of 2)
+		byteLength++
+	}
+	log.Debugf("Amount of bytes to encode is %v: 1 byte for length, 1 byte for header, %v bytes for exponent, %v bytes for mantissa", byteLength, n, p)
+
+	//aligning bits first
+	pd.appendAlignBits()
+	// storing number of bytes for reference
+	numBytesRef := len(pd.bytes)
+
+	// putting length of the bits first
+	err = pd.putBitsValue(uint64(byteLength), 8)
+	if err != nil {
+		return err
+	}
+
+	// composing header
+	// putting 1 (mandatory)
+	err = pd.putBitsValue(1, 1)
+	if err != nil {
+		return err
+	}
+	// putting sign bit
+	if value >= 0 {
+		// if positive number
+		err = pd.putBitsValue(0, 1)
+		if err != nil {
+			return err
+		}
+	} else {
+		// if negative number
+		err = pd.putBitsValue(1, 1)
+		if err != nil {
+			return err
+		}
+	}
+	// putting an encoding base (always 2, so 00 bits)
+	err = pd.putBitsValue(0, 2)
+	if err != nil {
+		return err
+	}
+	// putting a scale factor (always set to 0)
+	err = pd.putBitsValue(0, 2)
+	if err != nil {
+		return err
+	}
+	// putting an exponent (always set to be 00 bits)
+	err = pd.putBitsValue(0, 2)
+	if err != nil {
+		return err
+	}
+
+	// putting exponent here
+	if negativeExponent {
+		// ToDo - if the exponent is negative, then we should put 2's compliment instead..
+		// There may be potentially an issue
+		log.Debugf("Computing 2's complement for exponent (%v)", exponent)
+		//y := exponent >> 63
+		//exponentXor := exponent ^ y
+		//unsignedExponent := uint64((exponentXor - y))
+		//err = pd.putBitsValue(unsignedExponent, 8)
+		//if err != nil {
+		//	return err
+		//}
+		//log.Debugf("2's complement for exponent is %v", unsignedExponent)
+		//log.Debugf("It requires %v bits to store the value", howManyBitsNeeded(int64(unsignedExponent)))
+
+		//alternative way
+		twosComplimentExp := 256 - exponent
+		log.Debugf("2's complement for exponent is %v", twosComplimentExp)
+		log.Debugf("It requires %v bits to store the value", howManyBitsNeeded(int64(twosComplimentExp)))
+		err = pd.putBitsValue(uint64(twosComplimentExp), 8)
+		if err != nil {
+			return err
+		}
+	} else {
+		// if the exponent is positive, putting it here
+		err = pd.putBitsValue(uint64(exponent), uint(howManyBitsNeeded(exponent)))
+		if err != nil {
+			return err
+		}
+	}
+
+	// putting mantissa
+	//if value == math.Trunc(value) {
+	//	// in case of a whole number
+	//	err = pd.putBitsValue(0, 8)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	err = pd.putBitsValue(uint64(mantissa), uint(howManyBytesNeeded(mantissa)*8))
+	//	if err != nil {
+	//		return err
+	//	}
+	//} else {
+	//	// ToDo - in the other case..
+	//	err = pd.putBitsValue(uint64(mantissa), uint(howManyBytesNeeded(mantissa)*8))
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
+
+	if p >= 7 {
+		err = pd.putBitsValue(uint64(mantissa), uint(howManyBytesNeeded(mantissa)*8))
+	} else {
+		err = pd.putBitsValue(0, 8)
+		if err != nil {
+			return err
+		}
+		err = pd.putBitsValue(uint64(mantissa), uint(howManyBytesNeeded(mantissa)*8))
+		if err != nil {
+			return err
+		}
+	}
+
+	numBytesEnd := len(pd.bytes)
+
+	log.Debugf("APER bytes for REAL %v are\n%v", value, hex.Dump(pd.bytes))
+
+	if numBytesEnd-numBytesRef != byteLength+1 {
+		return errors.NewInvalid("Encoding REAL - checksum verification failed. Encoded %v bytes, expected %v bytes to encode", numBytesEnd-numBytesRef, byteLength)
+	}
+
+	return nil
+}
+
 func (pd *perRawBitData) appendInteger(value int64, extensive bool, lowerBoundPtr *int64, upperBoundPtr *int64) error {
 	var lb, valueRange int64 = 0, 0
 	if lowerBoundPtr != nil {
@@ -781,6 +997,11 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			pd.appendAlignBits()
 		}
 		return nil
+
+	case reflect.Float64:
+		if err := pd.appendReal(v.Float()); err != nil {
+			return err
+		}
 
 	case reflect.Struct:
 

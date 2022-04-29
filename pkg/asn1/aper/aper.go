@@ -419,6 +419,14 @@ func (pd *perBitData) parseBool() (value bool, err error) {
 	return
 }
 
+//ToD0 - implement it
+func (pd *perBitData) parseReal() (float64, error) {
+
+	var val float64
+
+	return val, nil
+}
+
 func (pd *perBitData) parseInteger(extensed bool, lowerBoundPtr *int64, upperBoundPtr *int64) (int64, error) {
 	var lb, ub, valueRange int64 = 0, -1, 0
 	if !extensed {
