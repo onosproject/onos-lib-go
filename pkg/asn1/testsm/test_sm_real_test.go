@@ -36,9 +36,20 @@ func Test_TestUnconstrainedRealEncode(t *testing.T) {
 			AttrUcrB: b,
 		}
 		assert.NotNil(t, tc.expected)
+
 		per, err := aper.Marshal(test1, Choicemap, CanonicalChoicemap)
 		assert.Nil(t, err)
 		t.Logf("APER bytes are\n%v", hex.Dump(per))
-		assert.Equal(t, per, tc.expected)
+		assert.EqualValues(t, per, tc.expected)
 	}
+
+	for _, tc := range testCases {
+		res := &TestUnconstrainedReal{}
+		err := aper.Unmarshal(tc.expected, res, Choicemap, CanonicalChoicemap)
+		assert.Nil(t, err)
+		t.Logf("Decoded struct is\n%v", res)
+		assert.EqualValues(t, tc.values[0], res.AttrUcrA)
+		assert.EqualValues(t, tc.values[1], res.AttrUcrB)
+	}
+
 }

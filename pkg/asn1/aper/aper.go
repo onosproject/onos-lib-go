@@ -419,12 +419,119 @@ func (pd *perBitData) parseBool() (value bool, err error) {
 	return
 }
 
-//ToD0 - implement it
+// ToDo - implement it
 func (pd *perBitData) parseReal() (float64, error) {
 
-	var val float64
+	log.Debugf("Decoding REAL structure")
+	var result float64
 
-	return val, nil
+	// parsing aligning bits first
+	err := pd.parseAlignBits()
+	if err != nil {
+		return 0, err
+	}
+
+	byteLength, err := pd.getBitsValue(8)
+	if err != nil {
+		return 0, err
+	}
+	log.Debugf("Next %v bytes contain exponent and mantissa", byteLength)
+
+	// parsing header
+	bit, err := pd.getBitsValue(1)
+	if err != nil {
+		return 0, err
+	}
+	if bit != 1 {
+		return 0, errors.NewInvalid("It looks like the header for REAL contains corrupted bytes. Got %v, expected to have 1", bit)
+	}
+
+	// parsing sign
+	sign, err := pd.getBitsValue(1)
+	if err != nil {
+		return 0, err
+	}
+	negative := false
+	if sign == 0 {
+		log.Debugf("Obtained %v - REAL is a positive number", sign)
+	} else if sign == 1 {
+		log.Debugf("Obtained %v - REAL is a negative number", sign)
+		negative = true
+	}
+
+	// parsing encoding base
+	base, err := pd.getBitsValue(2)
+	if err != nil {
+		return 0, err
+	}
+	switch base {
+	case 0:
+		log.Debugf("Obtained %v - decoding REAL with base 2 (default)", base)
+	case 1:
+		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v - base of 8 is not supported", base)
+	case 2:
+		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v - base of 16 is not supported", base)
+	default:
+		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v", base)
+	}
+
+	// parsing scaling factor
+	ff, err := pd.getBitsValue(2)
+	if err != nil {
+		return 0, err
+	}
+	if ff != 0 {
+		return 0, errors.NewInvalid("Error parsing scaling factor - expected to be 0, obtained %v", ff)
+	}
+
+	// parsing exponent
+	ee, err := pd.getBitsValue(2)
+	if err != nil {
+		return 0, err
+	}
+	if ee != 0 {
+		return 0, errors.NewInvalid("Error parsing exponent - expected to be 0, obtained %v", ee)
+	}
+
+	//parsing exponent value
+	exponent, err := pd.getBitsValue(8)
+	if err != nil {
+		return 0, err
+	}
+	twosComplement := false
+	if exponent >= 52 {
+		// getting 2's complement back
+		exponent = 256 - exponent
+		twosComplement = true
+	}
+	log.Debugf("Obtained exponent is %v", exponent)
+
+	// parsing mantissa
+	mantissa, err := pd.getBitsValue(8 * uint(byteLength-1-1))
+	if err != nil {
+		return 0, err
+	}
+	log.Debugf("Obtained mantissa is %v", mantissa)
+
+	if twosComplement {
+		result = float64(mantissa)
+		for i := 0; i < int(exponent); i++ {
+			result = result / 2
+		}
+	} else {
+		result = float64(mantissa)
+		for i := 0; i < int(exponent); i++ {
+			result = result * 2
+		}
+	}
+
+	if negative {
+		result = -result
+	}
+
+	// ToDo - find a way how to cut off distortion obtained in the division
+	log.Debugf("Decoded REAL number is %v", result)
+	return result, nil
 }
 
 func (pd *perBitData) parseInteger(extensed bool, lowerBoundPtr *int64, upperBoundPtr *int64) (int64, error) {
@@ -801,6 +908,14 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			pd.unique = parsedInt
 			log.Debugf("UNIQUE flag was found, it is %v", pd.unique)
 		}
+		return nil
+	case reflect.Float64:
+		parsedReal, err := pd.parseReal()
+		if err != nil {
+			return err
+		}
+		val.SetFloat(parsedReal)
+		log.Debugf("Decoded REAL Value: %d", parsedReal)
 		return nil
 	case reflect.Struct:
 		structType := fieldType
