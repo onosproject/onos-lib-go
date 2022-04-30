@@ -348,6 +348,10 @@ func (pd *perRawBitData) appendBool(value bool) (err error) {
 
 func howManyBitsNeeded(value int64) (bitAmount int32) {
 
+	if value < 0 {
+		value = -value
+	}
+
 	//log.Debugf("Starting to compute how many bits are needed to store value of %v", value)
 	for {
 		bitAmount++
@@ -364,6 +368,10 @@ func howManyBitsNeeded(value int64) (bitAmount int32) {
 }
 
 func howManyBytesNeeded(value int64) (byteAmount int) {
+
+	if value < 0 {
+		value = -value
+	}
 
 	//log.Debugf("Starting to compute how many bytes are needed to store value of %v", value)
 	bitAmount := howManyBitsNeeded(value)
@@ -432,6 +440,7 @@ func (pd *perRawBitData) appendReal(value float64) (err error) {
 
 	p = howManyBytesNeeded(mantissa)
 	n = howManyBytesNeeded(exponent) // should be always 1 byte
+	log.Debugf("Obtained mantissa is %v, value in computations is nothing. Exponent is %v, it is negative (%v)", mantissa, exponent, negativeExponent)
 
 	// computing length of the bytes needed to encode a number
 	byteLength := n + p + 1
