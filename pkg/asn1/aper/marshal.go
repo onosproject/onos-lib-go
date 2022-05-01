@@ -416,6 +416,10 @@ func (pd *perRawBitData) appendReal(value float64) (err error) {
 			exponent++
 			mantissa = mantissa / 2
 		}
+		// mantissa can't be negative
+		if mantissa < 0 {
+			mantissa = -mantissa
+		}
 		log.Debugf("Obtained mantissa is %v, exponent is %v", mantissa, exponent)
 	} else {
 		log.Debugf("We're encoding a number with a floating point")
@@ -434,25 +438,30 @@ func (pd *perRawBitData) appendReal(value float64) (err error) {
 		}
 		// get the mantissa
 		mantissa = int64(math.Trunc(val))
+		// mantissa can't be negative
+		if mantissa < 0 {
+			mantissa = -mantissa
+		}
 		negativeExponent = true
 		log.Debugf("Obtained mantissa is %v, value in computations is %v. Exponent is %v, it is negative (%v)", mantissa, val, exponent, negativeExponent)
 	}
 
 	p = howManyBytesNeeded(mantissa)
+	if p < 7 && mantissa > 100 {
+		// 7 is the maximum number of bytes to carry mantissa (because of max. 51 multiplication of 2),
+		// mantissa <= 100 apply rules for encoding non-negative whole small number
+		p = p + 1
+	}
 	n = howManyBytesNeeded(exponent) // should be always 1 byte
-	log.Debugf("Obtained mantissa is %v, value in computations is nothing. Exponent is %v, it is negative (%v)", mantissa, exponent, negativeExponent)
 
 	// computing length of the bytes needed to encode a number
 	byteLength := n + p + 1
-	if p < 7 { // 7 is the maximum number of bytes to carry mantissa (because of max. 51 multiplication of 2)
-		byteLength++
-	}
 	log.Debugf("Amount of bytes to encode is %v: 1 byte for length, 1 byte for header, %v bytes for exponent, %v bytes for mantissa", byteLength, n, p)
 
 	//aligning bits first
 	pd.appendAlignBits()
 	// storing number of bytes for reference
-	numBytesRef := len(pd.bytes)
+	numBytesStart := len(pd.bytes)
 
 	// putting length of the bits first
 	err = pd.putBitsValue(uint64(byteLength), 8)
@@ -509,31 +518,20 @@ func (pd *perRawBitData) appendReal(value float64) (err error) {
 		}
 	} else {
 		// if the exponent is positive, putting it here
-		err = pd.putBitsValue(uint64(exponent), uint(howManyBitsNeeded(exponent)))
+		err = pd.putBitsValue(uint64(exponent), uint(n)*8)
 		if err != nil {
 			return err
 		}
 	}
 
-	if p >= 7 {
-		err = pd.putBitsValue(uint64(mantissa), uint(howManyBytesNeeded(mantissa)*8))
-		if err != nil {
-			return err
-		}
-	} else {
-		err = pd.putBitsValue(0, 8)
-		if err != nil {
-			return err
-		}
-		err = pd.putBitsValue(uint64(mantissa), uint(howManyBytesNeeded(mantissa)*8))
-		if err != nil {
-			return err
-		}
+	err = pd.putBitsValue(uint64(mantissa), uint(p)*8)
+	if err != nil {
+		return err
 	}
 
 	numBytesEnd := len(pd.bytes)
-	if numBytesEnd-numBytesRef != byteLength+1 {
-		return errors.NewInvalid("Encoding REAL - checksum verification failed. Encoded %v bytes, expected %v bytes to encode", numBytesEnd-numBytesRef, byteLength)
+	if numBytesEnd-numBytesStart != byteLength+1 { // byteLength+1 is because 1 byte in the beginning stores length
+		return errors.NewInvalid("Encoding REAL - checksum verification failed. Encoded %v bytes, expected %v bytes to encode", numBytesEnd-numBytesStart, byteLength+1)
 	}
 
 	return nil

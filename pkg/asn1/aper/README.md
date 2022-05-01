@@ -56,3 +56,7 @@ All of the aforementioned changes were verified with unit tests.
 * `unique` specifies that this item is used as an input to indicate which `CHOICE` option is encoded or decoded 
   * It is a mandatory prerequisite for Canonical `CHOICE` encoding
 * `align` specifies that the Octet Alignment should be performed after this item
+
+## Known issues
+* When decoding structure of type `REAL` there may happen a precision error, i.e. decoding number `98765.4321` will 
+return `98765.43210023842`. This is a subject for future investigation.
