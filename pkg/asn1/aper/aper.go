@@ -532,7 +532,7 @@ func (pd *perBitData) parseReal() (float64, error) {
 		result = -result
 	}
 
-	// ToDo - find a way how to cut off distortion obtained in the division
+	// ToDo - find a way how to cut off distortion obtained in the division, e.g. decoding of 98765.4321
 	log.Debugf("Decoded REAL number is %v", result)
 	return result, nil
 }
