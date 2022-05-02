@@ -352,14 +352,10 @@ func howManyBitsNeeded(value int64) (bitAmount int32) {
 		value = -value
 	}
 
-	//log.Debugf("Starting to compute how many bits are needed to store value of %v", value)
 	for {
 		bitAmount++
 		value = value >> 1
-		//log.Debugf("Current bit amount is %v", bitAmount)
-		//log.Debugf("Value is %v", value)
 		if value == 0 {
-			//log.Debugf("We've reached the bottom of the value, bit amount is %v", bitAmount)
 			break
 		}
 	}
@@ -373,7 +369,6 @@ func howManyBytesNeeded(value int64) (byteAmount int) {
 		value = -value
 	}
 
-	//log.Debugf("Starting to compute how many bytes are needed to store value of %v", value)
 	bitAmount := howManyBitsNeeded(value)
 
 	for {
@@ -383,15 +378,14 @@ func howManyBytesNeeded(value int64) (byteAmount int) {
 		} else {
 			break
 		}
-		//log.Debugf("Current byte amount is %v", byteAmount)
 	}
 	byteAmount++
-	//log.Debugf("Final byte amount is %v", byteAmount)
 
 	return
 }
 
 // it looks like encoding of REAL doesn't take into account constraints at all, so we don't bother about parsing constraints
+// general rules are - mantissa should be an odd number or a 0
 func (pd *perRawBitData) appendReal(value float64) (err error) {
 
 	log.Debugf("Encoding REAL number %v", value)
@@ -409,16 +403,16 @@ func (pd *perRawBitData) appendReal(value float64) (err error) {
 		// If the number is even at the beginning, then encode 0 as an exponent and encode
 		// number as a mantissa (don't forget to put 00 octet in the beginning, for some reason I don't understand (yet))
 		mantissa = int64(value)
+		// mantissa can't be negative
+		if mantissa < 0 {
+			mantissa = -mantissa
+		}
 		for {
 			if mantissa%2 != 0 {
 				break
 			}
 			exponent++
 			mantissa = mantissa / 2
-		}
-		// mantissa can't be negative
-		if mantissa < 0 {
-			mantissa = -mantissa
 		}
 		log.Debugf("Obtained mantissa is %v, exponent is %v", mantissa, exponent)
 	} else {
@@ -444,12 +438,22 @@ func (pd *perRawBitData) appendReal(value float64) (err error) {
 		}
 		negativeExponent = true
 		log.Debugf("Obtained mantissa is %v, value in computations is %v. Exponent is %v, it is negative (%v)", mantissa, val, exponent, negativeExponent)
+		log.Debugf("Computing 2's complement for exponent (%v)", exponent)
+		//alternative way - works for 8 bit representation numbers
+		twosComplimentExp := 256 - exponent
+		log.Debugf("2's complement for exponent %v is %v", exponent, twosComplimentExp)
+		exponent = twosComplimentExp
+		log.Debugf("It requires %v bits to store the value", howManyBitsNeeded(exponent))
 	}
 
 	p = howManyBytesNeeded(mantissa)
-	if p < 7 && mantissa > 100 {
+	log.Debugf("Exponent/2 is %v, mantissa/2 is %v, exponent is %v, p is %v, mantissa is %v", exponent%2, mantissa%2, exponent, p, mantissa)
+	// ToDo - nail down correct constraints to include 0x00 before mantissa
+	// current constraint at least covers all cases in the unit test.
+	// I, personally, would abandon these extra 0x00 in the beginning of mantissa. It's redundant
+	if (exponent%2 == 0 || mantissa%2 != 0 || exponent == 0) && p < 7 && mantissa > 32 {
 		// 7 is the maximum number of bytes to carry mantissa (because of max. 51 multiplication of 2),
-		// mantissa <= 100 apply rules for encoding non-negative whole small number
+		// mantissa > 32 and odd - reverse engineered from Nokia's asn1c tool
 		p = p + 1
 	}
 	n = howManyBytesNeeded(exponent) // should be always 1 byte
@@ -505,23 +509,9 @@ func (pd *perRawBitData) appendReal(value float64) (err error) {
 		return err
 	}
 
-	// putting exponent here
-	if negativeExponent {
-		log.Debugf("Computing 2's complement for exponent (%v)", exponent)
-		//alternative way - works for 8 bit representation numbers
-		twosComplimentExp := 256 - exponent
-		log.Debugf("2's complement for exponent is %v", twosComplimentExp)
-		log.Debugf("It requires %v bits to store the value", howManyBitsNeeded(twosComplimentExp))
-		err = pd.putBitsValue(uint64(twosComplimentExp), 8)
-		if err != nil {
-			return err
-		}
-	} else {
-		// if the exponent is positive, putting it here
-		err = pd.putBitsValue(uint64(exponent), uint(n)*8)
-		if err != nil {
-			return err
-		}
+	err = pd.putBitsValue(uint64(exponent), uint(n)*8)
+	if err != nil {
+		return err
 	}
 
 	err = pd.putBitsValue(uint64(mantissa), uint(p)*8)
@@ -530,7 +520,7 @@ func (pd *perRawBitData) appendReal(value float64) (err error) {
 	}
 
 	numBytesEnd := len(pd.bytes)
-	if numBytesEnd-numBytesStart != byteLength+1 { // byteLength+1 is because 1 byte in the beginning stores length
+	if numBytesEnd-numBytesStart != byteLength+1 { // byteLength+1 is because 1 byte in the beginning stores the length of the following bytes
 		return errors.NewInvalid("Encoding REAL - checksum verification failed. Encoded %v bytes, expected %v bytes to encode", numBytesEnd-numBytesStart, byteLength+1)
 	}
 

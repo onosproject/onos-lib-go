@@ -419,7 +419,6 @@ func (pd *perBitData) parseBool() (value bool, err error) {
 	return
 }
 
-// ToDo - implement it
 func (pd *perBitData) parseReal() (float64, error) {
 
 	log.Debugf("Decoding REAL structure")
@@ -459,20 +458,24 @@ func (pd *perBitData) parseReal() (float64, error) {
 		negative = true
 	}
 
+	var base int
 	// parsing encoding base
-	base, err := pd.getBitsValue(2)
+	bb, err := pd.getBitsValue(2)
 	if err != nil {
 		return 0, err
 	}
-	switch base {
+	switch bb {
 	case 0:
-		log.Debugf("Obtained %v - decoding REAL with base 2 (default)", base)
+		base = 2
+		log.Debugf("Obtained %v - decoding REAL with base 2 (default)", bb)
 	case 1:
-		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v - base of 8 is not supported", base)
+		base = 8
+		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v - base of 8 is not supported", bb)
 	case 2:
-		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v - base of 16 is not supported", base)
+		base = 16
+		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v - base of 16 is not supported", bb)
 	default:
-		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v", base)
+		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v", bb)
 	}
 
 	// parsing scaling factor
@@ -481,7 +484,7 @@ func (pd *perBitData) parseReal() (float64, error) {
 		return 0, err
 	}
 	if ff != 0 {
-		return 0, errors.NewInvalid("Error parsing scaling factor - expected to be 0, obtained %v", ff)
+		return 0, errors.NewInvalid("Error parsing scaling factor - decoded bits expected to be 0, obtained %v", ff)
 	}
 
 	// parsing exponent
@@ -490,7 +493,7 @@ func (pd *perBitData) parseReal() (float64, error) {
 		return 0, err
 	}
 	if ee != 0 {
-		return 0, errors.NewInvalid("Error parsing exponent - expected to be 0, obtained %v", ee)
+		return 0, errors.NewInvalid("Error parsing exponent - decoded bits expected to be 0, obtained %v", ee)
 	}
 
 	//parsing exponent value
@@ -516,12 +519,12 @@ func (pd *perBitData) parseReal() (float64, error) {
 	if twosComplement {
 		result = float64(mantissa)
 		for i := 0; i < int(exponent); i++ {
-			result = result / 2
+			result = result / float64(base)
 		}
 	} else {
 		result = float64(mantissa)
 		for i := 0; i < int(exponent); i++ {
-			result = result * 2
+			result = result * float64(base)
 		}
 	}
 
