@@ -390,14 +390,22 @@ func (pd *perRawBitData) appendReal(value float64, lb *int64, ub *int64) (err er
 	if lb != nil {
 		lowerBound := *lb
 		if value < float64(lowerBound) {
-			return errors.NewInvalid("Error in encoding REAL - value (%v) is lower than lowerbound (%v)", value, float64(lowerBound))
+			return errors.NewInvalid("Error encoding REAL - value (%v) is lower than lowerbound (%v)", value, float64(lowerBound))
 		}
 	}
 	if ub != nil {
 		upperBound := *ub
 		if value > float64(upperBound) {
-			return errors.NewInvalid("Error in encoding REAL - value (%v) is higher than upperbound (%v)", value, float64(upperBound))
+			return errors.NewInvalid("Error encoding REAL - value (%v) is higher than upperbound (%v)", value, float64(upperBound))
 		}
+	}
+
+	// treating special case
+	if value == float64(0) {
+		// ITU-T X.691 refers to ITU-T X.690 and none of the defines proper form to encode 0 value.
+		// I assume, that it can be represented as [0x03 0x80 0x00 0x00].
+		// asn1c tool by Nokia doesn't treat this case - it returns error "numerical argument out of domain", returning it here
+		return errors.NewInvalid("Error encoding REAL - numerical argument is out of domain")
 	}
 
 	var mantissa int64
@@ -534,7 +542,7 @@ func (pd *perRawBitData) appendReal(value float64, lb *int64, ub *int64) (err er
 
 	numBytesEnd := len(pd.bytes)
 	if numBytesEnd-numBytesStart != byteLength+1 { // byteLength+1 is because 1 byte in the beginning stores the length of the following bytes
-		return errors.NewInvalid("Encoding REAL - checksum verification failed. Encoded %v bytes, expected %v bytes to encode", numBytesEnd-numBytesStart, byteLength+1)
+		return errors.NewInvalid("Error encoding REAL - checksum verification failed. Encoded %v bytes, expected %v bytes to encode", numBytesEnd-numBytesStart, byteLength+1)
 	}
 
 	return nil

@@ -527,13 +527,13 @@ func (pd *perBitData) parseReal(lb *int64, ub *int64) (float64, error) {
 	// we don't want to break decoding here, just putting warnings
 	if lb != nil {
 		lowerBound := *lb
-		if result < float64(lowerBound) {
+		if result < float64(lowerBound-1) {
 			log.Warnf("Decoding REAL - value (%v) is lower than lowerbound (%v)", result, float64(lowerBound))
 		}
 	}
 	if ub != nil {
 		upperBound := *ub
-		if result > float64(upperBound) {
+		if result > float64(upperBound+1) {
 			log.Warnf("Decoding REAL - value (%v) is higher than upperbound (%v)", result, float64(upperBound))
 		}
 	}

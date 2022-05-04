@@ -84,4 +84,44 @@ func Test_TestUnconstrainedRealEncode(t *testing.T) {
 		assert.EqualValues(t, tc.values[1], res.AttrUcrB)
 	}
 
+	valuesWithDistortion := []byte{0x09, 0x80, 0xd9, 0x18, 0x1c, 0xd6, 0xe6, 0x31, 0xf8, 0xa1, 0x09, 0x80, 0xdd, 0x0c, 0x0e, 0x6b, 0x74, 0xf0, 0xf8, 0x45}
+	res1 := &TestUnconstrainedReal{}
+	err := aper.Unmarshal(valuesWithDistortion, res1, Choicemap, CanonicalChoicemap)
+	assert.Nil(t, err)
+	t.Logf("Decoded struct is\n%v", res1)
+
+}
+
+func Test_RealErrors(t *testing.T) {
+	test1 := &TestUnconstrainedReal{
+		AttrUcrA: 0.0,
+		AttrUcrB: 21.546,
+	}
+
+	_, err := aper.Marshal(test1, Choicemap, CanonicalChoicemap)
+	assert.EqualError(t, err, "Error encoding REAL - numerical argument is out of domain")
+
+	test2 := &TestConstrainedReal{
+		AttrCrA: 21.4587,
+		AttrCrB: 654654.651564,
+		AttrCrC: -5464.98421,
+		AttrCrD: 554421.0,
+		AttrCrE: 10.0,
+		AttrCrF: 11.354,
+	}
+
+	_, err = aper.Marshal(test2, Choicemap, CanonicalChoicemap)
+	assert.EqualError(t, err, "Error encoding REAL - value (554421) is higher than upperbound (20)")
+
+	test3 := &TestConstrainedReal{
+		AttrCrA: 21.4587,
+		AttrCrB: -1.275,
+		AttrCrC: -5464.98421,
+		AttrCrD: 554421.0,
+		AttrCrE: 10.0,
+		AttrCrF: 11.354,
+	}
+
+	_, err = aper.Marshal(test3, Choicemap, CanonicalChoicemap)
+	assert.EqualError(t, err, "Error encoding REAL - value (-1.275) is lower than lowerbound (10)")
 }
