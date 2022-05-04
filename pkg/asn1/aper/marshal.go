@@ -22,10 +22,6 @@ type perRawBitData struct {
 	sequenceCanBeExtended bool
 }
 
-// Assuming that UNIQUE ID is being treated as INTEGER
-// By default, we don't know if UNIQUE items are present in ASN.1 definition
-//var unique int64 = -1
-
 func perRawBitLog(numBits uint64, byteLen int, bitsOffset uint, value interface{}) string {
 	if reflect.TypeOf(value).Kind() == reflect.Uint64 {
 		return fmt.Sprintf("  [PER put %2d bits, byteLen(after): %d, bitsOffset(after): %d, value: 0x%0x]",
@@ -384,11 +380,26 @@ func howManyBytesNeeded(value int64) (byteAmount int) {
 	return
 }
 
-// it looks like encoding of REAL doesn't take into account constraints at all, so we don't bother about parsing constraints
+// it looks like encoding of REAL doesn't take into account constraints at all, so we don't bother about parsing constraints (only to check if value is within bounds)
 // general rules are - mantissa should be an odd number or a 0
-func (pd *perRawBitData) appendReal(value float64) (err error) {
+func (pd *perRawBitData) appendReal(value float64, lb *int64, ub *int64) (err error) {
 
 	log.Debugf("Encoding REAL number %v", value)
+
+	// checking if value is within bounds
+	if lb != nil {
+		lowerBound := *lb
+		if value < float64(lowerBound) {
+			return errors.NewInvalid("Error in encoding REAL - value (%v) is lower than lowerbound (%v)", value, float64(lowerBound))
+		}
+	}
+	if ub != nil {
+		upperBound := *ub
+		if value > float64(upperBound) {
+			return errors.NewInvalid("Error in encoding REAL - value (%v) is higher than upperbound (%v)", value, float64(upperBound))
+		}
+	}
+
 	var mantissa int64
 	var exponent int64
 	var p int
@@ -446,6 +457,7 @@ func (pd *perRawBitData) appendReal(value float64) (err error) {
 		log.Debugf("It requires %v bits to store the value", howManyBitsNeeded(exponent))
 	}
 
+	// number of bytes to carry mantissa
 	p = howManyBytesNeeded(mantissa)
 	log.Debugf("Exponent/2 is %v, mantissa/2 is %v, exponent is %v, p is %v, mantissa is %v", exponent%2, mantissa%2, exponent, p, mantissa)
 	// ToDo - nail down correct constraints to include 0x00 before mantissa
@@ -456,11 +468,12 @@ func (pd *perRawBitData) appendReal(value float64) (err error) {
 		// mantissa > 32 and odd - reverse engineered from Nokia's asn1c tool
 		p = p + 1
 	}
+	// number of bytes to carry exponent
 	n = howManyBytesNeeded(exponent) // should be always 1 byte
 
 	// computing length of the bytes needed to encode a number
 	byteLength := n + p + 1
-	log.Debugf("Amount of bytes to encode is %v: 1 byte for length, 1 byte for header, %v bytes for exponent, %v bytes for mantissa", byteLength, n, p)
+	log.Debugf("Amount of bytes to encode is %v: 1 byte for header, %v bytes for exponent, %v bytes for mantissa", byteLength, n, p)
 
 	//aligning bits first
 	pd.appendAlignBits()
@@ -964,7 +977,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		return nil
 
 	case reflect.Float64:
-		if err := pd.appendReal(v.Float()); err != nil {
+		if err := pd.appendReal(v.Float(), params.valueLowerBound, params.valueUpperBound); err != nil {
 			return err
 		}
 		return nil

@@ -15,15 +15,6 @@ import (
 
 var log = logging.GetLogger("asn1", "aper")
 
-// ChoiceMap - a global map of choices - specific to the Protobuf being handled
-//var ChoiceMap = map[string]map[int]reflect.Type{}
-
-// CanonicalChoiceMap - a global map of choices in canonical ordering - specific to the Protobuf being handled
-//var CanonicalChoiceMap = map[string]map[int64]reflect.Type{}
-//
-//var canonicalOrdering = false
-//var choiceCanBeExtended = false
-
 type perBitData struct {
 	bytes               []byte
 	byteOffset          uint64
@@ -145,7 +136,7 @@ func (pd *perBitData) parseAlignBits() error {
 		if val, err := pd.getBitsValue(alignBits); err != nil {
 			return err
 		} else if val != 0 {
-			return fmt.Errorf("Align Bit is not zero in (see last octet) %v", hex.Dump(pd.bytes[:pd.byteOffset+1]))
+			return fmt.Errorf("Align Bit is not zero in (see last octet)\n%v", hex.Dump(pd.bytes[:pd.byteOffset+1]))
 		}
 	} else if pd.bitsOffset != 0 {
 		pd.bitCarry()
@@ -419,7 +410,7 @@ func (pd *perBitData) parseBool() (value bool, err error) {
 	return
 }
 
-func (pd *perBitData) parseReal() (float64, error) {
+func (pd *perBitData) parseReal(lb *int64, ub *int64) (float64, error) {
 
 	log.Debugf("Decoding REAL structure")
 	var result float64
@@ -530,6 +521,21 @@ func (pd *perBitData) parseReal() (float64, error) {
 
 	if negative {
 		result = -result
+	}
+
+	// checking if value is within bounds
+	// we don't want to break decoding here, just putting warnings
+	if lb != nil {
+		lowerBound := *lb
+		if result < float64(lowerBound) {
+			log.Warnf("Decoding REAL - value (%v) is lower than lowerbound (%v)", result, float64(lowerBound))
+		}
+	}
+	if ub != nil {
+		upperBound := *ub
+		if result > float64(upperBound) {
+			log.Warnf("Decoding REAL - value (%v) is higher than upperbound (%v)", result, float64(upperBound))
+		}
 	}
 
 	// ToDo - find a way how to cut off distortion obtained in the division, e.g. decoding of 98765.4321
@@ -913,7 +919,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		}
 		return nil
 	case reflect.Float64:
-		parsedReal, err := pd.parseReal()
+		parsedReal, err := pd.parseReal(params.valueLowerBound, params.valueUpperBound)
 		if err != nil {
 			return err
 		}
@@ -1185,8 +1191,8 @@ func Unmarshal(b []byte, value interface{}, choiceMap map[string]map[int]reflect
 // UnmarshalWithParams allows field parameters to be specified for the
 // top-level element. The form of the params is the same as the field tags.
 func UnmarshalWithParams(b []byte, value interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) error {
+	//log.SetLevel(logging.DebugLevel)
 	v := reflect.ValueOf(value).Elem()
-	// ToDo - sequenceCanBeExtended may cause potential problems
 	pd := &perBitData{b, 0, 0, choiceMap, -1, false, canonicalChoiceMap, false}
 	err := parseField(v, pd, parseFieldParameters(params))
 	if err != nil {
