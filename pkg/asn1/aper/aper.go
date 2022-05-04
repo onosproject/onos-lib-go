@@ -15,15 +15,6 @@ import (
 
 var log = logging.GetLogger("asn1", "aper")
 
-// ChoiceMap - a global map of choices - specific to the Protobuf being handled
-//var ChoiceMap = map[string]map[int]reflect.Type{}
-
-// CanonicalChoiceMap - a global map of choices in canonical ordering - specific to the Protobuf being handled
-//var CanonicalChoiceMap = map[string]map[int64]reflect.Type{}
-//
-//var canonicalOrdering = false
-//var choiceCanBeExtended = false
-
 type perBitData struct {
 	bytes               []byte
 	byteOffset          uint64
@@ -145,7 +136,7 @@ func (pd *perBitData) parseAlignBits() error {
 		if val, err := pd.getBitsValue(alignBits); err != nil {
 			return err
 		} else if val != 0 {
-			return fmt.Errorf("Align Bit is not zero in (see last octet) %v", hex.Dump(pd.bytes[:pd.byteOffset+1]))
+			return fmt.Errorf("Align Bit is not zero in (see last octet)\n%v", hex.Dump(pd.bytes[:pd.byteOffset+1]))
 		}
 	} else if pd.bitsOffset != 0 {
 		pd.bitCarry()
@@ -417,6 +408,139 @@ func (pd *perBitData) parseBool() (value bool, err error) {
 	}
 	log.Debugf("Decoded BOOLEAN Value %v", value)
 	return
+}
+
+func (pd *perBitData) parseReal(lb *int64, ub *int64) (float64, error) {
+
+	log.Debugf("Decoding REAL structure")
+	var result float64
+
+	// parsing aligning bits first
+	err := pd.parseAlignBits()
+	if err != nil {
+		return 0, err
+	}
+
+	byteLength, err := pd.getBitsValue(8)
+	if err != nil {
+		return 0, err
+	}
+	log.Debugf("Next %v bytes contain exponent and mantissa", byteLength)
+
+	// parsing header
+	bit, err := pd.getBitsValue(1)
+	if err != nil {
+		return 0, err
+	}
+	if bit != 1 {
+		return 0, errors.NewInvalid("It looks like the header for REAL contains corrupted bytes. Got %v, expected to have 1", bit)
+	}
+
+	// parsing sign
+	sign, err := pd.getBitsValue(1)
+	if err != nil {
+		return 0, err
+	}
+	negative := false
+	if sign == 0 {
+		log.Debugf("Obtained %v - REAL is a positive number", sign)
+	} else if sign == 1 {
+		log.Debugf("Obtained %v - REAL is a negative number", sign)
+		negative = true
+	}
+
+	var base int
+	// parsing encoding base
+	bb, err := pd.getBitsValue(2)
+	if err != nil {
+		return 0, err
+	}
+	switch bb {
+	case 0:
+		base = 2
+		log.Debugf("Obtained %v - decoding REAL with base 2 (default)", bb)
+	case 1:
+		base = 8
+		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v - base of 8 is not supported", bb)
+	case 2:
+		base = 16
+		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v - base of 16 is not supported", bb)
+	default:
+		return 0, errors.NewInvalid("Error while parsing encoding base of REAL, obtained %v", bb)
+	}
+
+	// parsing scaling factor
+	ff, err := pd.getBitsValue(2)
+	if err != nil {
+		return 0, err
+	}
+	if ff != 0 {
+		return 0, errors.NewInvalid("Error parsing scaling factor - decoded bits expected to be 0, obtained %v", ff)
+	}
+
+	// parsing exponent
+	ee, err := pd.getBitsValue(2)
+	if err != nil {
+		return 0, err
+	}
+	if ee != 0 {
+		return 0, errors.NewInvalid("Error parsing exponent - decoded bits expected to be 0, obtained %v", ee)
+	}
+
+	//parsing exponent value
+	exponent, err := pd.getBitsValue(8)
+	if err != nil {
+		return 0, err
+	}
+	twosComplement := false
+	if exponent >= 52 {
+		// getting 2's complement back
+		exponent = 256 - exponent
+		twosComplement = true
+	}
+	log.Debugf("Obtained exponent is %v", exponent)
+
+	// parsing mantissa
+	mantissa, err := pd.getBitsValue(8 * uint(byteLength-1-1))
+	if err != nil {
+		return 0, err
+	}
+	log.Debugf("Obtained mantissa is %v", mantissa)
+
+	if twosComplement {
+		result = float64(mantissa)
+		for i := 0; i < int(exponent); i++ {
+			result = result / float64(base)
+		}
+	} else {
+		result = float64(mantissa)
+		for i := 0; i < int(exponent); i++ {
+			result = result * float64(base)
+		}
+	}
+
+	if negative {
+		result = -result
+	}
+
+	// checking if value is within bounds
+	// we don't want to break decoding here, just putting warnings
+	if lb != nil {
+		lowerBound := *lb
+		if result < float64(lowerBound-1) {
+			log.Warnf("Decoding REAL - value (%v) is lower than lowerbound (%v)", result, float64(lowerBound))
+		}
+	}
+	if ub != nil {
+		upperBound := *ub
+		if result > float64(upperBound+1) {
+			log.Warnf("Decoding REAL - value (%v) is higher than upperbound (%v)", result, float64(upperBound))
+		}
+	}
+
+	// ToDo - find a way how to cut off distortion obtained in the division, e.g. decoding of 98765.4321
+	log.Debugf("Decoded REAL number is %v", result)
+	return result, nil
 }
 
 func (pd *perBitData) parseInteger(extensed bool, lowerBoundPtr *int64, upperBoundPtr *int64) (int64, error) {
@@ -794,6 +918,14 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			log.Debugf("UNIQUE flag was found, it is %v", pd.unique)
 		}
 		return nil
+	case reflect.Float64:
+		parsedReal, err := pd.parseReal(params.valueLowerBound, params.valueUpperBound)
+		if err != nil {
+			return err
+		}
+		val.SetFloat(parsedReal)
+		log.Debugf("Decoded REAL Value: %d", parsedReal)
+		return nil
 	case reflect.Struct:
 		structType := fieldType
 		var structParams []fieldParameters
@@ -1059,8 +1191,8 @@ func Unmarshal(b []byte, value interface{}, choiceMap map[string]map[int]reflect
 // UnmarshalWithParams allows field parameters to be specified for the
 // top-level element. The form of the params is the same as the field tags.
 func UnmarshalWithParams(b []byte, value interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) error {
+	//log.SetLevel(logging.DebugLevel)
 	v := reflect.ValueOf(value).Elem()
-	// ToDo - sequenceCanBeExtended may cause potential problems
 	pd := &perBitData{b, 0, 0, choiceMap, -1, false, canonicalChoiceMap, false}
 	err := parseField(v, pd, parseFieldParameters(params))
 	if err != nil {

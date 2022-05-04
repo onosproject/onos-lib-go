@@ -22,10 +22,6 @@ type perRawBitData struct {
 	sequenceCanBeExtended bool
 }
 
-// Assuming that UNIQUE ID is being treated as INTEGER
-// By default, we don't know if UNIQUE items are present in ASN.1 definition
-//var unique int64 = -1
-
 func perRawBitLog(numBits uint64, byteLen int, bitsOffset uint, value interface{}) string {
 	if reflect.TypeOf(value).Kind() == reflect.Uint64 {
 		return fmt.Sprintf("  [PER put %2d bits, byteLen(after): %d, bitsOffset(after): %d, value: 0x%0x]",
@@ -344,6 +340,212 @@ func (pd *perRawBitData) appendBool(value bool) (err error) {
 		log.Debugf("Encoded BOOLEAN Value : 0x0")
 	}
 	return
+}
+
+func howManyBitsNeeded(value int64) (bitAmount int32) {
+
+	if value < 0 {
+		value = -value
+	}
+
+	for {
+		bitAmount++
+		value = value >> 1
+		if value == 0 {
+			break
+		}
+	}
+
+	return
+}
+
+func howManyBytesNeeded(value int64) (byteAmount int) {
+
+	if value < 0 {
+		value = -value
+	}
+
+	bitAmount := howManyBitsNeeded(value)
+
+	for {
+		if bitAmount > 8 {
+			bitAmount = bitAmount - 8
+			byteAmount++
+		} else {
+			break
+		}
+	}
+	byteAmount++
+
+	return
+}
+
+// it looks like encoding of REAL doesn't take into account constraints at all, so we don't bother about parsing constraints (only to check if value is within bounds)
+// general rules are - mantissa should be an odd number or a 0
+func (pd *perRawBitData) appendReal(value float64, lb *int64, ub *int64) (err error) {
+
+	log.Debugf("Encoding REAL number %v", value)
+
+	// checking if value is within bounds
+	if lb != nil {
+		lowerBound := *lb
+		if value < float64(lowerBound) {
+			return errors.NewInvalid("Error encoding REAL - value (%v) is lower than lowerbound (%v)", value, float64(lowerBound))
+		}
+	}
+	if ub != nil {
+		upperBound := *ub
+		if value > float64(upperBound) {
+			return errors.NewInvalid("Error encoding REAL - value (%v) is higher than upperbound (%v)", value, float64(upperBound))
+		}
+	}
+
+	// treating special case
+	if value == float64(0) {
+		// ITU-T X.691 refers to ITU-T X.690 and none of the defines proper form to encode 0 value.
+		// I assume, that it can be represented as [0x03 0x80 0x00 0x00].
+		// asn1c tool by Nokia doesn't treat this case - it returns error "numerical argument out of domain", returning it here
+		return errors.NewInvalid("Error encoding REAL - numerical argument is out of domain")
+	}
+
+	var mantissa int64
+	var exponent int64
+	var p int
+	var n int
+	negativeExponent := false
+
+	// First, checking whether we encode a whole number
+	if value == math.Trunc(value) {
+		log.Debugf("We're encoding a whole number")
+		// Valid for whole numbers: divide value on 2 until the result is odd, once result is even, stop.
+		// Encode power of 2 (obtained from division) as exponent and encode result of division as a mantissa
+		// If the number is even at the beginning, then encode 0 as an exponent and encode
+		// number as a mantissa (don't forget to put 00 octet in the beginning, for some reason I don't understand (yet))
+		mantissa = int64(value)
+		// mantissa can't be negative
+		if mantissa < 0 {
+			mantissa = -mantissa
+		}
+		for {
+			if mantissa%2 != 0 {
+				break
+			}
+			exponent++
+			mantissa = mantissa / 2
+		}
+		log.Debugf("Obtained mantissa is %v, exponent is %v", mantissa, exponent)
+	} else {
+		log.Debugf("We're encoding a number with a floating point")
+		// For values with numbers after decimal dot (radix), representation is different
+		// Steps are following: multiply initial number by two until it becomes a whole number
+		// if the number is not becoming a whole one, then multiply by 2 (max. 51 times), then
+		// take the resulting number and encode it the same way as a whole number (exponent is encoded as its 2's complement)
+
+		val := value
+		for i := 0; i < 52; i++ { // 52 bits is maximum size of float
+			if val == math.Trunc(val) {
+				break
+			}
+			val = val * 2
+			exponent++
+		}
+		// get the mantissa
+		mantissa = int64(math.Trunc(val))
+		// mantissa can't be negative
+		if mantissa < 0 {
+			mantissa = -mantissa
+		}
+		negativeExponent = true
+		log.Debugf("Obtained mantissa is %v, value in computations is %v. Exponent is %v, it is negative (%v)", mantissa, val, exponent, negativeExponent)
+		log.Debugf("Computing 2's complement for exponent (%v)", exponent)
+		//alternative way - works for 8 bit representation numbers
+		twosComplimentExp := 256 - exponent
+		log.Debugf("2's complement for exponent %v is %v", exponent, twosComplimentExp)
+		exponent = twosComplimentExp
+		log.Debugf("It requires %v bits to store the value", howManyBitsNeeded(exponent))
+	}
+
+	// number of bytes to carry mantissa
+	p = howManyBytesNeeded(mantissa)
+	log.Debugf("Exponent/2 is %v, mantissa/2 is %v, exponent is %v, p is %v, mantissa is %v", exponent%2, mantissa%2, exponent, p, mantissa)
+	// ToDo - nail down correct constraints to include 0x00 before mantissa
+	// current constraint at least covers all cases in the unit test.
+	// I, personally, would abandon these extra 0x00 in the beginning of mantissa. It's redundant
+	if (exponent%2 == 0 || mantissa%2 != 0 || exponent == 0) && p < 7 && mantissa > 32 {
+		// 7 is the maximum number of bytes to carry mantissa (because of max. 51 multiplication of 2),
+		// mantissa > 32 and odd - reverse engineered from Nokia's asn1c tool
+		p = p + 1
+	}
+	// number of bytes to carry exponent
+	n = howManyBytesNeeded(exponent) // should be always 1 byte
+
+	// computing length of the bytes needed to encode a number
+	byteLength := n + p + 1
+	log.Debugf("Amount of bytes to encode is %v: 1 byte for header, %v bytes for exponent, %v bytes for mantissa", byteLength, n, p)
+
+	//aligning bits first
+	pd.appendAlignBits()
+	// storing number of bytes for reference
+	numBytesStart := len(pd.bytes)
+
+	// putting length of the bits first
+	err = pd.putBitsValue(uint64(byteLength), 8)
+	if err != nil {
+		return err
+	}
+
+	// composing header
+	// putting 1 (mandatory)
+	err = pd.putBitsValue(1, 1)
+	if err != nil {
+		return err
+	}
+	// putting sign bit
+	if value >= 0 {
+		// if positive number
+		err = pd.putBitsValue(0, 1)
+		if err != nil {
+			return err
+		}
+	} else {
+		// if negative number
+		err = pd.putBitsValue(1, 1)
+		if err != nil {
+			return err
+		}
+	}
+	// putting an encoding base (always 2, so 00 bits)
+	err = pd.putBitsValue(0, 2)
+	if err != nil {
+		return err
+	}
+	// putting a scale factor (always set to 0)
+	err = pd.putBitsValue(0, 2)
+	if err != nil {
+		return err
+	}
+	// putting an exponent (always set to be 00 bits)
+	err = pd.putBitsValue(0, 2)
+	if err != nil {
+		return err
+	}
+
+	err = pd.putBitsValue(uint64(exponent), uint(n)*8)
+	if err != nil {
+		return err
+	}
+
+	err = pd.putBitsValue(uint64(mantissa), uint(p)*8)
+	if err != nil {
+		return err
+	}
+
+	numBytesEnd := len(pd.bytes)
+	if numBytesEnd-numBytesStart != byteLength+1 { // byteLength+1 is because 1 byte in the beginning stores the length of the following bytes
+		return errors.NewInvalid("Error encoding REAL - checksum verification failed. Encoded %v bytes, expected %v bytes to encode", numBytesEnd-numBytesStart, byteLength+1)
+	}
+
+	return nil
 }
 
 func (pd *perRawBitData) appendInteger(value int64, extensive bool, lowerBoundPtr *int64, upperBoundPtr *int64) error {
@@ -779,6 +981,12 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		}
 		if params.align {
 			pd.appendAlignBits()
+		}
+		return nil
+
+	case reflect.Float64:
+		if err := pd.appendReal(v.Float(), params.valueLowerBound, params.valueUpperBound); err != nil {
+			return err
 		}
 		return nil
 

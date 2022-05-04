@@ -20,6 +20,7 @@ generates the same APER bytes as [this asn1c](https://github.com/nokia/asn1c) to
     * Value field is represented with `[]byte`
     * Len field is represented with `uint32`
 * Fixed `BitString` encoding and decoding brought by `[]byte` representation specificity
+* Fixed encoding and decoding for `BitString` when they have an extension flag
 * Fixed `Integer` encoding, now it can encode negative values as well
 * logrus has been replaced by own logging
 * Errors are generated through our own package
@@ -34,6 +35,7 @@ generates the same APER bytes as [this asn1c](https://github.com/nokia/asn1c) to
 * Introduced encoding of normally small non-negative `Integers`
 * Fixed race condition issue
 * Implemented possibility to encode `SEQUENCE` structures with defined extension
+* Implemented possibility to encode and decode `REAL` type (numbers with floating point)
 
 All of the aforementioned changes were verified with unit tests.
 
@@ -55,7 +57,6 @@ All of the aforementioned changes were verified with unit tests.
   * It is a mandatory prerequisite for Canonical `CHOICE` encoding
 * `align` specifies that the Octet Alignment should be performed after this item
 
-#### Known issues
-
-* Encoding and decoding of `REAL` structures is not handled
-* `BitString` doesn't support encoding and decoding of value extension
+## Known issues
+* When decoding structure of type `REAL` there may happen a precision error, i.e. decoding number `98765.4321` will 
+return `98765.43210023842`. This is a subject for future investigation.
