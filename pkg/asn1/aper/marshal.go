@@ -121,7 +121,7 @@ func (pd *perRawBitData) appendConstraintValue(valueRange int64, value uint64) (
 	} else if valueRange <= 65536 {
 		bytes = 2
 	} else {
-		err = fmt.Errorf("constraint Value is large than 65536")
+		err = fmt.Errorf("constraint Value is larger than 65536")
 		return
 	}
 	pd.appendAlignBits()
@@ -791,7 +791,7 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, fromChoi
 		if choiceBounds < 1 {
 			return fmt.Errorf("the upper bound of CHOICE is missing")
 		} else if extensive && rawChoice > choiceBounds {
-			return fmt.Errorf("unsupport value of CHOICE type is in Extensed: %v", rawChoice)
+			return fmt.Errorf("unsupport value of CHOICE type: %v", rawChoice)
 		}
 		log.Debugf("Encoding Present index of CHOICE  %d - 1", present)
 		if choiceBounds != 1 {

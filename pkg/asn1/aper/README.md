@@ -57,6 +57,23 @@ All of the aforementioned changes were verified with unit tests.
   * It is a mandatory prerequisite for Canonical `CHOICE` encoding
 * `align` specifies that the Octet Alignment should be performed after this item
 
+> There is a list of errors with a description which may happen in the encoding/decoding process with Go APER library. 
+> You can find it [here](error_list.md).
+
 ## Known issues
 * When decoding structure of type `REAL` there may happen a precision error, i.e. decoding number `98765.4321` will 
 return `98765.43210023842`. This is a subject for future investigation.
+
+
+## Some useful resources:
+If you're interested in the APER encoding/decoding fundamentals or tending to learn more, there is a list of useful links:
+
+[1] [ITU-T X.691 specification](https://www.itu.int/ITU-T/studygroups/com17/languages/X.691-0207.pdf)
+
+[2] [Olivier DuBuisson, ASN.1 Communication between heterogeneous systems (in particular, chapters 15.6 and 20.6.21)](https://www.oss.com/asn1/resources/books-whitepapers-pubs/dubuisson-asn1-book.PDF)
+
+[3] [OSS Novakia ASN.1 notes](https://www.oss.com/asn1/knowledge-center/asn1-java/asn1java-der-support.html)
+
+[4] [A Warm Welcome to ASN.1 and DER (provides a good overview of ASN1 encoding, but not related to APER – may be excluded)](https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der/)
+
+[5] [John Larmount, ASN.1 complete](https://www.oss.com/asn1/resources/books-whitepapers-pubs/larmouth-asn1-book.pdf)

@@ -103,7 +103,7 @@ message TestBitString {
     asn1.v1.BitString attr_bs1 = 1 [json_name = "attrBs1"];
     // @inject_tag: aper:"sizeLB:20,sizeUB:20"
     asn1.v1.BitString attr_bs2 = 2 [json_name = "attrBs2"];
-    // @inject_tag: aper:"sizeLB:20,sizeUB:20, valueExt"
+    // @inject_tag: aper:"sizeLB:20,sizeUB:20,sizeExt"
     asn1.v1.BitString attr_bs3 = 3 [json_name = "attrBs3"];
     // @inject_tag: aper:"sizeLB:0,sizeUB:18"
     asn1.v1.BitString attr_bs4 = 4 [json_name = "attrBs4"];
