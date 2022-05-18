@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2022-present Intel Corporation
+SPDX-FileCopyrightText: 2021-present Open Networking Foundation <info@opennetworking.org>
+SPDX-License-Identifier: Apache-2.0
+-->
+
 ## Descriptions of the error messages
 This little guide explains errors which may happen in the encoding/decoding process with Go APER library.
 
