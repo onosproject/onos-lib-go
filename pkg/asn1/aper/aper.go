@@ -204,7 +204,7 @@ func (pd *perBitData) parseLength(sizeRange int64, repeat *bool) (value uint64, 
 	}
 	firstByte &= 63
 	if firstByte < 1 || firstByte > 4 {
-		err = fmt.Errorf("Parse Length Out of Constraint")
+		err = fmt.Errorf("Parsed Length Out of Constraint")
 		return
 	}
 	*repeat = true

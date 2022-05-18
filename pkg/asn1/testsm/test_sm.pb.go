@@ -511,8 +511,8 @@ type TestBitString struct {
 	AttrBs1 *asn1.BitString `protobuf:"bytes,1,opt,name=attr_bs1,json=attrBs1,proto3" json:"attr_bs1,omitempty"`
 	// @inject_tag: aper:"sizeLB:20,sizeUB:20"
 	AttrBs2 *asn1.BitString `protobuf:"bytes,2,opt,name=attr_bs2,json=attrBs2,proto3" json:"attr_bs2,omitempty" aper:"sizeLB:20,sizeUB:20"`
-	// @inject_tag: aper:"sizeLB:20,sizeUB:20, valueExt"
-	AttrBs3 *asn1.BitString `protobuf:"bytes,3,opt,name=attr_bs3,json=attrBs3,proto3" json:"attr_bs3,omitempty" aper:"sizeLB:20,sizeUB:20, valueExt"`
+	// @inject_tag: aper:"sizeLB:20,sizeUB:20,sizeExt"
+	AttrBs3 *asn1.BitString `protobuf:"bytes,3,opt,name=attr_bs3,json=attrBs3,proto3" json:"attr_bs3,omitempty" aper:"sizeLB:20,sizeUB:20,sizeExt"`
 	// @inject_tag: aper:"sizeLB:0,sizeUB:18"
 	AttrBs4 *asn1.BitString `protobuf:"bytes,4,opt,name=attr_bs4,json=attrBs4,proto3" json:"attr_bs4,omitempty" aper:"sizeLB:0,sizeUB:18"`
 	// @inject_tag: aper:"sizeLB:22,sizeUB:32"
