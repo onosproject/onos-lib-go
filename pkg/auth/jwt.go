@@ -110,12 +110,15 @@ func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.MapClaims, 
 // The keys are in a public key format and are converted to RSA Public Keys
 func (j *JwtAuthenticator) refreshJwksKeys() error {
 	oidcURL := os.Getenv(OIDCServerURL)
-
+	fmt.Println("***********InSideAuthJwt_SMAL_************")
+	fmt.Sprintf("oidcURL :-%s\n",oidcURL)
 	client := new(http.Client)
 	resOpenIDConfig, err := client.Get(fmt.Sprintf("%s/%s", oidcURL, OpenidConfiguration))
+	
 	if err != nil {
 		return err
 	}
+	fmt.Sprintf("resOpenIDConfig info:- %s\n",resOpenIDConfig)
 	if resOpenIDConfig.Body != nil {
 		defer resOpenIDConfig.Body.Close()
 	}
@@ -123,6 +126,7 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 	if readErr != nil {
 		return err
 	}
+	fmt.Sprintf("openIDConfigBody info:- %s\n",openIDConfigBody)
 	var openIDprovider ecoidc.Provider
 	jsonErr := json.Unmarshal(openIDConfigBody, &openIDprovider)
 	if jsonErr != nil {
@@ -132,6 +136,8 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 	if err != nil {
 		return err
 	}
+	fmt.Sprintf("JWKSURL :- %s\n",openIDprovider.JWKSUR)
+	fmt.Sprintf("resOpenIDKeys info:- %s\n",resOpenIDKeysy)
 	if resOpenIDKeys.Body != nil {
 		defer resOpenIDKeys.Body.Close()
 	}
