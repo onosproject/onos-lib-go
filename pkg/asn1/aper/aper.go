@@ -1192,7 +1192,7 @@ func Unmarshal(b []byte, value interface{}, choiceMap map[string]map[int]reflect
 // UnmarshalWithParams allows field parameters to be specified for the
 // top-level element. The form of the params is the same as the field tags.
 func UnmarshalWithParams(b []byte, value interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) error {
-	log.SetLevel(logging.DebugLevel)
+	//log.SetLevel(logging.DebugLevel)
 	v := reflect.ValueOf(value).Elem()
 	pd := &perBitData{b, 0, 0, choiceMap, -1, false, canonicalChoiceMap, false}
 	err := parseField(v, pd, parseFieldParameters(params))
