@@ -721,7 +721,8 @@ func (pd *perBitData) getChoiceIndex(extensed bool, fromChoiceExtension bool, nu
 			log.Debugf("Choice is extended. Parsing items from extension")
 			upperBound := choiceMapLen - numItemsNotInExtension
 			if upperBound == 1 {
-				present = upperBound + 1
+				// We have only single item inside the choice extension, returning choiceMap length as a last CHOCIE index
+				present = choiceMapLen
 			} else {
 				if upperBound < 1 {
 					err = fmt.Errorf("the upper bound of CHOICE is missing")

@@ -773,11 +773,13 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, fromChoi
 		} else if extensive && rawChoice > choiceBounds {
 			return fmt.Errorf("unsupport value of CHOICE type is in Extensed: %v", rawChoice)
 		}
-		log.Debugf("Encoding Present index of CHOICE  %d - 1", present)
+		log.Debugf("Encoding index of CHOICE %d with upperbound %d", rawChoice, choiceBounds)
 		if choiceBounds != 1 {
 			if err := pd.appendConstraintValue(int64(choiceBounds), uint64(rawChoice)); err != nil {
 				return err
 			}
+		} else {
+			log.Debugf("Choice extension contains only single item, no need to encode the Choice index")
 		}
 	} else {
 		if pd.choiceCanBeExtended {
@@ -1033,7 +1035,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			if tempParams.fromValueExt && v.Field(i).Type().Kind() == reflect.Ptr && !v.Field(i).IsNil() {
 				log.Debugf("%v is from SEQUENCE extension and present", structType.Field(i).Name)
 				fromValueExtPresent = true
-			} else if v.Field(i).Type().Kind() == reflect.Ptr && !v.Field(i).IsNil() {
+			} else if tempParams.fromValueExt && v.Field(i).Type().Kind() == reflect.Ptr && v.Field(i).IsNil() {
 				log.Debugf("%v is from SEQUENCE extension and not present", structType.Field(i).Name)
 			}
 			choiceType = structType.Field(i).Tag.Get("protobuf_oneof")
@@ -1168,6 +1170,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 						log.Debugf("ValueExt is %v", structParams[fieldIdx].valueExtensible)
 						log.Debugf("FromChoiceExt is %v", structParams[fieldIdx].fromChoiceExt)
 						log.Debugf("Amount of values which are not in extension is %v", ieNotInExt)
+						log.Debugf("Choice map length is %v", len(choices))
 						log.Debugf("Choice can be extended is %v", pd.choiceCanBeExtended)
 						if err := pd.appendChoiceIndex(present, structParams[fieldIdx].valueExtensible, structParams[fieldIdx].fromChoiceExt, ieNotInExt, len(choices)); err != nil {
 							return err
@@ -1224,6 +1227,7 @@ func Marshal(val interface{}, choiceMap map[string]map[int]reflect.Type, canonic
 // top-level element. The form of the params is the same as the field tags.
 func MarshalWithParams(val interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) ([]byte, error) {
 	// ToDo - sequenceCanBeExtended may cause potential problems
+	//log.SetLevel(logging.DebugLevel)
 	pd := &perRawBitData{[]byte(""), 0, choiceMap, -1, canonicalChoiceMap, false, false}
 	err := pd.makeField(reflect.ValueOf(val), parseFieldParameters(params))
 	if err != nil {
