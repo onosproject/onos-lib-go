@@ -10,6 +10,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/onosproject/onos-lib-go/pkg/grpc/auth"
+	"google.golang.org/grpc/credentials"
 	"net"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -17,8 +18,6 @@ import (
 
 	"github.com/onosproject/onos-lib-go/pkg/certs"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
-	"google.golang.org/grpc/credentials"
-
 	"google.golang.org/grpc"
 )
 
@@ -85,6 +84,18 @@ func NewServerCfg(caPath string, keyPath string, certPath string, port int16, in
 	}
 }
 
+// NewInsecureServerConfig creates an insecure server configuration for the specified port.
+func NewInsecureServerConfig(port int16) *ServerConfig {
+	return &ServerConfig{
+		Port:     port,
+		Insecure: true,
+		SecurityCfg: &SecurityConfig{
+			AuthenticationEnabled: false,
+			AuthorizationEnabled:  false,
+		},
+	}
+}
+
 // AddService adds a Service to the server to be registered on Serve.
 func (s *Server) AddService(r Service) {
 	s.services = append(s.services, r)
@@ -98,7 +109,9 @@ func (s *Server) Serve(started func(string)) error {
 	}
 	tlsCfg := &tls.Config{}
 
-	if *s.cfg.CertPath == "" && *s.cfg.KeyPath == "" {
+	if s.cfg.Insecure && s.cfg.CertPath == nil && s.cfg.KeyPath == nil {
+		// nothing
+	} else if *s.cfg.CertPath == "" && *s.cfg.KeyPath == "" {
 		// Load default Certificates
 		clientCerts, err := tls.X509KeyPair([]byte(certs.DefaultLocalhostCrt), []byte(certs.DefaultLocalhostKey))
 		if err != nil {
@@ -124,16 +137,24 @@ func (s *Server) Serve(started func(string)) error {
 		tlsCfg.ClientAuth = tls.RequireAndVerifyClientCert
 	}
 
-	if *s.cfg.CaPath == "" {
+	if s.cfg.CaPath == nil {
+		// nothing
+	} else if *s.cfg.CaPath == "" {
 		log.Info("Loading default CA onfca")
 		tlsCfg.ClientCAs, err = certs.GetCertPoolDefault()
 	} else {
 		tlsCfg.ClientCAs, err = certs.GetCertPool(*s.cfg.CaPath)
 	}
+
 	if err != nil {
 		return err
 	}
-	opts := []grpc.ServerOption{grpc.Creds(credentials.NewTLS(tlsCfg))}
+
+	opts := make([]grpc.ServerOption, 0, 3)
+	if len(tlsCfg.Certificates) > 0 {
+		opts = append(opts, grpc.Creds(credentials.NewTLS(tlsCfg)))
+	}
+
 	if s.cfg.SecurityCfg.AuthenticationEnabled {
 		log.Info("Authentication Enabled")
 		opts = append(opts, grpc.UnaryInterceptor(
