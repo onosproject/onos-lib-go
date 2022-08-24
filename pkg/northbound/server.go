@@ -102,7 +102,7 @@ func (s *Server) AddService(r Service) {
 }
 
 // Serve starts the NB gNMI server.
-func (s *Server) Serve(started func(string)) error {
+func (s *Server) Serve(started func(string), grpcOpts ...grpc.ServerOption) error {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.Port))
 	if err != nil {
 		return err
@@ -150,7 +150,7 @@ func (s *Server) Serve(started func(string)) error {
 		return err
 	}
 
-	opts := make([]grpc.ServerOption, 0, 3)
+	opts := make([]grpc.ServerOption, 0, 5)
 	if len(tlsCfg.Certificates) > 0 {
 		opts = append(opts, grpc.Creds(credentials.NewTLS(tlsCfg)))
 	}
@@ -166,6 +166,8 @@ func (s *Server) Serve(started func(string)) error {
 				grpc_auth.StreamServerInterceptor(auth.AuthenticationInterceptor))))
 
 	}
+
+	opts = append(opts, grpcOpts...)
 
 	s.server = grpc.NewServer(opts...)
 	for i := range s.services {
