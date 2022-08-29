@@ -16,6 +16,17 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+const (
+	// ServiceAddress command option
+	ServiceAddress = "service-address"
+	// TLSCertPathFlag command option
+	TLSCertPathFlag = "tls-cert-path"
+	// TLSKeyPathFlag command option
+	TLSKeyPathFlag = "tls-key-path"
+	// NoTLSFlag command option
+	NoTLSFlag = "no-tls"
+)
+
 // GetConnection returns a gRPC client connection to the onos service
 func GetConnection(cmd *cobra.Command) (*grpc.ClientConn, error) {
 	address := getAddress(cmd)
@@ -72,4 +83,36 @@ func NewContextWithAuthHeaderFromFlag(ctx context.Context, authHeaderFlag *pflag
 		ctx = metadata.NewOutgoingContext(ctx, md)
 	}
 	return ctx
+}
+
+// AddEndpointFlags adds service address, TLS cert path and TLS key path option to the command.
+func AddEndpointFlags(cmd *cobra.Command, defaultAddress string) {
+	cmd.Flags().String(ServiceAddress, defaultAddress, "service address; defaults to "+defaultAddress)
+	cmd.Flags().String(TLSKeyPathFlag, "", "path to client private key")
+	cmd.Flags().String(TLSCertPathFlag, "", "path to client certificate")
+	cmd.Flags().Bool(NoTLSFlag, false, "if present, do not use TLS")
+}
+
+// GetServiceAddress returns the service address option value
+func GetServiceAddress(cmd *cobra.Command) string {
+	address, _ := cmd.Flags().GetString(ServiceAddress)
+	return address
+}
+
+// GetTLSCertPath returns the TLS certificate path option value
+func GetTLSCertPath(cmd *cobra.Command) string {
+	certPath, _ := cmd.Flags().GetString(TLSCertPathFlag)
+	return certPath
+}
+
+// GetTLSKeyPath returns the TLS key path option value
+func GetTLSKeyPath(cmd *cobra.Command) string {
+	keyPath, _ := cmd.Flags().GetString(TLSKeyPathFlag)
+	return keyPath
+}
+
+// NoTLS returns true if the no-TLS flag is set
+func NoTLS(cmd *cobra.Command) bool {
+	tls, _ := cmd.Flags().GetBool(NoTLSFlag)
+	return tls
 }
