@@ -63,6 +63,8 @@ All of the aforementioned changes were verified with unit tests.
 ## Known issues
 * When decoding structure of type `REAL` there may happen a precision error, i.e. decoding number `98765.4321` will 
 return `98765.43210023842`. This is a subject for future investigation.
+* It is not possible to encode or decode the '0' value for 'REAL' numbers. Per ITU-T X.691, it is a special case. 
+Its treatment is not defined. 
 
 
 ## Some useful resources:
