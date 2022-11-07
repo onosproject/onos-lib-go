@@ -21,6 +21,7 @@ type perBitData struct {
 	bitsOffset          uint
 	choiceMap           map[string]map[int]reflect.Type
 	unique              int64
+	uniqueStructFlag    bool
 	canonicalOrdering   bool
 	canonicalChoiceMap  map[string]map[int64]reflect.Type
 	choiceCanBeExtended bool
@@ -914,9 +915,10 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		}
 		val.SetInt(parsedInt)
 		log.Debugf("Decoded INTEGER Value: %d", parsedInt)
-		if params.unique {
+		if params.unique || pd.uniqueStructFlag {
 			pd.unique = parsedInt
 			log.Debugf("UNIQUE flag was found, it is %v", pd.unique)
+			pd.uniqueStructFlag = false // setting this flag back to false
 		}
 		return nil
 	case reflect.Float64:
@@ -945,7 +947,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			tempParams.oneofName = structType.Field(i).Tag.Get("protobuf_oneof")
 
 			if tempParams.valueExtensible {
-				log.Debugf("This SEQUENCE %v can be extended", structType.Field(i).Name)
+				log.Debugf("SEQUENCE %v can be extended", structType.Field(i).Type)
 			}
 
 			// for optional flag
@@ -955,6 +957,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			structParams = append(structParams, tempParams)
 		}
 
+		log.Debugf("optionalCount is %d", optionalCount)
 		if optionalCount > 0 {
 			optionalPresentsTmp, err := pd.getBitsValue(optionalCount)
 			if err != nil {
@@ -972,6 +975,13 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			}
 			fieldIdx++
 
+			// if no UNIQUE flag, then regular processing..
+			if structParams[fieldIdx].unique {
+				log.Debugf("UNIQUE flag was found for %v, %v", structType.Field(i).Name, structType.Field(i).Type)
+				// setting this flag to true to indicate that the structure carries unique flag
+				// assumption is that this structure contains only one int32 field..
+				pd.uniqueStructFlag = true
+			}
 			if structParams[fieldIdx].fromValueExt && valueExtensible {
 				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and present", structType.Field(i).Name, structType)
 			} else if structParams[fieldIdx].fromValueExt {
@@ -1030,7 +1040,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			}
 
 			if pd.unique == -1 {
-				return errors.NewInvalid("Didn't find UNIQUE flag. Please revisit ASN1 definition")
+				return errors.NewInvalid("Didn't find UNIQUE flag. Please revisit ASN.1 definition")
 			}
 
 			choiceType, ok := canonicalChoices[pd.unique]
@@ -1171,17 +1181,17 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 //
 // The following tags on struct fields have special meaning to Unmarshal:
 //
-//	optional        	OPTIONAL tag in SEQUENCE
-//	sizeExt             specifies that size  is extensible
-//	valueExt            specifies that value is extensible
-//	sizeLB		        set the minimum value of size constraint
-//	sizeUB              set the maximum value of value constraint
-//	valueLB		        set the minimum value of size constraint
-//	valueUB             set the maximum value of value constraint
-//	default             sets the default value
-//	openType            specifies the open Type
-//  referenceFieldName	the string of the reference field for this type (only if openType used)
-//  referenceFieldValue	the corresponding value of the reference field for this type (only if openType used)
+//		optional        	OPTIONAL tag in SEQUENCE
+//		sizeExt             specifies that size  is extensible
+//		valueExt            specifies that value is extensible
+//		sizeLB		        set the minimum value of size constraint
+//		sizeUB              set the maximum value of value constraint
+//		valueLB		        set the minimum value of size constraint
+//		valueUB             set the maximum value of value constraint
+//		default             sets the default value
+//		openType            specifies the open Type
+//	 referenceFieldName	the string of the reference field for this type (only if openType used)
+//	 referenceFieldValue	the corresponding value of the reference field for this type (only if openType used)
 //
 // Other ASN.1 types are not supported; if it encounters them,
 // Unmarshal returns a parse error.
@@ -1194,7 +1204,7 @@ func Unmarshal(b []byte, value interface{}, choiceMap map[string]map[int]reflect
 func UnmarshalWithParams(b []byte, value interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) error {
 	//log.SetLevel(logging.DebugLevel)
 	v := reflect.ValueOf(value).Elem()
-	pd := &perBitData{b, 0, 0, choiceMap, -1, false, canonicalChoiceMap, false}
+	pd := &perBitData{b, 0, 0, choiceMap, -1, false, false, canonicalChoiceMap, false}
 	err := parseField(v, pd, parseFieldParameters(params))
 	if err != nil {
 		return fmt.Errorf("Decoding failed with error %v\n%v", err, hex.Dump(b))
