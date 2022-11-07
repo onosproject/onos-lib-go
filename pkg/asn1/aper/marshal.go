@@ -1029,7 +1029,12 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			log.Debugf("Handling %s", structType.Field(i).Name)
 			tempParams := parseFieldParameters(structType.Field(i).Tag.Get("aper"))
 			if tempParams.unique {
-				pd.unique = v.Field(i).Int()
+				if v.Field(i).Kind() == reflect.Ptr {
+					log.Debugf("Type of the structure is %v, value is %v - %v", v.Field(i).Elem().Field(1).Kind(), v.Field(i).Elem().Field(1).Int(), v.Field(i).Elem().Field(3))
+					pd.unique = v.Field(i).Elem().Field(3).Int()
+				} else {
+					pd.unique = v.Field(i).Int()
+				}
 				log.Debugf("Unique of type %v was found - it is %v", reflect.ValueOf(v.Field(i)), pd.unique)
 			}
 			if tempParams.fromValueExt && v.Field(i).Type().Kind() == reflect.Ptr && !v.Field(i).IsNil() {
