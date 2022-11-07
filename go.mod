@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/Shopify/sarama v1.31.1
-	github.com/atomix/runtime/sdk v0.7.0
+	github.com/atomix/runtime/sdk v0.7.4
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
 	github.com/ericchiang/oidc v0.0.0-20160908143337-11f62933e071
