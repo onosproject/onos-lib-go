@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -119,7 +119,7 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 	if resOpenIDConfig.Body != nil {
 		defer resOpenIDConfig.Body.Close()
 	}
-	openIDConfigBody, readErr := ioutil.ReadAll(resOpenIDConfig.Body)
+	openIDConfigBody, readErr := io.ReadAll(resOpenIDConfig.Body)
 	if readErr != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 	if resOpenIDKeys.Body != nil {
 		defer resOpenIDKeys.Body.Close()
 	}
-	bodyOpenIDKeys, readErr := ioutil.ReadAll(resOpenIDKeys.Body)
+	bodyOpenIDKeys, readErr := io.ReadAll(resOpenIDKeys.Body)
 	if readErr != nil {
 		return err
 	}

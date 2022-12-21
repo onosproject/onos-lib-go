@@ -7,7 +7,7 @@ package logging
 import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -21,7 +21,7 @@ func TestDefaultLogger(t *testing.T) {
 
 func TestLoggerConfig(t *testing.T) {
 	config := Config{}
-	bytes, err := ioutil.ReadFile("test.yaml")
+	bytes, err := os.ReadFile("test.yaml")
 	assert.NoError(t, err)
 	err = yaml.Unmarshal(bytes, &config)
 	assert.NoError(t, err)

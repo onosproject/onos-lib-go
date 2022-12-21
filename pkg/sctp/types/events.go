@@ -95,11 +95,12 @@ const (
 )
 
 // EventSubscribe Data structure for different types of SCTP events.
-//   An SCTP application may need to understand and process events and
-//   errors that happen on the SCTP stack.  These events include network
-//   status changes, association startups, remote operational errors, and
-//   undeliverable messages.  All of these can be essential for the
-//   application.
+//
+//	An SCTP application may need to understand and process events and
+//	errors that happen on the SCTP stack.  These events include network
+//	status changes, association startups, remote operational errors, and
+//	undeliverable messages.  All of these can be essential for the
+//	application.
 type EventSubscribe struct {
 	DataIO          uint8
 	Association     uint8

@@ -94,9 +94,9 @@ func User(username string) *Userinfo {
 //
 // This functionality should only be used with legacy web sites.
 // RFC 2396 warns that interpreting Userinfo this way
-// ``is NOT RECOMMENDED, because the passing of authentication
+// “is NOT RECOMMENDED, because the passing of authentication
 // information in clear text (such as URI) has proven to be a
-// security risk in almost every case where it has been used.''
+// security risk in almost every case where it has been used.”
 func UserPassword(username, password string) *Userinfo {
 	return &Userinfo{username, password, true}
 }
@@ -487,15 +487,15 @@ func validOptionalPort(port string) bool {
 // To obtain the path, String uses u.EscapedPath().
 //
 // In the second form, the following rules apply:
-//	- if u.Scheme is empty, scheme: is omitted.
-//	- if u.User is nil, userinfo@ is omitted.
-//	- if u.Host is empty, host/ is omitted.
-//	- if u.Scheme and u.Host are empty and u.User is nil,
-//	   the entire scheme://userinfo@host/ is omitted.
-//	- if u.Host is non-empty and u.Path begins with a /,
-//	   the form host/path does not add its own /.
-//	- if u.RawQuery is empty, ?query is omitted.
-//	- if u.Fragment is empty, #fragment is omitted.
+//   - if u.Scheme is empty, scheme: is omitted.
+//   - if u.User is nil, userinfo@ is omitted.
+//   - if u.Host is empty, host/ is omitted.
+//   - if u.Scheme and u.Host are empty and u.User is nil,
+//     the entire scheme://userinfo@host/ is omitted.
+//   - if u.Host is non-empty and u.Path begins with a /,
+//     the form host/path does not add its own /.
+//   - if u.RawQuery is empty, ?query is omitted.
+//   - if u.Fragment is empty, #fragment is omitted.
 func (u *URI) String() string {
 	var buf strings.Builder
 	if u.Scheme != "" {
@@ -657,7 +657,7 @@ func parseQuery(m Values, query string) (err error) {
 	return err
 }
 
-// Encode encodes the values into ``URI encoded'' form
+// Encode encodes the values into “URI encoded” form
 // ("bar=baz&foo=quux") sorted by key.
 func (v Values) Encode() string {
 	if v == nil {

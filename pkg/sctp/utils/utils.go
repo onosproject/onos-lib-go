@@ -49,7 +49,7 @@ func Htons(h uint16) uint16 {
 	return h
 }
 
-//from https://github.com/golang/go
+// from https://github.com/golang/go
 type ipStackCapabilities struct {
 	sync.Once             // guards following
 	ipv4Enabled           bool
@@ -57,7 +57,7 @@ type ipStackCapabilities struct {
 	ipv4MappedIPv6Enabled bool
 }
 
-//from https://github.com/golang/go
+// from https://github.com/golang/go
 var ipStackCaps ipStackCapabilities
 
 // SupportsIPv4 supportsIPv4 reports whether the platform supports IPv4 networking
@@ -76,14 +76,15 @@ func SupportsIPv4() bool {
 }*/
 
 // SupportsIPv4map supportsIPv4map reports whether the platform supports mapping an
-//  IPv4 address inside an IPv6 address at transport layer
-//  protocols. See RFC 4291, RFC 4038 and RFC 3493.
+//
+//	IPv4 address inside an IPv6 address at transport layer
+//	protocols. See RFC 4291, RFC 4038 and RFC 3493.
 func SupportsIPv4map() bool {
 	ipStackCaps.Once.Do(ipStackCaps.probe)
 	return ipStackCaps.ipv4MappedIPv6Enabled
 }
 
-//from https://github.com/golang/go
+// from https://github.com/golang/go
 // Probe probes IPv4, IPv6 and IPv4-mapped IPv6 communication
 // capabilities which are controlled by the IPV6_V6ONLY socket option
 // and kernel configuration.

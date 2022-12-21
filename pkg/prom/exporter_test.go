@@ -6,9 +6,9 @@ package prom
 
 import (
 	"fmt"
+	"io"
 	"time"
 
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -52,7 +52,7 @@ func queryExporter(address, path string) error {
 	if err != nil {
 		return err
 	}
-	_, err = ioutil.ReadAll(resp.Body)
+	_, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func queryExporterMetrics(address, path string, metricNames ...string) error {
 	if err != nil {
 		return err
 	}
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

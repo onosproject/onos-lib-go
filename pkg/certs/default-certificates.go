@@ -20,16 +20,17 @@ All of these are copied over from https://github.com/onosproject/gnxi-simulators
 /*
 OnfCaCrt is the default CA certificate
 Certificate:
-    Data:
-        Version: 1 (0x0)
-        Serial Number:
-            de:f7:d7:d2:37:da:b1:49
-    Signature Algorithm: sha256WithRSAEncryption
-        Issuer: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = ca.opennetworking.org
-        Validity
-            Not Before: Apr 11 09:06:13 2019 GMT
-            Not After : Apr  8 09:06:13 2029 GMT
-        Subject: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = ca.opennetworking.org
+
+	Data:
+	    Version: 1 (0x0)
+	    Serial Number:
+	        de:f7:d7:d2:37:da:b1:49
+	Signature Algorithm: sha256WithRSAEncryption
+	    Issuer: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = ca.opennetworking.org
+	    Validity
+	        Not Before: Apr 11 09:06:13 2019 GMT
+	        Not After : Apr  8 09:06:13 2029 GMT
+	    Subject: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = ca.opennetworking.org
 */
 const OnfCaCrt = `
 -----BEGIN CERTIFICATE-----
@@ -93,16 +94,17 @@ mCxUxvivP7oUNf0CMZd6CW2M0LEWMVrIFJ1o0BtNpUVZ/+nipJblRA1B/JLsgNvn
 
 /*
 DefaultClientCrt is the default client certificate
-    Data:
-        Version: 1 (0x0)
-        Serial Number:
-            4a:c1:1b:3b:17:1e:8d:65:f1:b9:99:46:60:e4:17:e8:76:6e:c7:53
-        Signature Algorithm: sha256WithRSAEncryption
-        Issuer: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = ca.opennetworking.org
-        Validity
-            Not Before: May  5 07:42:13 2020 GMT
-            Not After : May  3 07:42:13 2030 GMT
-        Subject: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = client1.opennetworking.org
+
+	Data:
+	    Version: 1 (0x0)
+	    Serial Number:
+	        4a:c1:1b:3b:17:1e:8d:65:f1:b9:99:46:60:e4:17:e8:76:6e:c7:53
+	    Signature Algorithm: sha256WithRSAEncryption
+	    Issuer: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = ca.opennetworking.org
+	    Validity
+	        Not Before: May  5 07:42:13 2020 GMT
+	        Not After : May  3 07:42:13 2030 GMT
+	    Subject: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = client1.opennetworking.org
 */
 const DefaultClientCrt = `
 -----BEGIN CERTIFICATE-----
@@ -167,16 +169,17 @@ f/cOAHPSczsq+mGIYxo=
 /*
 DefaultLocalhostCrt is the default localhost server certificate
 Certificate:
-    Data:
-        Version: 1 (0x0)
-        Serial Number:
-            4a:c1:1b:3b:17:1e:8d:65:f1:b9:99:46:60:e4:17:e8:76:6e:c7:54
-        Signature Algorithm: sha256WithRSAEncryption
-        Issuer: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = ca.opennetworking.org
-        Validity
-            Not Before: May  5 07:43:55 2020 GMT
-            Not After : May  3 07:43:55 2030 GMT
-        Subject: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = localhost
+
+	Data:
+	    Version: 1 (0x0)
+	    Serial Number:
+	        4a:c1:1b:3b:17:1e:8d:65:f1:b9:99:46:60:e4:17:e8:76:6e:c7:54
+	    Signature Algorithm: sha256WithRSAEncryption
+	    Issuer: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = ca.opennetworking.org
+	    Validity
+	        Not Before: May  5 07:43:55 2020 GMT
+	        Not After : May  3 07:43:55 2030 GMT
+	    Subject: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = localhost
 */
 const DefaultLocalhostCrt = `
 -----BEGIN CERTIFICATE-----
@@ -241,16 +244,17 @@ wXqkSZWW53eg8HKb/cVMLoM=
 /*
 DefaultOnosConfigCrt is the default onos-config server certificate
 Certificate:
-    Data:
-        Version: 1 (0x0)
-        Serial Number:
-            56:56:04:5e:9b:45:15:87:d7:24:3d:2a:22:21:df:87:11:e0:f2:0b
-        Signature Algorithm: sha256WithRSAEncryption
-        Issuer: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = ca.opennetworking.org
-        Validity
-            Not Before: Jul 16 18:38:15 2019 GMT
-            Not After : Jul 13 18:38:15 2029 GMT
-        Subject: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = onos-config
+
+	Data:
+	    Version: 1 (0x0)
+	    Serial Number:
+	        56:56:04:5e:9b:45:15:87:d7:24:3d:2a:22:21:df:87:11:e0:f2:0b
+	    Signature Algorithm: sha256WithRSAEncryption
+	    Issuer: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = ca.opennetworking.org
+	    Validity
+	        Not Before: Jul 16 18:38:15 2019 GMT
+	        Not After : Jul 13 18:38:15 2029 GMT
+	    Subject: C = US, ST = CA, L = MenloPark, O = ONF, OU = Engineering, CN = onos-config
 */
 const DefaultOnosConfigCrt = `
 -----BEGIN CERTIFICATE-----
