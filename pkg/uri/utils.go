@@ -292,10 +292,11 @@ func split(s string, sep byte, cutc bool) (string, string) {
 
 // validUserinfo reports whether s is a valid userinfo string per RFC 3986
 // Section 3.2.1:
-//     userinfo    = *( unreserved / pct-encoded / sub-delims / ":" )
-//     unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
-//     sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
-//                   / "*" / "+" / "," / ";" / "="
+//
+//	userinfo    = *( unreserved / pct-encoded / sub-delims / ":" )
+//	unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+//	sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
+//	              / "*" / "+" / "," / ";" / "="
 //
 // It doesn't validate pct-encoded. The caller does that via func unescape.
 func validUserinfo(s string) bool {

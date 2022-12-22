@@ -385,8 +385,8 @@ func setsockopt(fd int, optname, optval, optlen uintptr) (uintptr, uintptr, erro
 	return r0, r1, nil
 }
 
-//from https://github.com/golang/go
-//Changes: it is for SCTP only
+// from https://github.com/golang/go
+// Changes: it is for SCTP only
 func setDefaultSockopts(s int, family int, ipv6only bool) error {
 	if family == syscall.AF_INET6 {
 		// Allow both IP versions even if the OS default

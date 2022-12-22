@@ -159,7 +159,8 @@ func (n *Notification) GetSenderDry() *SenderDry {
 }
 
 // AssociationChange Communication notifications inform the application that an SCTP
-//   association has either begun or ended.
+//
+//	association has either begun or ended.
 type AssociationChange struct {
 	Type  NotificationType
 	Flags uint16

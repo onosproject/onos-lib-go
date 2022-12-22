@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"io/ioutil"
+	"os"
 )
 
 // HandleCertPaths is a common function for clients and servers like admin/net-changes for
@@ -66,7 +66,7 @@ func GetCertPoolDefault() (*x509.CertPool, error) {
 // GetCertPool loads the Certificate Authority from the given path
 func GetCertPool(CaPath string) (*x509.CertPool, error) {
 	certPool := x509.NewCertPool()
-	ca, err := ioutil.ReadFile(CaPath)
+	ca, err := os.ReadFile(CaPath)
 	if err != nil {
 		return nil, err
 	}

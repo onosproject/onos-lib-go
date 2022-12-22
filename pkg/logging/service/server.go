@@ -8,8 +8,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 
 	"github.com/onosproject/onos-lib-go/pkg/certs"
 
@@ -125,7 +125,7 @@ func getCertPoolDefault() *x509.CertPool {
 
 func getCertPool(CaPath string) *x509.CertPool {
 	certPool := x509.NewCertPool()
-	ca, err := ioutil.ReadFile(CaPath)
+	ca, err := os.ReadFile(CaPath)
 	if err != nil {
 		fmt.Println("could not read ", CaPath, err)
 	}

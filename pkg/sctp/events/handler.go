@@ -65,7 +65,7 @@ func IsNotification(flags int) bool {
 }
 
 // IsMsgEORSet checks if MsgEOR is set or not. If all data in a single message has been delivered, MSG_EOR will be
-//set in the msg_flags field of the msghdr structure
+// set in the msg_flags field of the msghdr structure
 func IsMsgEORSet(flags int) bool {
 	return flags&types.MsgEOR > 0
 }
