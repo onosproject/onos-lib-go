@@ -188,3 +188,18 @@ func (s *Server) Stop() {
 func (s *Server) GracefulStop() {
 	s.server.GracefulStop()
 }
+
+// StartInBackground starts serving in the background, returning an error if any issue is encountered
+func (s *Server) StartInBackground() error {
+	doneCh := make(chan error)
+	go func() {
+		err := s.Serve(func(started string) {
+			log.Info("Started NBI on ", started)
+			close(doneCh)
+		})
+		if err != nil {
+			doneCh <- err
+		}
+	}()
+	return <-doneCh
+}
