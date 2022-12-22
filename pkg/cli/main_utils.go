@@ -19,7 +19,7 @@ const (
 	// TLSCACertPathFlag command option
 	TLSCACertPathFlag = "tls-ca-cert-path"
 	// DefaultBindPort command options
-	DefaultBindPort = 5152
+	DefaultBindPort = 5150
 )
 
 // Run runs the body of the given root command; exists with status 1 if an error is encountered
@@ -30,11 +30,24 @@ func Run(rootCommand *cobra.Command) {
 	}
 }
 
-// WaitForInterrupt waits until it receives SIGTERM
-func WaitForInterrupt() {
+// Daemon is a simple abstraction of a process that can be started and stopped
+type Daemon interface {
+	// Start starts the daemon in the background
+	Start() error
+	// Stop stops the daemon
+	Stop()
+}
+
+// RunDaemon starts the given deamon, waits until it receives SIGTERM and then stops the daemon.
+func RunDaemon(daemon Daemon) error {
+	if err := daemon.Start(); err != nil {
+		return err
+	}
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	<-sigCh
+	daemon.Stop()
+	return nil
 }
 
 // AddServiceEndpointFlags injects standard server service endpoint flags to the given command
