@@ -53,7 +53,7 @@ func RunDaemon(daemon Daemon) error {
 // AddServiceEndpointFlags injects standard server service endpoint flags to the given command
 func AddServiceEndpointFlags(cmd *cobra.Command, name string) {
 	cmd.Flags().Int(BindPortFlag, DefaultBindPort, fmt.Sprintf("listen TCP port of the %s service", name))
-	cmd.Flags().Bool(NoTLSFlag, true, fmt.Sprintf("if set, do not use TLS for the %s service", name))
+	cmd.Flags().Bool(NoTLSFlag, false, fmt.Sprintf("if set, do not use TLS for the %s service", name))
 	cmd.Flags().String(TLSCACertPathFlag, "", "path to CA certificate")
 	cmd.Flags().String(TLSKeyPathFlag, "", "path to client private key")
 	cmd.Flags().String(TLSCertPathFlag, "", "path to client certificate")
