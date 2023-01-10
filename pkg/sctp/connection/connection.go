@@ -9,10 +9,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	syscall "golang.org/x/sys/unix"
+
 	"github.com/onosproject/onos-lib-go/pkg/sctp/addressing"
 	"github.com/onosproject/onos-lib-go/pkg/sctp/types"
-
-	syscall "golang.org/x/sys/unix"
 )
 
 // SCTPConn SCTP connection data structure
@@ -94,7 +94,8 @@ func (c *SCTPConn) FD() int {
 
 // Write writes on an SCTP connection
 func (c *SCTPConn) Write(b []byte) (int, error) {
-	return c.SCTPWrite(b, nil)
+	//E2 interface should use ppid 70(70=0x46).["The Payload Protocol Identifier assigned by IANA to be used by SCTP for the application layer protocol E2AP is 70" defined in chapter 6.1 of <E2 GAP> spec.]
+	return c.SCTPWrite(b, &types.SndRcvInfo{PPID: 0x46000000})
 }
 
 // Read reads on an SCTP connection
