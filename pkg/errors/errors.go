@@ -6,7 +6,7 @@ package errors
 
 import (
 	"fmt"
-	atomixerrors "github.com/atomix/runtime/sdk/pkg/errors"
+	atomixerrors "github.com/atomix/atomix/api/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
