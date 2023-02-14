@@ -26,7 +26,7 @@ func TestController(t *testing.T) {
 	done := make(chan struct{})
 	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
 		close(done)
-		return request.Complete()
+		return request.Ack()
 	})
 	assert.NoError(t, controller.Reconcile("foo"))
 	<-done
@@ -35,7 +35,7 @@ func TestController(t *testing.T) {
 	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
 		reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
 			close(done)
-			return request.Complete()
+			return request.Ack()
 		})
 		return request.Requeue()
 	})
@@ -46,7 +46,7 @@ func TestController(t *testing.T) {
 	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
 		reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
 			close(done)
-			return request.Complete()
+			return request.Ack()
 		})
 		return request.Retry(errors.New("test"))
 	})
@@ -57,7 +57,7 @@ func TestController(t *testing.T) {
 	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
 		reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
 			close(done)
-			return request.Complete()
+			return request.Ack()
 		})
 		return request.Retry(errors.New("test")).With(ExponentialBackoff(time.Second, 10*time.Second))
 	})
@@ -68,7 +68,7 @@ func TestController(t *testing.T) {
 	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
 		reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
 			close(done)
-			return request.Complete()
+			return request.Ack()
 		})
 		return request.Retry(errors.New("test")).After(time.Second)
 	})
@@ -79,7 +79,7 @@ func TestController(t *testing.T) {
 	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
 		reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
 			close(done)
-			return request.Complete()
+			return request.Ack()
 		})
 		return request.Retry(errors.New("test")).At(time.Now().Add(time.Second))
 	})

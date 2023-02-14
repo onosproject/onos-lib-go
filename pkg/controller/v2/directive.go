@@ -24,11 +24,11 @@ func ExponentialBackoff(initialDelay time.Duration, maxDelay time.Duration) Back
 	}
 }
 
-type Complete[I ID] struct {
+type Ack[I ID] struct {
 	request Request[I]
 }
 
-func (c *Complete[I]) Do(controller *Controller[I]) {
+func (c *Ack[I]) Do(controller *Controller[I]) {
 	controller.Log.Debugf("Reconciliation of %s complete", c.request.ID)
 }
 

@@ -34,8 +34,8 @@ type Request[I ID] struct {
 	attempt   int
 }
 
-func (r Request[I]) Complete() *Complete[I] {
-	return &Complete[I]{
+func (r Request[I]) Ack() *Ack[I] {
+	return &Ack[I]{
 		request: r,
 	}
 }
