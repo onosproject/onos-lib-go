@@ -37,7 +37,7 @@ func TestController(t *testing.T) {
 			close(done)
 			return request.Complete()
 		})
-		return request.Retry(errors.New("test"))
+		return request.Requeue()
 	})
 	assert.NoError(t, controller.Reconcile("bar"))
 	<-done
@@ -48,7 +48,7 @@ func TestController(t *testing.T) {
 			close(done)
 			return request.Complete()
 		})
-		return request.Retry(errors.New("test")).With(ExponentialBackoff(time.Second, 10*time.Second))
+		return request.Retry(errors.New("test"))
 	})
 	assert.NoError(t, controller.Reconcile("baz"))
 	<-done
@@ -59,7 +59,7 @@ func TestController(t *testing.T) {
 			close(done)
 			return request.Complete()
 		})
-		return request.Retry(errors.New("test")).After(time.Second)
+		return request.Retry(errors.New("test")).With(ExponentialBackoff(time.Second, 10*time.Second))
 	})
 	assert.NoError(t, controller.Reconcile("foo"))
 	<-done
@@ -70,8 +70,19 @@ func TestController(t *testing.T) {
 			close(done)
 			return request.Complete()
 		})
-		return request.Retry(errors.New("test")).At(time.Now().Add(time.Second))
+		return request.Retry(errors.New("test")).After(time.Second)
 	})
 	assert.NoError(t, controller.Reconcile("bar"))
+	<-done
+
+	done = make(chan struct{})
+	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
+		reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
+			close(done)
+			return request.Complete()
+		})
+		return request.Retry(errors.New("test")).At(time.Now().Add(time.Second))
+	})
+	assert.NoError(t, controller.Reconcile("baz"))
 	<-done
 }
