@@ -65,9 +65,9 @@ func (r Request[I]) Retry(err error) *Retry[I] {
 }
 
 type Options struct {
-	Log        logging.Logger
-	Partitions int
-	Timeout    *time.Duration
+	Log         logging.Logger
+	Parallelism int
+	Timeout     *time.Duration
 }
 
 type Option func(*Options)
@@ -84,9 +84,9 @@ func WithLog(log logging.Logger) Option {
 	}
 }
 
-func WithPartitions(partitions int) Option {
+func WithParallelism(parallelism int) Option {
 	return func(options *Options) {
-		options.Partitions = partitions
+		options.Parallelism = parallelism
 	}
 }
 
@@ -102,7 +102,7 @@ func NewController[I ID](reconciler Reconciler[I], opts ...Option) *Controller[I
 	for _, opt := range opts {
 		opt(&options)
 	}
-	numPartitions := options.Partitions
+	numPartitions := options.Parallelism
 	if numPartitions == 0 {
 		numPartitions = 1
 	}

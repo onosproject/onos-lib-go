@@ -20,7 +20,7 @@ func TestController(t *testing.T) {
 	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
 		reconcile := reconciler.Load().(func(ctx context.Context, request Request[testID]) Directive[testID])
 		return reconcile(ctx, request)
-	}, WithPartitions(10))
+	}, WithParallelism(10))
 	defer controller.Stop()
 
 	done := make(chan struct{})
