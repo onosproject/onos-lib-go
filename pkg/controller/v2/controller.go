@@ -94,22 +94,10 @@ func NewController[I ID](reconciler Reconciler[I], opts ...Option) *Controller[I
 	return controller
 }
 
-// Controller is a control loop
-// The Controller is responsible for processing events provided by a Watcher. Events are processed by
-// a configurable Reconciler. The controller processes events in a loop, retrying requests until the
-// Reconciler can successfully process them.
-// The Controller can be activated or deactivated by a configurable Activator. When inactive, the controller
-// will ignore requests, and when active it processes all requests.
-// For per-request filtering, a Filter can be provided which provides a simple bool to indicate whether a
-// request should be passed to the Reconciler.
-// Once the Reconciler receives a request, it should process the request using the current state of the cluster
-// Reconcilers should not cache state themselves and should instead rely on stores for consistency.
-// If a Reconciler returns false, the request will be requeued to be retried after all pending requests.
-// If a Reconciler returns an error, the request will be retried after a backoff period.
-// Once a Reconciler successfully processes a request by returning true, the request will be discarded.
-// Requests can be partitioned among concurrent goroutines by configuring a WorkPartitioner. The controller
-// will create a goroutine per PartitionKey provided by the WorkPartitioner, and requests to different
-// partitions may be handled concurrently.
+// Controller manages a set of control loops for reconciling objects.
+// The type parameter is the type of object identifier reconciled by this controller. To reconcile an object,
+// enqueue the object ID by calling the Reconcile method. Once called, the controller will call the configured
+// Reconciler to reconcile the request until complete.
 type Controller[I ID] struct {
 	reconciler Reconciler[I]
 	partitions []chan Request[I]
