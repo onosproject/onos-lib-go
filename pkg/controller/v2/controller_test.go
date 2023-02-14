@@ -26,6 +26,17 @@ func TestAck(t *testing.T) {
 	<-done
 }
 
+func TestFail(t *testing.T) {
+	done := make(chan struct{})
+	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
+		close(done)
+		return request.Fail(errors.New("test"))
+	}, WithParallelism(10))
+	defer controller.Stop()
+	assert.NoError(t, controller.Reconcile("foo"))
+	<-done
+}
+
 func TestRequeue(t *testing.T) {
 	var requeued atomic.Bool
 	done := make(chan struct{})
