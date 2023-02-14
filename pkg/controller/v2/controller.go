@@ -213,12 +213,14 @@ func NewController[I ID](reconciler Reconciler[I], opts ...Option) *Controller[I
 	if options.Timeout != nil {
 		timeout = *options.Timeout
 	}
-	return &Controller[I]{
+	controller := &Controller[I]{
 		partitions: partitions,
 		reconciler: reconciler,
 		Log:        rlog,
 		timeout:    timeout,
 	}
+	controller.start()
+	return controller
 }
 
 // Controller is a control loop
@@ -244,12 +246,11 @@ type Controller[I ID] struct {
 	timeout    time.Duration
 }
 
-// Start starts the controller
-func (c *Controller[I]) Start() error {
+// start starts the controller
+func (c *Controller[I]) start() {
 	for _, partition := range c.partitions {
 		go c.processRequests(partition)
 	}
-	return nil
 }
 
 // Stop stops the controller
