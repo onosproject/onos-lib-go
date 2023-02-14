@@ -17,6 +17,7 @@ var log = logging.GetLogger()
 
 const (
 	defaultReconciliationTimeout = 30 * time.Second
+	defaultBufferSize            = 100
 )
 
 type ID interface {
@@ -67,6 +68,7 @@ func (r Request[I]) Retry(err error) *Retry[I] {
 type Options struct {
 	Log         logging.Logger
 	Parallelism int
+	BufferSize  int
 	Timeout     *time.Duration
 }
 
@@ -90,6 +92,12 @@ func WithParallelism(parallelism int) Option {
 	}
 }
 
+func WithBufferSize(bufferSize int) Option {
+	return func(options *Options) {
+		options.BufferSize = bufferSize
+	}
+}
+
 func WithTimeout(timeout time.Duration) Option {
 	return func(options *Options) {
 		options.Timeout = &timeout
@@ -102,13 +110,17 @@ func NewController[I ID](reconciler Reconciler[I], opts ...Option) *Controller[I
 	for _, opt := range opts {
 		opt(&options)
 	}
+	bufferSize := options.BufferSize
+	if bufferSize == 0 {
+		bufferSize = defaultBufferSize
+	}
 	numPartitions := options.Parallelism
 	if numPartitions == 0 {
 		numPartitions = 1
 	}
 	partitions := make([]chan Request[I], numPartitions)
 	for i := 0; i < numPartitions; i++ {
-		partitions[i] = make(chan Request[I])
+		partitions[i] = make(chan Request[I], bufferSize)
 	}
 	rlog := options.Log
 	if rlog == nil {
