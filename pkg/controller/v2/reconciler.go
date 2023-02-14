@@ -76,7 +76,7 @@ type Ack[I ID] struct {
 }
 
 func (c *Ack[I]) Do(controller *Controller[I]) {
-	controller.Log.Debugf("Reconciliation of %s complete", c.request.ID)
+	controller.Log.Debugw("Reconciliation complete", "Request.ID", c.request.ID)
 }
 
 type Requeue[I ID] struct {
@@ -84,7 +84,7 @@ type Requeue[I ID] struct {
 }
 
 func (r *Requeue[I]) Do(controller *Controller[I]) {
-	controller.Log.Debugf("Requeueing %s", r.request.ID)
+	controller.Log.Debugw("Requeueing request", "Request.ID", r.request.ID)
 	go controller.enqueue(r.request)
 }
 
@@ -94,7 +94,7 @@ type Fail[I ID] struct {
 }
 
 func (f *Fail[I]) Do(controller *Controller[I]) {
-	controller.Log.Warnf("Reconciliation of %s failed: %s", f.request.ID, f.Error.Error())
+	controller.Log.Warnw("Reconciliation failed", "Request.ID", f.request.ID, "Error", f.Error.Error())
 }
 
 type Retry[I ID] struct {
@@ -103,7 +103,7 @@ type Retry[I ID] struct {
 }
 
 func (r *Retry[I]) Do(controller *Controller[I]) {
-	controller.Log.Debugf("Reconciliation of %s failed: %s. Retrying", r.request.ID, r.Error.Error())
+	controller.Log.Debugw("Reconciliation of %s failed: %s. Retrying", "Request.ID", r.request.ID, "Error", r.Error.Error())
 	go controller.enqueue(r.request)
 }
 
@@ -134,7 +134,7 @@ type RetryAfter[I ID] struct {
 }
 
 func (r *RetryAfter[I]) Do(controller *Controller[I]) {
-	controller.Log.Debugf("Reconciliation of %s failed: %s. Retrying after %s", r.request.ID, r.Error.Error(), r.delay)
+	controller.Log.Debugw("Reconciliation of %s failed: %s. Retrying after %s", "Request.ID", r.request.ID, "Error", r.Error.Error(), "Delay", r.delay)
 	time.AfterFunc(r.delay, func() {
 		controller.enqueue(r.request)
 	})
@@ -146,7 +146,7 @@ type RetryAt[I ID] struct {
 }
 
 func (r *RetryAt[I]) Do(controller *Controller[I]) {
-	controller.Log.Debugf("Reconciliation of %s failed: %s. Retrying at %s", r.request.ID, r.Error.Error(), r.t)
+	controller.Log.Debugw("Reconciliation of %s failed: %s. Retrying at %s", "Request.ID", r.request.ID, "Error", r.Error.Error(), "Time", r.t)
 	time.AfterFunc(time.Until(r.t), func() {
 		controller.enqueue(r.request)
 	})
@@ -159,7 +159,7 @@ type RetryWith[I ID] struct {
 
 func (r *RetryWith[I]) Do(controller *Controller[I]) {
 	delay := r.backoff(r.request.attempt)
-	controller.Log.Debugf("Reconciliation of %s failed: %s. Retrying after %s", r.request.ID, r.Error.Error(), delay)
+	controller.Log.Debugw("Reconciliation of %s failed: %s. Retrying after %s", "Request.ID", r.request.ID, "Error", r.Error.Error(), "Delay", delay)
 	time.AfterFunc(delay, func() {
 		controller.enqueue(r.request)
 	})
