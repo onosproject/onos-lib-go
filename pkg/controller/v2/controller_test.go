@@ -15,74 +15,88 @@ func (id testID) String() string {
 	return string(id)
 }
 
-func TestController(t *testing.T) {
-	var reconciler atomic.Value
-	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
-		reconcile := reconciler.Load().(func(ctx context.Context, request Request[testID]) Directive[testID])
-		return reconcile(ctx, request)
-	}, WithParallelism(10))
-	defer controller.Stop()
-
+func TestAck(t *testing.T) {
 	done := make(chan struct{})
-	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
+	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
 		close(done)
 		return request.Ack()
-	})
+	}, WithParallelism(10))
+	defer controller.Stop()
 	assert.NoError(t, controller.Reconcile("foo"))
 	<-done
+}
 
-	done = make(chan struct{})
-	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
-		reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
-			close(done)
-			return request.Ack()
-		})
-		return request.Requeue()
-	})
+func TestRequeue(t *testing.T) {
+	var requeued atomic.Bool
+	done := make(chan struct{})
+	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
+		if requeued.CompareAndSwap(false, true) {
+			return request.Requeue()
+		}
+		close(done)
+		return request.Ack()
+	}, WithParallelism(10))
+	defer controller.Stop()
 	assert.NoError(t, controller.Reconcile("bar"))
 	<-done
+}
 
-	done = make(chan struct{})
-	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
-		reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
-			close(done)
-			return request.Ack()
-		})
-		return request.Retry(errors.New("test"))
-	})
+func TestRetry(t *testing.T) {
+	var retried atomic.Bool
+	done := make(chan struct{})
+	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
+		if retried.CompareAndSwap(false, true) {
+			return request.Retry(errors.New("test"))
+		}
+		close(done)
+		return request.Ack()
+	}, WithParallelism(10))
+	defer controller.Stop()
 	assert.NoError(t, controller.Reconcile("baz"))
 	<-done
+}
 
-	done = make(chan struct{})
-	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
-		reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
-			close(done)
-			return request.Ack()
-		})
-		return request.Retry(errors.New("test")).With(ExponentialBackoff(time.Second, 10*time.Second))
-	})
+func TestRetryAfter(t *testing.T) {
+	var retried atomic.Bool
+	done := make(chan struct{})
+	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
+		if retried.CompareAndSwap(false, true) {
+			return request.Retry(errors.New("test")).After(time.Second)
+		}
+		close(done)
+		return request.Ack()
+	}, WithParallelism(10))
+	defer controller.Stop()
 	assert.NoError(t, controller.Reconcile("foo"))
 	<-done
+}
 
-	done = make(chan struct{})
-	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
-		reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
-			close(done)
-			return request.Ack()
-		})
-		return request.Retry(errors.New("test")).After(time.Second)
-	})
+func TestRetryAt(t *testing.T) {
+	var retried atomic.Bool
+	done := make(chan struct{})
+	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
+		if retried.CompareAndSwap(false, true) {
+			return request.Retry(errors.New("test")).At(time.Now().Add(time.Second))
+		}
+		close(done)
+		return request.Ack()
+	}, WithParallelism(10))
+	defer controller.Stop()
 	assert.NoError(t, controller.Reconcile("bar"))
 	<-done
+}
 
-	done = make(chan struct{})
-	reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
-		reconciler.Store(func(ctx context.Context, request Request[testID]) Directive[testID] {
-			close(done)
-			return request.Ack()
-		})
-		return request.Retry(errors.New("test")).At(time.Now().Add(time.Second))
-	})
-	assert.NoError(t, controller.Reconcile("baz"))
+func TestRetryWith(t *testing.T) {
+	var retried atomic.Bool
+	done := make(chan struct{})
+	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
+		if retried.CompareAndSwap(false, true) {
+			return request.Retry(errors.New("test")).With(ExponentialBackoff(time.Second, time.Minute))
+		}
+		close(done)
+		return request.Ack()
+	}, WithParallelism(10))
+	defer controller.Stop()
+	assert.NoError(t, controller.Reconcile("bar"))
 	<-done
 }
