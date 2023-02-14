@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
+// SPDX-FileCopyrightText: 2023-present Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -19,6 +19,7 @@ const (
 	defaultBufferSize = 100
 )
 
+// Options is options for the Controller
 type Options struct {
 	Log         logging.Logger
 	Parallelism int
@@ -26,32 +27,38 @@ type Options struct {
 	Timeout     *time.Duration
 }
 
+// Option is a Controller option
 type Option func(*Options)
 
+// WithOptions sets the Controller options
 func WithOptions(options Options) Option {
 	return func(opts *Options) {
 		*opts = options
 	}
 }
 
+// WithLog sets the Controller Logger
 func WithLog(log logging.Logger) Option {
 	return func(options *Options) {
 		options.Log = log
 	}
 }
 
+// WithParallelism sets the number of parallel goroutines to use for reconciliation
 func WithParallelism(parallelism int) Option {
 	return func(options *Options) {
 		options.Parallelism = parallelism
 	}
 }
 
+// WithBufferSize sets the buffer size for reconciliation queues
 func WithBufferSize(bufferSize int) Option {
 	return func(options *Options) {
 		options.BufferSize = bufferSize
 	}
 }
 
+// WithTimeout sets the timeout for each reconciliation cycle
 func WithTimeout(timeout time.Duration) Option {
 	return func(options *Options) {
 		options.Timeout = &timeout
@@ -119,6 +126,7 @@ func (c *Controller[I]) Stop() {
 	}
 }
 
+// Reconcile reconciles the given object ID
 func (c *Controller[I]) Reconcile(id I) error {
 	hash, err := computeHash(id)
 	if err != nil {
