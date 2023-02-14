@@ -7,6 +7,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"math"
 	"time"
 
@@ -22,7 +23,6 @@ const (
 type ID interface {
 	~string | ~int | ~int32 | ~int64 | ~uint | ~uint32 | ~uint64
 	fmt.Stringer
-	Hash() (int, error)
 }
 
 // Reconciler reconciles an object
@@ -261,7 +261,7 @@ func (c *Controller[I]) Stop() {
 }
 
 func (c *Controller[I]) Reconcile(id I) error {
-	hash, err := id.Hash()
+	hash, err := computeHash(id)
 	if err != nil {
 		return err
 	}
@@ -294,4 +294,12 @@ func (c *Controller[I]) processRequest(request Request[I]) {
 	if directive != nil {
 		directive.Do(c)
 	}
+}
+
+func computeHash[I ID](id I) (int, error) {
+	hash := fnv.New32a()
+	if _, err := hash.Write([]byte(id.String())); err != nil {
+		return 0, err
+	}
+	return int(hash.Sum32()), nil
 }

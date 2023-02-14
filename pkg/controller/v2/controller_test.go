@@ -4,21 +4,12 @@ import (
 	"context"
 	"errors"
 	"github.com/stretchr/testify/assert"
-	"hash/fnv"
 	"sync/atomic"
 	"testing"
 	"time"
 )
 
 type testID string
-
-func (id testID) Hash() (int, error) {
-	hash := fnv.New32a()
-	if _, err := hash.Write([]byte(id)); err != nil {
-		return 0, err
-	}
-	return int(hash.Sum32()), nil
-}
 
 func (id testID) String() string {
 	return string(id)
