@@ -34,18 +34,21 @@ type Request[I ID] struct {
 	attempt   int
 }
 
+// Ack acknowledges the request was reconciled successfully, removing it from the reconciliation queue.
 func (r Request[I]) Ack() *Ack[I] {
 	return &Ack[I]{
 		request: r,
 	}
 }
 
+// Requeue acknowledges successful reconciliation of the request, requeueing the request for further reconciliation.
 func (r Request[I]) Requeue() *Requeue[I] {
 	return &Requeue[I]{
 		request: r,
 	}
 }
 
+// Fail fails reconciliation of the request, logging the given error and removing it from the reconciliation queue.
 func (r Request[I]) Fail(err error) *Fail[I] {
 	return &Fail[I]{
 		request: r,
@@ -53,6 +56,7 @@ func (r Request[I]) Fail(err error) *Fail[I] {
 	}
 }
 
+// Retry logs a reconciliation error and retries reconciliation of the request.
 func (r Request[I]) Retry(err error) *Retry[I] {
 	return &Retry[I]{
 		request: r,
