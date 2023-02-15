@@ -120,7 +120,7 @@ type Retry[I ID] struct {
 
 // Do executes the controller directive
 func (r *Retry[I]) Do(controller *Controller[I]) {
-	controller.Log.Debugw("Reconciliation of %s failed: %s. Retrying", "Request.ID", r.request.ID, "Error", r.Error.Error())
+	controller.Log.Debugw("Reconciliation failed. Retrying...", "Request.ID", r.request.ID, "Error", r.Error.Error())
 	go controller.enqueue(r.request)
 }
 
@@ -156,7 +156,7 @@ type RetryAfter[I ID] struct {
 
 // Do executes the controller directive
 func (r *RetryAfter[I]) Do(controller *Controller[I]) {
-	controller.Log.Debugw("Reconciliation of %s failed: %s. Retrying after %s", "Request.ID", r.request.ID, "Error", r.Error.Error(), "Delay", r.delay)
+	controller.Log.Debugw("Reconciliation failed. Retrying...", "Request.ID", r.request.ID, "Error", r.Error.Error(), "Delay", r.delay)
 	time.AfterFunc(r.delay, func() {
 		controller.enqueue(r.request)
 	})
@@ -170,7 +170,7 @@ type RetryAt[I ID] struct {
 
 // Do executes the controller directive
 func (r *RetryAt[I]) Do(controller *Controller[I]) {
-	controller.Log.Debugw("Reconciliation of %s failed: %s. Retrying at %s", "Request.ID", r.request.ID, "Error", r.Error.Error(), "Time", r.t)
+	controller.Log.Debugw("Reconciliation failed. Retrying...", "Request.ID", r.request.ID, "Error", r.Error.Error(), "Time", r.t)
 	time.AfterFunc(time.Until(r.t), func() {
 		controller.enqueue(r.request)
 	})
@@ -185,7 +185,7 @@ type RetryWith[I ID] struct {
 // Do executes the controller directive
 func (r *RetryWith[I]) Do(controller *Controller[I]) {
 	delay := r.backoff(r.request.attempt)
-	controller.Log.Debugw("Reconciliation of %s failed: %s. Retrying after %s", "Request.ID", r.request.ID, "Error", r.Error.Error(), "Delay", delay)
+	controller.Log.Debugw("Reconciliation failed. Retrying...", "Request.ID", r.request.ID, "Error", r.Error.Error(), "Delay", delay)
 	time.AfterFunc(delay, func() {
 		controller.enqueue(r.request)
 	})
