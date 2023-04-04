@@ -16,7 +16,17 @@ var root *zapLogger
 
 const nameSep = "/"
 
-func init() {
+func CustomInit(dir string) {
+	config := Config{}
+	if err := customLoad(&config, dir); err != nil {
+		panic(err)
+	} else if err := configure(config); err != nil {
+		panic(err)
+	}
+
+}
+
+func rootInit() {
 	config := Config{}
 	if err := load(&config); err != nil {
 		panic(err)
@@ -41,6 +51,9 @@ func configure(config Config) error {
 // string on backslashes.
 // If multiple names are provided, the set of names defines the logger ancestry.
 func GetLogger(names ...string) Logger {
+	if root == nil {
+		rootInit()
+	}
 	if len(names) == 0 {
 		pkg, ok := getCallerPackage()
 		if !ok {

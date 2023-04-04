@@ -275,19 +275,19 @@ type KafkaSinkConfig struct {
 	Brokers []string `yaml:"brokers"`
 }
 
-// load loads the configuration
-func load(config *Config) error {
+
+func customLoad(config *Config, dir string) error {
 	home, err := homedir.Dir()
 	if err != nil {
 		return err
 	}
-
+		
 	// Set the file name of the configurations file
 	viper.SetConfigName("logging")
 
 	// Set the path to look for the configurations file
-	viper.AddConfigPath("./" + configDir + "/config")
-	viper.AddConfigPath(home + "/" + configDir + "/config")
+	viper.AddConfigPath("./" + dir + "/config")
+	viper.AddConfigPath(home + "/" + dir + "/config")
 	viper.AddConfigPath("/etc/onos/config")
 	viper.AddConfigPath(".")
 
@@ -302,4 +302,11 @@ func load(config *Config) error {
 		return err
 	}
 	return nil
+
+
+}
+
+// load loads the configuration
+func load(config *Config) error {
+	return customLoad(config, configDir)
 }
