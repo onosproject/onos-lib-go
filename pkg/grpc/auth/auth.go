@@ -7,11 +7,11 @@ package auth
 import (
 	"context"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/onosproject/onos-lib-go/pkg/auth"
 	"strings"
-
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 )
 
 const (
@@ -29,56 +29,33 @@ func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 
 	// Authenticate the jwt token
 	jwtAuth := new(auth.JwtAuthenticator)
-	authClaims, err := jwtAuth.ParseAndValidate(tokenString)
+	authClaimsIf, err := jwtAuth.ParseAndValidate(tokenString)
 	if err != nil {
 		return ctx, err
 	}
 
 	niceMd := metautils.ExtractIncoming(ctx)
-	niceMd.Del("authorization")
-	if name, ok := authClaims["name"]; ok {
-		niceMd.Set("name", name.(string))
+
+	authClaims, isMap := authClaimsIf.(jwt.MapClaims)
+	if !isMap {
+		return nil, fmt.Errorf("error converting claims to a map")
 	}
-	if email, ok := authClaims["email"]; ok {
-		niceMd.Set("email", email.(string))
-	}
-	if aud, ok := authClaims["aud"]; ok {
-		niceMd.Set("aud", aud.(string))
-	}
-	if exp, ok := authClaims["exp"]; ok {
-		niceMd.Set("exp", fmt.Sprintf("%s", exp))
-	}
-	if iat, ok := authClaims["iat"]; ok {
-		niceMd.Set("iat", fmt.Sprintf("%s", iat))
-	}
-	if iss, ok := authClaims["iss"]; ok {
-		niceMd.Set("iss", iss.(string))
-	}
-	if sub, ok := authClaims["sub"]; ok {
-		niceMd.Set("sub", sub.(string))
-	}
-	if atHash, ok := authClaims["at_hash"]; ok {
-		niceMd.Set("at_hash", atHash.(string))
-	}
-	if preferred, ok := authClaims["preferred_username"]; ok {
-		niceMd.Set("preferred_username", preferred.(string))
+	for k, v := range authClaims {
+		switch vt := v.(type) {
+		case string:
+			niceMd.Set(k, vt)
+		case float64:
+			niceMd.Set(k, fmt.Sprintf("%v", vt))
+		case []interface{}:
+			items := make([]string, 0)
+			for _, item := range vt {
+				items = append(items, fmt.Sprintf("%v", item))
+			}
+			niceMd.Set(k, strings.Join(items, ";"))
+		default:
+			return nil, fmt.Errorf("unhandled type %T", vt)
+		}
 	}
 
-	groupsIf, ok := authClaims["groups"].([]interface{})
-	if ok {
-		groups := make([]string, 0)
-		for _, g := range groupsIf {
-			groups = append(groups, g.(string))
-		}
-		niceMd.Set("groups", strings.Join(groups, ";"))
-	}
-	rolesIf, ok := authClaims["roles"].([]interface{})
-	if ok {
-		roles := make([]string, 0)
-		for _, r := range rolesIf {
-			roles = append(roles, r.(string))
-		}
-		niceMd.Set("roles", strings.Join(roles, ";"))
-	}
 	return niceMd.ToIncoming(ctx), nil
 }
