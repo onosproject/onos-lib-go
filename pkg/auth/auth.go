@@ -4,7 +4,7 @@
 
 package auth
 
-import jwt "github.com/golang-jwt/jwt/v5"
+import "github.com/golang-jwt/jwt/v5"
 
 // Authenticator an authenticator interface to implement different authentication methods
 type Authenticator interface {

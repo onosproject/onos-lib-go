@@ -22,6 +22,7 @@ type TestCustomClaims struct {
 	jwt.RegisteredClaims
 	Name              string   `json:"name"`
 	Email             string   `json:"email"`
+	EmailVerified     bool     `json:"email_verified"`
 	PreferredUsername string   `json:"preferred_username"`
 	Groups            []string `json:"groups"`
 	Roles             []string `json:"roles"`
@@ -51,6 +52,7 @@ func Test_AuthenticationInterceptor(t *testing.T) {
 		},
 		Name:              "testname",
 		Email:             "test1@opennetworking.org",
+		EmailVerified:     true,
 		PreferredUsername: "a user Name",
 		Groups:            []string{"testGroup1", "testGroup2"},
 		Roles:             []string{"testRole1", "testRole2"},
@@ -58,7 +60,7 @@ func Test_AuthenticationInterceptor(t *testing.T) {
 		Foo32:             22,
 	}
 
-	claims.Validate()
+	assert.NilError(t, claims.Validate())
 
 	signingKey := "testkey"
 	err := os.Setenv(auth.SharedSecretKey, signingKey)
@@ -95,7 +97,7 @@ func Test_AuthenticationInterceptor_InvalidExpiry(t *testing.T) {
 		Name:  "testname",
 		Email: "test1@opennetworking.org",
 	}
-	claims.Validate()
+	assert.NilError(t, claims.Validate())
 
 	signingKey := "testkey"
 	err := os.Setenv(auth.SharedSecretKey, signingKey)
@@ -112,28 +114,34 @@ func Test_AuthenticationInterceptor_InvalidExpiry(t *testing.T) {
 }
 
 func Test_AuthenticationInterceptor_NoAuth_NotAllowed(t *testing.T) {
-	signingKey := "testkey"
-	err := os.Setenv(auth.SharedSecretKey, signingKey)
-	assert.NilError(t, err)
-
-	mdIn := metadata.Pairs("no-auth", "no-auth")
-	ctx := metadata.NewIncomingContext(context.Background(), mdIn)
-	_, err = AuthenticationInterceptor(ctx)
-	assert.ErrorContains(t, err, "Request unauthenticated with bearer")
-}
-
-func Test_AuthenticationInterceptor_NoAuth_Allowed(t *testing.T) {
-	oldValue := os.Getenv(allowMissingAuth)
-	os.Setenv(allowMissingAuth, "TRUE")
+	oldValue := os.Getenv(allowMissingAuthClients)
+	assert.NilError(t, os.Setenv(allowMissingAuthClients, "some-other-client"))
 	defer func() {
-		os.Setenv(allowMissingAuth, oldValue)
+		assert.NilError(t, os.Setenv(allowMissingAuthClients, oldValue))
 	}()
 
 	signingKey := "testkey"
 	err := os.Setenv(auth.SharedSecretKey, signingKey)
 	assert.NilError(t, err)
 
-	mdIn := metadata.Pairs("no-auth", "no-auth")
+	mdIn := metadata.Pairs("client", "test-client")
+	ctx := metadata.NewIncomingContext(context.Background(), mdIn)
+	_, err = AuthenticationInterceptor(ctx)
+	assert.ErrorContains(t, err, "Request unauthenticated with bearer")
+}
+
+func Test_AuthenticationInterceptor_NoAuth_Allowed(t *testing.T) {
+	oldValue := os.Getenv(allowMissingAuthClients)
+	assert.NilError(t, os.Setenv(allowMissingAuthClients, "test-client,some-other-client"))
+	defer func() {
+		assert.NilError(t, os.Setenv(allowMissingAuthClients, oldValue))
+	}()
+
+	signingKey := "testkey"
+	err := os.Setenv(auth.SharedSecretKey, signingKey)
+	assert.NilError(t, err)
+
+	mdIn := metadata.Pairs("client", "test-client")
 	ctx := metadata.NewIncomingContext(context.Background(), mdIn)
 	intercepted, err := AuthenticationInterceptor(ctx)
 	assert.NilError(t, err)

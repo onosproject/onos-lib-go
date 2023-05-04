@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	jwt "github.com/golang-jwt/jwt/v5"
+	"github.com/golang-jwt/jwt/v5"
 	"io"
 	"net/http"
 	"os"
