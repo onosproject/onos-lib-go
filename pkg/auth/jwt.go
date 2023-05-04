@@ -90,8 +90,7 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.Claim
 func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.Claims, error) {
 	token, claims, err := j.parseToken(tokenString)
 	if err != nil {
-		log.Warnf("Error parsing token: %s", tokenString)
-		log.Warnf("Error %s", err.Error())
+		log.Warnf("cannot parse token. %s", err.Error())
 		return nil, err
 	}
 

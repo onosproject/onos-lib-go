@@ -29,26 +29,22 @@ type TestCustomClaims struct {
 	Foo32             int32
 }
 
-func (c *TestCustomClaims) Validate() error {
+func (c TestCustomClaims) Validate() error {
 	if c.Name == "" || c.Email == "" {
-		return fmt.Errorf("Name or Email cannot be empty")
+		return fmt.Errorf("name or email cannot be empty")
 	}
 	return nil
 }
 
 func Test_AuthenticationInterceptor(t *testing.T) {
 	now := time.Now()
-	in100kSec := time.Unix(now.Unix()+1000000, 0)
-	signingKey := "testkey"
-	err := os.Setenv(auth.SharedSecretKey, signingKey)
-	assert.NilError(t, err)
 
 	claims := TestCustomClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "http://dex:32000",
 			Subject:   "Test_AuthenticationInterceptor",
 			Audience:  []string{"testaudience"},
-			ExpiresAt: &jwt.NumericDate{Time: in100kSec},
+			ExpiresAt: &jwt.NumericDate{Time: now.Add(24 * time.Hour)},
 			NotBefore: &jwt.NumericDate{Time: now},
 			IssuedAt:  &jwt.NumericDate{Time: now},
 			ID:        "",
@@ -61,10 +57,14 @@ func Test_AuthenticationInterceptor(t *testing.T) {
 		Foo:               21,
 		Foo32:             22,
 	}
-	assert.NilError(t, claims.Validate())
+
+	claims.Validate()
+
+	signingKey := "testkey"
+	err := os.Setenv(auth.SharedSecretKey, signingKey)
+	assert.NilError(t, err)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	token.Valid = true
 	s, err := token.SignedString([]byte(signingKey))
 	assert.NilError(t, err)
 
@@ -80,4 +80,63 @@ func Test_AuthenticationInterceptor(t *testing.T) {
 	assert.Equal(t, "testRole1;testRole2", md.Get("Roles"))
 	assert.Equal(t, "a user Name", md.Get("preferred_username"))
 	assert.Assert(t, strings.HasPrefix(md.Get("authorization"), ContextMetadataTokenKey))
+}
+func Test_AuthenticationInterceptor_InvalidExpiry(t *testing.T) {
+	now := time.Now()
+
+	claims := TestCustomClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "http://dex:32000",
+			Audience:  []string{"testaudience"},
+			ExpiresAt: &jwt.NumericDate{Time: now.Add(-24 * time.Hour)}, // Before issued at
+			NotBefore: &jwt.NumericDate{Time: now},
+			IssuedAt:  &jwt.NumericDate{Time: now},
+		},
+		Name:  "testname",
+		Email: "test1@opennetworking.org",
+	}
+	claims.Validate()
+
+	signingKey := "testkey"
+	err := os.Setenv(auth.SharedSecretKey, signingKey)
+	assert.NilError(t, err)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	s, err := token.SignedString([]byte(signingKey))
+	assert.NilError(t, err)
+
+	mdIn := metadata.Pairs("authorization", fmt.Sprintf("bearer %s", s))
+	ctx := metadata.NewIncomingContext(context.Background(), mdIn)
+	_, err = AuthenticationInterceptor(ctx)
+	assert.ErrorContains(t, err, "token has invalid claims: token is expired")
+}
+
+func Test_AuthenticationInterceptor_NoAuth_NotAllowed(t *testing.T) {
+	signingKey := "testkey"
+	err := os.Setenv(auth.SharedSecretKey, signingKey)
+	assert.NilError(t, err)
+
+	mdIn := metadata.Pairs("no-auth", "no-auth")
+	ctx := metadata.NewIncomingContext(context.Background(), mdIn)
+	_, err = AuthenticationInterceptor(ctx)
+	assert.ErrorContains(t, err, "Request unauthenticated with bearer")
+}
+
+func Test_AuthenticationInterceptor_NoAuth_Allowed(t *testing.T) {
+	oldValue := os.Getenv(allowMissingAuth)
+	os.Setenv(allowMissingAuth, "TRUE")
+	defer func() {
+		os.Setenv(allowMissingAuth, oldValue)
+	}()
+
+	signingKey := "testkey"
+	err := os.Setenv(auth.SharedSecretKey, signingKey)
+	assert.NilError(t, err)
+
+	mdIn := metadata.Pairs("no-auth", "no-auth")
+	ctx := metadata.NewIncomingContext(context.Background(), mdIn)
+	intercepted, err := AuthenticationInterceptor(ctx)
+	assert.NilError(t, err)
+	md := metautils.ExtractIncoming(intercepted)
+	assert.Equal(t, "", md.Get("iat"))
 }

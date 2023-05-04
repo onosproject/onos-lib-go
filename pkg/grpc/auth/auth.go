@@ -11,12 +11,14 @@ import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/onosproject/onos-lib-go/pkg/auth"
+	"os"
 	"strings"
 )
 
 const (
 	// ContextMetadataTokenKey metadata token key
 	ContextMetadataTokenKey = "bearer"
+	allowMissingAuth        = "ALLOW_MISSING_AUTH"
 )
 
 // AuthenticationInterceptor an interceptor for authentication
@@ -24,6 +26,10 @@ func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 	// Extract token from metadata in the context
 	tokenString, err := grpc_auth.AuthFromMD(ctx, ContextMetadataTokenKey)
 	if err != nil {
+		acceptNoAuth := os.Getenv(allowMissingAuth)
+		if acceptNoAuth == "TRUE" && err.Error() == `rpc error: code = Unauthenticated desc = Request unauthenticated with bearer` {
+			return ctx, nil
+		}
 		return nil, err
 	}
 
