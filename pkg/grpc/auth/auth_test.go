@@ -18,16 +18,29 @@ import (
 	"time"
 )
 
+type RealmAccess struct {
+	Roles []string
+}
+
+type Account struct {
+	Roles []string `json:"roles"`
+}
+
+type ResourceAccess struct {
+	Account Account `json:"account"`
+}
 type TestCustomClaims struct {
 	jwt.RegisteredClaims
-	Name              string   `json:"name"`
-	Email             string   `json:"email"`
-	EmailVerified     bool     `json:"email_verified"`
-	PreferredUsername string   `json:"preferred_username"`
-	Groups            []string `json:"groups"`
-	Roles             []string `json:"roles"`
-	Foo               int
-	Foo32             int32
+	Name              string         `json:"name"`
+	Email             string         `json:"email"`
+	EmailVerified     bool           `json:"email_verified"`
+	PreferredUsername string         `json:"preferred_username"`
+	Groups            []string       `json:"groups"`
+	Roles             []string       `json:"roles"`
+	Foo               int            `json:"foo"`
+	Foo32             int32          `json:"foo32"`
+	RealmAccess       RealmAccess    `json:"realm-access"`
+	ResourceAccess    ResourceAccess `json:"resource-access"`
 }
 
 func (c TestCustomClaims) Validate() error {
@@ -58,6 +71,20 @@ func Test_AuthenticationInterceptor(t *testing.T) {
 		Roles:             []string{"testRole1", "testRole2"},
 		Foo:               21,
 		Foo32:             22,
+		RealmAccess: RealmAccess{
+			Roles: []string{
+				"testRole1",
+				"testRole2",
+			},
+		},
+		ResourceAccess: ResourceAccess{
+			Account: Account{
+				Roles: []string{
+					"testRole1",
+					"testRole2",
+				},
+			},
+		},
 	}
 
 	assert.NilError(t, claims.Validate())
@@ -82,6 +109,8 @@ func Test_AuthenticationInterceptor(t *testing.T) {
 	assert.Equal(t, "testRole1;testRole2", md.Get("Roles"))
 	assert.Equal(t, "a user Name", md.Get("preferred_username"))
 	assert.Assert(t, strings.HasPrefix(md.Get("authorization"), ContextMetadataTokenKey))
+	assert.Equal(t, "testRole1;testRole2", md.Get("realm-access/roles"))
+	assert.Equal(t, "testRole1;testRole2", md.Get("resource-access/account/roles"))
 }
 func Test_AuthenticationInterceptor_InvalidExpiry(t *testing.T) {
 	now := time.Now()

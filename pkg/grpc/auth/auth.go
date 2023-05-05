@@ -64,27 +64,43 @@ func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 		return nil, fmt.Errorf("error converting claims to a map")
 	}
 	for k, v := range authClaims {
-		switch vt := v.(type) {
-		case string:
-			niceMd.Set(k, vt)
-		case float64:
-			niceMd.Set(k, fmt.Sprintf("%v", vt))
-		case bool:
-			if vt {
-				niceMd.Set(k, "true")
-			} else {
-				niceMd.Set(k, "false")
-			}
-		case []interface{}:
-			items := make([]string, 0)
-			for _, item := range vt {
-				items = append(items, fmt.Sprintf("%v", item))
-			}
-			niceMd.Set(k, strings.Join(items, ";"))
-		default:
-			return nil, fmt.Errorf("unhandled type %T", vt)
+		err = handleClaim(&niceMd, []string{k}, v)
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	return niceMd.ToIncoming(ctx), nil
+}
+
+func handleClaim(niceMd *metautils.NiceMD, key []string, value interface{}) error {
+	k := strings.Join(key, "/")
+	switch vt := value.(type) {
+	case string:
+		niceMd.Set(k, vt)
+	case float64:
+		niceMd.Set(k, fmt.Sprintf("%v", vt))
+	case bool:
+		if vt {
+			niceMd.Set(k, "true")
+		} else {
+			niceMd.Set(k, "false")
+		}
+	case []interface{}:
+		items := make([]string, 0)
+		for _, item := range vt {
+			items = append(items, fmt.Sprintf("%v", item))
+		}
+		niceMd.Set(k, strings.Join(items, ";"))
+	case map[string]interface{}:
+		for k, v := range vt {
+			err := handleClaim(niceMd, append(key, k), v)
+			if err != nil {
+				return err
+			}
+		}
+	default:
+		return fmt.Errorf("gRPC metadata unhandled type %T", vt)
+	}
+	return nil
 }
