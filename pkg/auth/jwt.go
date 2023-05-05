@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"io"
 	"net/http"
 	"os"
@@ -21,8 +22,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"google.golang.org/grpc/codes"
-
-	"github.com/golang-jwt/jwt"
 )
 
 var log = logging.GetLogger("jwt")
@@ -38,6 +37,8 @@ const (
 	HS = "HS"
 	// RS prefix for RS family algorithms
 	RS = "RS"
+	// PS prefix for PS family algorithms
+	PS = "PS"
 )
 
 // JwtAuthenticator jwt authenticator
@@ -46,15 +47,15 @@ type JwtAuthenticator struct {
 }
 
 // ParseToken parse token and Ensure that the JWT conforms to the structure of a JWT.
-func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapClaims, error) {
+func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.Claims, error) {
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		// HS256, HS384, or HS512
 		if strings.HasPrefix(token.Method.Alg(), HS) {
 			key := os.Getenv(SharedSecretKey)
 			return []byte(key), nil
-			// RS256, RS384, or RS512
-		} else if strings.HasPrefix(token.Method.Alg(), RS) {
+			// ES256, ES384, ES512, PS256, PS384, PS512, RS256, RS384, RS512
+		} else if strings.HasPrefix(token.Method.Alg(), RS) || strings.HasPrefix(token.Method.Alg(), PS) {
 			keyID, ok := token.Header["kid"]
 			if !ok {
 				return nil, status.Errorf(codes.Unauthenticated, "token header not found 'kid' (key ID)")
@@ -86,11 +87,10 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.MapCl
 }
 
 // ParseAndValidate parse a jwt string token and validate it
-func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.MapClaims, error) {
+func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.Claims, error) {
 	token, claims, err := j.parseToken(tokenString)
 	if err != nil {
-		log.Warnf("Error parsing token: %s", tokenString)
-		log.Warnf("Error %s", err.Error())
+		log.Warnf("cannot parse token. %s", err.Error())
 		return nil, err
 	}
 
@@ -121,12 +121,12 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 	}
 	openIDConfigBody, readErr := io.ReadAll(resOpenIDConfig.Body)
 	if readErr != nil {
-		return err
+		return readErr
 	}
 	var openIDprovider ecoidc.Provider
 	jsonErr := json.Unmarshal(openIDConfigBody, &openIDprovider)
 	if jsonErr != nil {
-		return err
+		return jsonErr
 	}
 	resOpenIDKeys, err := client.Get(openIDprovider.JWKSURL)
 	if err != nil {
@@ -137,7 +137,7 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 	}
 	bodyOpenIDKeys, readErr := io.ReadAll(resOpenIDKeys.Body)
 	if readErr != nil {
-		return err
+		return readErr
 	}
 	var jsonWebKeySet jose.JSONWebKeySet
 	if err := json.Unmarshal(bodyOpenIDKeys, &jsonWebKeySet); err != nil {

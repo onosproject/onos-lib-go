@@ -38,6 +38,7 @@ issues:
     - path: pkg/sctp/connection/socket.go
       linters:
         - errcheck
+        - staticcheck
     - path: pkg/asn1/testsm/procedure_codes.go
       linters:
         - revive
