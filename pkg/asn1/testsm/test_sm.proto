@@ -463,3 +463,35 @@ message SequenceExtended {
     // @inject_tag: aper:"fromValueExt,optional,sizeLB:2,sizeUB:6,sizeExt"
     optional string se5 = 5 [json_name = "attrPs7"];
 }
+
+message TestExtension1 {
+    int32 item1 = 1 [json_name = "item1"];
+    // @inject_tag: aper:"optional,sizeLB:3,sizeUB:7"
+    optional bytes item2 = 2 [json_name = "item2"];
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:3,sizeUB:7"
+    optional bytes ext1 = 3 [json_name = "ext1"];
+}
+
+message TestExtension2 {
+    int32 item1 = 1 [json_name = "item1"];
+    // @inject_tag: aper:"optional,sizeLB:3,sizeUB:7"
+    optional bytes item2 = 2 [json_name = "item2"];
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:3,sizeUB:7"
+    optional bytes ext1 = 3 [json_name = "ext1"];
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:3,sizeUB:7"
+    optional bytes ext2 = 4 [json_name = "ext2"];
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:3,sizeUB:7"
+    optional bytes ext3 = 5 [json_name = "ext3"];
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:3,sizeUB:7"
+    optional bytes ext4 = 6 [json_name = "ext4"];
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:3,sizeUB:7"
+    optional bytes ext5 = 7 [json_name = "ext5"];
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:3,sizeUB:7"
+    optional bytes ext6 = 8 [json_name = "ext6"];
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:3,sizeUB:7"
+    optional bytes ext7 = 9 [json_name = "ext7"];
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:3,sizeUB:7"
+    optional bytes ext8 = 10 [json_name = "ext8"];
+    // @inject_tag: aper:"fromValueExt,optional,sizeLB:3,sizeUB:7"
+    optional bytes ext9 = 11 [json_name = "ext9"];
+}

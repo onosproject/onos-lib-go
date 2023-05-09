@@ -29,7 +29,7 @@ type fieldParameters struct {
 	canonicalOrder      bool   // true, if CHOICE is needed to be encoded in canonical ordering
 	fromChoiceExt       bool   // true, if CHOICE item belongs to CHOICE extension
 	choiceExt           bool   // true, if CHOICE can be extended with other items
-	fromValueExt        bool   // true, if item in SEQUENCE belongs to SEQUENCE extension
+	fromValueExt        bool   // true, if item in SEQUENCE belongs to the SEQUENCE extension
 }
 
 // Given a tag string with the format specified in the package comment,
