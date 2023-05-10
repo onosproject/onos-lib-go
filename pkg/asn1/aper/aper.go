@@ -411,7 +411,7 @@ func (pd *perBitData) parseBool() (value bool, err error) {
 	return
 }
 
-func (pd *perBitData) parseReal(lb *int64, ub *int64) (float64, error) {
+func (pd *perBitData) parseReal(lb *int64, ub *int64, valueExt bool) (float64, error) {
 
 	log.Debugf("Decoding REAL structure")
 	var result float64
@@ -534,7 +534,7 @@ func (pd *perBitData) parseReal(lb *int64, ub *int64) (float64, error) {
 	}
 	if ub != nil {
 		upperBound := *ub
-		if result > float64(upperBound+1) {
+		if result > float64(upperBound+1) && !valueExt {
 			log.Warnf("Decoding REAL - value (%v) is higher than upperbound (%v)", result, float64(upperBound))
 		}
 	}
@@ -916,7 +916,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		}
 		return nil
 	case reflect.Float64:
-		parsedReal, err := pd.parseReal(params.valueLowerBound, params.valueUpperBound)
+		parsedReal, err := pd.parseReal(params.valueLowerBound, params.valueUpperBound, params.valueExtensible)
 		if err != nil {
 			return err
 		}
