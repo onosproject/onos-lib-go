@@ -16,16 +16,15 @@ import (
 var log = logging.GetLogger("asn1", "aper")
 
 type perBitData struct {
-	bytes                 []byte
-	byteOffset            uint64
-	bitsOffset            uint
-	choiceMap             map[string]map[int]reflect.Type
-	unique                int64
-	uniqueStructFlag      bool
-	canonicalOrdering     bool
-	canonicalChoiceMap    map[string]map[int64]reflect.Type
-	choiceCanBeExtended   bool
-	extensionHeaderParsed bool // this is to indicate that the header for SEQUENCE Extension is parsed
+	bytes               []byte
+	byteOffset          uint64
+	bitsOffset          uint
+	choiceMap           map[string]map[int]reflect.Type
+	unique              int64
+	uniqueStructFlag    bool
+	canonicalOrdering   bool
+	canonicalChoiceMap  map[string]map[int64]reflect.Type
+	choiceCanBeExtended bool
 }
 
 func perBitLog(numBits uint64, byteOffset uint64, bitsOffset uint, value interface{}) string {
@@ -706,7 +705,7 @@ func (pd *perBitData) parseSequenceOf(sizeExtensed bool, params fieldParameters,
 	return sliceContent, nil
 }
 
-func (pd *perBitData) getChoiceIndex(extensed bool, fromChoiceExtension bool, numItemsNotInExtension int, choiceMapLen int) (present int, err error) {
+func (pd *perBitData) getChoiceIndex(numItemsNotInExtension int, choiceMapLen int) (present int, err error) {
 
 	if pd.choiceCanBeExtended {
 		// This flag has already served for its purpose. Setting it back to its initial value
@@ -929,7 +928,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		var structParams []fieldParameters
 		var optionalCount uint
 		var optionalPresents uint64
-		pd.extensionHeaderParsed = false
+		extensionHeaderParsed := false
 		var itemsInExtensionPresents uint64
 		var totalNumberOfItemsInExtension int
 
@@ -980,8 +979,9 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				// assumption is that this structure contains only one int32 field..
 				pd.uniqueStructFlag = true
 			}
-			if structParams[fieldIdx].fromValueExt && valueExtensible {
-				if !pd.extensionHeaderParsed {
+			if structParams[fieldIdx].fromValueExt && valueExtensible { // extensible bit is present
+				if !extensionHeaderParsed {
+					log.Debugf("Decoding SEQUENCE Extension header")
 					// parsing Octet Alignment
 					if err := pd.parseAlignBits(); err != nil {
 						return err
@@ -991,8 +991,8 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					if err != nil {
 						return err
 					}
-					extensionLength += 1 // decoded 0 corresponds to 1
-					log.Debugf("Expected number of items in the extension is %d", extensionLength)
+					extensionLength++ // decoded 0 corresponds to 1
+					log.Debugf("Expected number of items to be decoded in the extension is %d", extensionLength)
 					totalNumberOfItemsInExtension = structType.NumField() - i
 					if totalNumberOfItemsInExtension < 0 {
 						log.Debugf("Something went wrong - total amount of instances in the extension is %d (negative)\n", totalNumberOfItemsInExtension)
@@ -1017,7 +1017,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 						return err
 					}
 					// setting flag to true to indicate that we've processed SEQUENCE Extension header
-					pd.extensionHeaderParsed = true
+					extensionHeaderParsed = true
 				}
 				// decoding item from the extension
 				if structParams[fieldIdx].fromValueExt && totalNumberOfItemsInExtension > 0 {
@@ -1034,8 +1034,9 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 						}
 					}
 				}
-			} else if structParams[fieldIdx].fromValueExt {
+			} else if structParams[fieldIdx].fromValueExt && !valueExtensible { // extensible bit is not present
 				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and not present", structType.Field(i).Name, structType)
+				break // we are already in extension, which is not present - no need to iterate over items in extension
 			}
 			if structParams[fieldIdx].optional && optionalCount > 0 {
 				optionalCount--
@@ -1054,6 +1055,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				}
 			}
 		}
+		extensionHeaderParsed = false
 		return nil
 	case reflect.Slice:
 		sliceType := fieldType
@@ -1141,7 +1143,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				log.Debugf("Amount of values which are not in extension is %v", ieNotInExt)
 				log.Debugf("Choice can be extended is %v", pd.choiceCanBeExtended)
 
-				choiceIdx, err = pd.getChoiceIndex(params.valueExtensible, params.fromChoiceExt, ieNotInExt, len(choices))
+				choiceIdx, err = pd.getChoiceIndex(ieNotInExt, len(choices))
 				if err != nil {
 					return err
 				}
@@ -1254,7 +1256,7 @@ func Unmarshal(b []byte, value interface{}, choiceMap map[string]map[int]reflect
 func UnmarshalWithParams(b []byte, value interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) error {
 	//log.SetLevel(logging.DebugLevel)
 	v := reflect.ValueOf(value).Elem()
-	pd := &perBitData{b, 0, 0, choiceMap, -1, false, false, canonicalChoiceMap, false, false}
+	pd := &perBitData{b, 0, 0, choiceMap, -1, false, false, canonicalChoiceMap, false}
 	err := parseField(v, pd, parseFieldParameters(params))
 	if err != nil {
 		return fmt.Errorf("Decoding failed with error %v\n%v", err, hex.Dump(b))
