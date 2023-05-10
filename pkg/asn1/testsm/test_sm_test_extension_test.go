@@ -41,12 +41,12 @@ func Test_SequenceExtensionItem(t *testing.T) {
 	assert.DeepEqual(t, aperBytes, testExtension1Bytes)
 
 	// Now decode the bytes and compare messages
-	//result := &TestExtension1{}
-	//err = aper.UnmarshalWithParams(aperBytes, "valueExt", result, Choicemap, CanonicalChoicemap)
-	//assert.NilError(t, err)
-	//assert.Assert(t, result != nil)
-	//assert.Equal(t, msg.String(), result.String())
-	////t.Logf("Decoded message is\n%v", result)
+	result := &TestExtension1{}
+	err = aper.UnmarshalWithParams(aperBytes, result, "valueExt", Choicemap, CanonicalChoicemap)
+	assert.NilError(t, err)
+	assert.Assert(t, result != nil)
+	assert.Equal(t, msg.String(), result.String())
+	t.Logf("Decoded message is\n%v", result)
 }
 
 func Test_SequenceExtensionItemsFull(t *testing.T) {
@@ -73,12 +73,12 @@ func Test_SequenceExtensionItemsFull(t *testing.T) {
 	assert.DeepEqual(t, aperBytes, testExtension2BytesFull)
 
 	// Now decode the bytes and compare messages
-	//result := &TestExtension2{}
-	//err = aper.UnmarshalWithParams(aperBytes, "valueExt", result, Choicemap, CanonicalChoicemap)
-	//assert.NilError(t, err)
-	//assert.Assert(t, result != nil)
-	//assert.Equal(t, msg.String(), result.String())
-	////t.Logf("Decoded message is\n%v", result)
+	result := &TestExtension2{}
+	err = aper.UnmarshalWithParams(aperBytes, result, "valueExt", Choicemap, CanonicalChoicemap)
+	assert.NilError(t, err)
+	assert.Assert(t, result != nil)
+	assert.Equal(t, msg.String(), result.String())
+	t.Logf("Decoded message is\n%v", result)
 }
 
 func Test_SequenceExtensionItemsNoFirstItem(t *testing.T) {
@@ -105,10 +105,10 @@ func Test_SequenceExtensionItemsNoFirstItem(t *testing.T) {
 	assert.DeepEqual(t, aperBytes, testExtension2BytesNoFirstItem)
 
 	// Now decode the bytes and compare messages
-	//result := &TestExtension2{}
-	//err = aper.UnmarshalWithParams(aperBytes, "valueExt", result, Choicemap, CanonicalChoicemap)
-	//assert.NilError(t, err)
-	//assert.Assert(t, result != nil)
-	//assert.Equal(t, msg.String(), result.String())
-	////t.Logf("Decoded message is\n%v", result)
+	result := &TestExtension2{}
+	err = aper.UnmarshalWithParams(aperBytes, result, "valueExt", Choicemap, CanonicalChoicemap)
+	assert.NilError(t, err)
+	assert.Assert(t, result != nil)
+	assert.Equal(t, msg.String(), result.String())
+	t.Logf("Decoded message is\n%v", result)
 }
