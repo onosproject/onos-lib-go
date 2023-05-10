@@ -382,7 +382,7 @@ func howManyBytesNeeded(value int64) (byteAmount int) {
 
 // it looks like encoding of REAL doesn't take into account constraints at all, so we don't bother about parsing constraints (only to check if value is within bounds)
 // general rules are - mantissa should be an odd number or a 0
-func (pd *perRawBitData) appendReal(value float64, lb *int64, ub *int64) (err error) {
+func (pd *perRawBitData) appendReal(value float64, lb *int64, ub *int64, valueExt bool) (err error) {
 
 	log.Debugf("Encoding REAL number %v", value)
 
@@ -395,7 +395,7 @@ func (pd *perRawBitData) appendReal(value float64, lb *int64, ub *int64) (err er
 	}
 	if ub != nil {
 		upperBound := *ub
-		if value > float64(upperBound) {
+		if value > float64(upperBound) && !valueExt {
 			return errors.NewInvalid("Error encoding REAL - value (%v) is higher than upperbound (%v)", value, float64(upperBound))
 		}
 	}
@@ -987,7 +987,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		return nil
 
 	case reflect.Float64:
-		if err := pd.appendReal(v.Float(), params.valueLowerBound, params.valueUpperBound); err != nil {
+		if err := pd.appendReal(v.Float(), params.valueLowerBound, params.valueUpperBound, params.valueExtensible); err != nil {
 			return err
 		}
 		return nil
