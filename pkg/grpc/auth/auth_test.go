@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/onosproject/onos-lib-go/pkg/auth"
 	"google.golang.org/grpc/metadata"
 	"gotest.tools/assert"
@@ -101,16 +100,20 @@ func Test_AuthenticationInterceptor(t *testing.T) {
 	ctx := metadata.NewIncomingContext(context.Background(), mdIn)
 	intercepted, err := AuthenticationInterceptor(ctx)
 	assert.NilError(t, err)
-	md := metautils.ExtractIncoming(intercepted)
+	// We're not using github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata in the test
+	// Just using the plain google.golang.org/grpc/metadata
+	// This is because the former only returns the first entry of a value when using Get()
+	md, ok := metadata.FromIncomingContext(intercepted)
+	assert.Assert(t, ok)
 	assert.Assert(t, md != nil, "expected a value for Metadata")
-	assert.Equal(t, "testname", md.Get("Name"))
-	assert.Equal(t, "test1@opennetworking.org", md.Get("Email"))
-	assert.Equal(t, "testGroup1;testGroup2", md.Get("Groups"))
-	assert.Equal(t, "testRole1;testRole2", md.Get("Roles"))
-	assert.Equal(t, "a user Name", md.Get("preferred_username"))
-	assert.Assert(t, strings.HasPrefix(md.Get("authorization"), ContextMetadataTokenKey))
-	assert.Equal(t, "testRole1;testRole2", md.Get("realm-access/roles"))
-	assert.Equal(t, "testRole1;testRole2", md.Get("resource-access/account/roles"))
+	assert.DeepEqual(t, []string{"testname"}, md.Get("Name"))
+	assert.DeepEqual(t, []string{"test1@opennetworking.org"}, md.Get("Email"))
+	assert.DeepEqual(t, []string{"testGroup1", "testGroup2"}, md.Get("Groups"))
+	assert.DeepEqual(t, []string{"testRole1", "testRole2"}, md.Get("Roles"))
+	assert.DeepEqual(t, []string{"a user Name"}, md.Get("preferred_username"))
+	assert.Assert(t, strings.HasPrefix(md.Get("authorization")[0], ContextMetadataTokenKey))
+	assert.DeepEqual(t, []string{"testRole1", "testRole2"}, md.Get("realm-access/roles"))
+	assert.DeepEqual(t, []string{"testRole1", "testRole2"}, md.Get("resource-access/account/roles"))
 }
 func Test_AuthenticationInterceptor_InvalidExpiry(t *testing.T) {
 	now := time.Now()
@@ -174,6 +177,7 @@ func Test_AuthenticationInterceptor_NoAuth_Allowed(t *testing.T) {
 	ctx := metadata.NewIncomingContext(context.Background(), mdIn)
 	intercepted, err := AuthenticationInterceptor(ctx)
 	assert.NilError(t, err)
-	md := metautils.ExtractIncoming(intercepted)
-	assert.Equal(t, "", md.Get("iat"))
+	md, ok := metadata.FromIncomingContext(intercepted)
+	assert.Assert(t, ok)
+	assert.DeepEqual(t, []string(nil), md.Get("iat"))
 }
