@@ -87,11 +87,9 @@ func handleClaim(niceMd *metautils.NiceMD, key []string, value interface{}) erro
 			niceMd.Set(k, "false")
 		}
 	case []interface{}:
-		items := make([]string, 0)
 		for _, item := range vt {
-			items = append(items, fmt.Sprintf("%v", item))
+			niceMd.Add(k, fmt.Sprintf("%v", item))
 		}
-		niceMd.Set(k, strings.Join(items, ";"))
 	case map[string]interface{}:
 		for k, v := range vt {
 			err := handleClaim(niceMd, append(key, k), v)
