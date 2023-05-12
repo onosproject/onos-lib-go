@@ -109,7 +109,11 @@ func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.Claims, err
 // 2) lookup the "keys" parameter and get keys from $OIDCServerURL/keys
 // The keys are in a public key format and are converted to RSA Public Keys
 func (j *JwtAuthenticator) refreshJwksKeys() error {
-	oidcURL := os.Getenv(OIDCServerURL)
+	oidcURL, present := os.LookupEnv(OIDCServerURL)
+	if !present {
+		return fmt.Errorf("environmental variable OIDC_SERVER_URL is not set " +
+			"Can't reach the OIDC server to refresh JWKS")
+	}
 
 	client := new(http.Client)
 	resOpenIDConfig, err := client.Get(fmt.Sprintf("%s/%s", oidcURL, OpenidConfiguration))
@@ -159,6 +163,7 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 		pemBytes := pem.EncodeToMemory(&block)
 		j.publicKeys[key.KeyID] = pemBytes
 	}
+	log.Infof("Refreshed JWKS keys from %s", openIDprovider.JWKSURL)
 
 	return nil
 }
