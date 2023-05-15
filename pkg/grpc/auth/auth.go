@@ -70,6 +70,8 @@ func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 		}
 	}
 
+	log.Debugf("JWT token is valid, proceeding with processing")
+
 	return niceMd.ToIncoming(ctx), nil
 }
 
