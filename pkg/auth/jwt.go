@@ -5,6 +5,7 @@
 package auth
 
 import (
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
@@ -31,6 +32,10 @@ const (
 	SharedSecretKey = "SHARED_SECRET_KEY"
 	// OIDCServerURL - will be accessed as Environment variable
 	OIDCServerURL = "OIDC_SERVER_URL"
+
+	// OIDCTrustCertBool - will be accessed as Environment variable
+	OIDCTrustCertBool = "OIDC_TRUST_CERT"
+
 	// OpenidConfiguration is the discovery point on the OIDC server
 	OpenidConfiguration = ".well-known/openid-configuration"
 	// HS prefix for HS family algorithms
@@ -115,8 +120,16 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 			"Can't reach the OIDC server to refresh JWKS")
 	}
 
-	client := new(http.Client)
-	resOpenIDConfig, err := client.Get(fmt.Sprintf("%s/%s", oidcURL, OpenidConfiguration))
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{},
+	}
+	trustOidcCert := os.Getenv(OIDCTrustCertBool)
+	if strings.ToLower(trustOidcCert) == "true" {
+		tr.TLSClientConfig.InsecureSkipVerify = true
+	}
+	oidcClient := &http.Client{Transport: tr}
+
+	resOpenIDConfig, err := oidcClient.Get(fmt.Sprintf("%s/%s", oidcURL, OpenidConfiguration))
 	if err != nil {
 		return err
 	}
@@ -132,7 +145,7 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 	if jsonErr != nil {
 		return jsonErr
 	}
-	resOpenIDKeys, err := client.Get(openIDprovider.JWKSURL)
+	resOpenIDKeys, err := oidcClient.Get(openIDprovider.JWKSURL)
 	if err != nil {
 		return err
 	}
