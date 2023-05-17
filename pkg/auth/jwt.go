@@ -120,15 +120,16 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 			"Can't reach the OIDC server to refresh JWKS")
 	}
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{},
+	oidcClient := new(http.Client)
+
+	oidcTLSInsecureSkipVerify := os.Getenv(OIDCTlsInsecureSkipVerify)
+	if strings.ToLower(oidcTLSInsecureSkipVerify) == "true" {
+		oidcClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
 	}
-	oidcTlsInsecureSkipVerify := os.Getenv(OIDCTlsInsecureSkipVerify)
-	log.Warnf("OIDC_TLS_INSECURE_SKIP_VERIFY = %s", oidcTlsInsecureSkipVerify)
-	if strings.ToLower(oidcTlsInsecureSkipVerify) == "true" {
-		tr.TLSClientConfig.InsecureSkipVerify = true
-	}
-	oidcClient := &http.Client{Transport: tr}
 
 	resOpenIDConfig, err := oidcClient.Get(fmt.Sprintf("%s/%s", oidcURL, OpenidConfiguration))
 	if err != nil {
