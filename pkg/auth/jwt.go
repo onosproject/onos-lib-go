@@ -33,8 +33,8 @@ const (
 	// OIDCServerURL - will be accessed as Environment variable
 	OIDCServerURL = "OIDC_SERVER_URL"
 
-	// OIDCTrustCertBool - will be accessed as Environment variable
-	OIDCTrustCertBool = "OIDC_TRUST_CERT"
+	// OIDCTlsInsecureSkipVerify - will be accessed as Environment variable
+	OIDCTlsInsecureSkipVerify = "OIDC_TLS_INSECURE_SKIP_VERIFY"
 
 	// OpenidConfiguration is the discovery point on the OIDC server
 	OpenidConfiguration = ".well-known/openid-configuration"
@@ -123,8 +123,9 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{},
 	}
-	trustOidcCert := os.Getenv(OIDCTrustCertBool)
-	if strings.ToLower(trustOidcCert) == "true" {
+	oidcTlsInsecureSkipVerify := os.Getenv(OIDCTlsInsecureSkipVerify)
+	log.Warnf("OIDC_TLS_INSECURE_SKIP_VERIFY = %s", oidcTlsInsecureSkipVerify)
+	if strings.ToLower(oidcTlsInsecureSkipVerify) == "true" {
 		tr.TLSClientConfig.InsecureSkipVerify = true
 	}
 	oidcClient := &http.Client{Transport: tr}
