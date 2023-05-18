@@ -27,6 +27,8 @@ import (
 
 var log = logging.GetLogger("jwt")
 
+var publicKeys map[string][]byte
+
 const (
 	// SharedSecretKey shared secret key for signing a token
 	SharedSecretKey = "SHARED_SECRET_KEY"
@@ -46,9 +48,15 @@ const (
 	PS = "PS"
 )
 
+func init() {
+	publicKeys = make(map[string][]byte)
+	if err := refreshJwksKeys(); err != nil {
+		log.Warnf("unable to refresh JWKS keys %s", err)
+	}
+}
+
 // JwtAuthenticator jwt authenticator
 type JwtAuthenticator struct {
-	publicKeys map[string][]byte
 }
 
 // ParseToken parse token and Ensure that the JWT conforms to the structure of a JWT.
@@ -66,15 +74,15 @@ func (j *JwtAuthenticator) parseToken(tokenString string) (*jwt.Token, jwt.Claim
 				return nil, status.Errorf(codes.Unauthenticated, "token header not found 'kid' (key ID)")
 			}
 			keyIDStr := keyID.(string)
-			publicKey, ok := j.publicKeys[keyIDStr]
+			publicKey, ok := publicKeys[keyIDStr]
 			if !ok {
 				// Keys may have been refreshed on the server
 				// Fetch them again and try once more before failing
-				if err := j.refreshJwksKeys(); err != nil {
+				if err := refreshJwksKeys(); err != nil {
 					return nil, status.Errorf(codes.Unauthenticated, "unable to refresh keys from ID provider %s", err)
 				}
 				// try again after refresh
-				if publicKey, ok = j.publicKeys[keyIDStr]; !ok {
+				if publicKey, ok = publicKeys[keyIDStr]; !ok {
 					return nil, status.Errorf(codes.Unauthenticated, "token has obsolete key ID %s", keyID)
 				}
 			}
@@ -113,7 +121,7 @@ func (j *JwtAuthenticator) ParseAndValidate(tokenString string) (jwt.Claims, err
 // 1) connect to $OIDCServerURL/.well-known/openid-configuration and retrieve the JSON payload
 // 2) lookup the "keys" parameter and get keys from $OIDCServerURL/keys
 // The keys are in a public key format and are converted to RSA Public Keys
-func (j *JwtAuthenticator) refreshJwksKeys() error {
+func refreshJwksKeys() error {
 	oidcURL, present := os.LookupEnv(OIDCServerURL)
 	if !present {
 		return fmt.Errorf("environmental variable OIDC_SERVER_URL is not set " +
@@ -163,9 +171,11 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 		return err
 	}
 
-	if j.publicKeys == nil {
-		j.publicKeys = make(map[string][]byte)
+	// Clear out old keys
+	for k := range publicKeys {
+		delete(publicKeys, k)
 	}
+
 	for _, key := range jsonWebKeySet.Keys {
 		data, err := x509.MarshalPKIXPublicKey(key.Key)
 		if err != nil {
@@ -176,7 +186,7 @@ func (j *JwtAuthenticator) refreshJwksKeys() error {
 			Bytes: data,
 		}
 		pemBytes := pem.EncodeToMemory(&block)
-		j.publicKeys[key.KeyID] = pemBytes
+		publicKeys[key.KeyID] = pemBytes
 	}
 	log.Infof("Refreshed JWKS keys from %s", openIDprovider.JWKSURL)
 
