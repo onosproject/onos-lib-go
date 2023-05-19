@@ -157,7 +157,7 @@ func refreshJwksKeys() error {
 	}
 	resOpenIDKeys, err := oidcClient.Get(openIDprovider.JWKSURL)
 	if err != nil {
-		return fmt.Errorf("error retrieving JWKS fro =m the OIDC provider: %v", err)
+		return fmt.Errorf("error retrieving JWKS from the OIDC provider: %v", err)
 	}
 	if resOpenIDKeys.Body != nil {
 		defer resOpenIDKeys.Body.Close()
