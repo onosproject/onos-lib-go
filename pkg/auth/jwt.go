@@ -141,34 +141,34 @@ func refreshJwksKeys() error {
 
 	resOpenIDConfig, err := oidcClient.Get(fmt.Sprintf("%s/%s", oidcURL, OpenidConfiguration))
 	if err != nil {
-		return err
+		return fmt.Errorf("error obtaining information from OIDC well-known URL: %v", err)
 	}
 	if resOpenIDConfig.Body != nil {
 		defer resOpenIDConfig.Body.Close()
 	}
 	openIDConfigBody, readErr := io.ReadAll(resOpenIDConfig.Body)
 	if readErr != nil {
-		return readErr
+		return fmt.Errorf("error reading Body of the OIDC configuration: %v", readErr)
 	}
 	var openIDprovider ecoidc.Provider
 	jsonErr := json.Unmarshal(openIDConfigBody, &openIDprovider)
 	if jsonErr != nil {
-		return jsonErr
+		return fmt.Errorf("error unmarshalling OIDC configuration: %v", jsonErr)
 	}
 	resOpenIDKeys, err := oidcClient.Get(openIDprovider.JWKSURL)
 	if err != nil {
-		return err
+		return fmt.Errorf("error retrieving JWKS from the OIDC provider: %v", err)
 	}
 	if resOpenIDKeys.Body != nil {
 		defer resOpenIDKeys.Body.Close()
 	}
 	bodyOpenIDKeys, readErr := io.ReadAll(resOpenIDKeys.Body)
 	if readErr != nil {
-		return readErr
+		return fmt.Errorf("error reading keys from the Body of the response: %v", readErr)
 	}
 	var jsonWebKeySet jose.JSONWebKeySet
 	if err := json.Unmarshal(bodyOpenIDKeys, &jsonWebKeySet); err != nil {
-		return err
+		return fmt.Errorf("error unmarshalling JWKS to JSON: %v", err)
 	}
 
 	// Clear out old keys
