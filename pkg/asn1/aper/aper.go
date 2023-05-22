@@ -995,7 +995,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					log.Debugf("Expected number of items to be decoded in the extension is %d", extensionLength)
 					totalNumberOfItemsInExtension = structType.NumField() - i
 					if totalNumberOfItemsInExtension < 0 {
-						err = fmt.Errorf("Something went wrong - total amount of instances in the extension is %d (negative)\n", totalNumberOfItemsInExtension)
+						err = fmt.Errorf("something went wrong - total amount of instances in the extension is %d (negative)\n", totalNumberOfItemsInExtension)
 						log.Errorf("%s\n", err)
 						return err
 					}
