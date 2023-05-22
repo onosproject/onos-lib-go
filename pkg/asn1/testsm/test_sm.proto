@@ -93,7 +93,7 @@ message TestConstrainedReal {
     double attr_cr_d = 4 [json_name = "attrCrD"];
     // @inject_tag: aper:"valueLB:10,valueUB:10"
     double attr_cr_e = 5 [json_name = "attrCrE"];
-    // @inject_tag: aper:"valueLB:10"
+    // @inject_tag: aper:"valueLB:10,valueUB:10,valueExt"
     double attr_cr_f = 6 [json_name = "attrCrF"];
 };
 

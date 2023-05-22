@@ -423,8 +423,8 @@ type TestConstrainedReal struct {
 	AttrCrD float64 `protobuf:"fixed64,4,opt,name=attr_cr_d,json=attrCrD,proto3" json:"attr_cr_d,omitempty" aper:"valueLB:10,valueUB:20"`
 	// @inject_tag: aper:"valueLB:10,valueUB:10"
 	AttrCrE float64 `protobuf:"fixed64,5,opt,name=attr_cr_e,json=attrCrE,proto3" json:"attr_cr_e,omitempty" aper:"valueLB:10,valueUB:10"`
-	// @inject_tag: aper:"valueLB:10"
-	AttrCrF float64 `protobuf:"fixed64,6,opt,name=attr_cr_f,json=attrCrF,proto3" json:"attr_cr_f,omitempty" aper:"valueLB:10"`
+	// @inject_tag: aper:"valueLB:10,valueUB:10,valueExt"
+	AttrCrF float64 `protobuf:"fixed64,6,opt,name=attr_cr_f,json=attrCrF,proto3" json:"attr_cr_f,omitempty" aper:"valueLB:10,valueUB:10,valueExt"`
 }
 
 func (x *TestConstrainedReal) Reset() {

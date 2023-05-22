@@ -995,14 +995,16 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					log.Debugf("Expected number of items to be decoded in the extension is %d", extensionLength)
 					totalNumberOfItemsInExtension = structType.NumField() - i
 					if totalNumberOfItemsInExtension < 0 {
-						log.Debugf("Something went wrong - total amount of instances in the extension is %d (negative)\n", totalNumberOfItemsInExtension)
-						return nil
+						err = fmt.Errorf("Something went wrong - total amount of instances in the extension is %d (negative)\n", totalNumberOfItemsInExtension)
+						log.Errorf("%s\n", err)
+						return err
 					}
 					log.Debugf("Number of items in the extension per defined schema is %d", totalNumberOfItemsInExtension)
 					if uint64(totalNumberOfItemsInExtension) != extensionLength {
-						log.Debugf("Encoded number of items in the extension (%d) does NOT correspond to the number of items defined in the extension (%d)!",
+						err = fmt.Errorf("encoded number of items in the extension (%d) does NOT correspond to the number of items defined in the extension (%d)",
 							extensionLength, totalNumberOfItemsInExtension)
-						return nil
+						log.Errorf("%s\n", err)
+						return err
 					}
 					if extensionLength > 0 {
 						itemsInExtensionPresentsTmp, err := pd.getBitsValue(uint(extensionLength))
@@ -1254,7 +1256,7 @@ func Unmarshal(b []byte, value interface{}, choiceMap map[string]map[int]reflect
 // UnmarshalWithParams allows field parameters to be specified for the
 // top-level element. The form of the params is the same as the field tags.
 func UnmarshalWithParams(b []byte, value interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) error {
-	//log.SetLevel(logging.DebugLevel)
+	log.SetLevel(logging.DebugLevel)
 	v := reflect.ValueOf(value).Elem()
 	pd := &perBitData{b, 0, 0, choiceMap, -1, false, false, canonicalChoiceMap, false}
 	err := parseField(v, pd, parseFieldParameters(params))
