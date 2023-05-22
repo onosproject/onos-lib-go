@@ -995,15 +995,15 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					log.Debugf("Expected number of items to be decoded in the extension is %d", extensionLength)
 					totalNumberOfItemsInExtension = structType.NumField() - i
 					if totalNumberOfItemsInExtension < 0 {
-						err = fmt.Errorf("something went wrong - total amount of instances in the extension is %d (negative)\n", totalNumberOfItemsInExtension)
-						log.Errorf("%s\n", err)
+						err = fmt.Errorf("something went wrong - total amount of instances in the extension is %d (negative)", totalNumberOfItemsInExtension)
+						log.Errorf("%s", err)
 						return err
 					}
 					log.Debugf("Number of items in the extension per defined schema is %d", totalNumberOfItemsInExtension)
 					if uint64(totalNumberOfItemsInExtension) != extensionLength {
 						err = fmt.Errorf("encoded number of items in the extension (%d) does NOT correspond to the number of items defined in the extension (%d)",
 							extensionLength, totalNumberOfItemsInExtension)
-						log.Errorf("%s\n", err)
+						log.Errorf("%s", err)
 						return err
 					}
 					if extensionLength > 0 {
