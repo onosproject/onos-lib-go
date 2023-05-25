@@ -998,7 +998,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		structType := fieldType
 		var structParams []fieldParameters
 		var optionalCount uint
-		fromValueExtPresent := false
+		fromValueExtPresent := false // this is to indicate if any items in SEQUENCE Extension are actually present
 		var optionalPresents uint64
 		var choiceType string
 		pd.choiceCanBeExtended = false
@@ -1152,7 +1152,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 							ieNotInExt = len(choices)
 						}
 
-						log.Debugf("ValueExt is %v", structParams[fieldIdx].valueExtensible)
+						log.Debugf("ValueExt (i.e., if current CHOICE item is extensible) is %v", structParams[fieldIdx].valueExtensible)
 						log.Debugf("FromChoiceExt is %v", structParams[fieldIdx].fromChoiceExt)
 						log.Debugf("Amount of values which are not in extension is %v", ieNotInExt)
 						log.Debugf("Choice map length is %v", len(choices))
@@ -1176,7 +1176,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				if err := pd.makeField(reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
 					return err
 				}
-			} else if structParams[fieldIdx].fromValueExt {
+			} else if structParams[fieldIdx].fromValueExt && fromValueExtPresent { // making sure that the items in the extension are actually present
 				// encoding items from the value extension
 				if !extensionHeader && pd.sequenceCanBeExtended {
 					log.Debugf("Encoding SEQUENCE Extension header")
@@ -1239,7 +1239,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 						return err
 					}
 				}
-			} else {
+			} else if !structParams[fieldIdx].fromValueExt { // we should make sure that the value is not Nil, if we want to encode it..
 				if err := pd.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
 					return err
 				}
