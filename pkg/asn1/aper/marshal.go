@@ -14,13 +14,13 @@ import (
 )
 
 type perRawBitData struct {
-	bytes                 []byte
-	bitsOffset            uint
-	choiceMap             map[string]map[int]reflect.Type
-	unique                int64
-	canonicalChoiceMap    map[string]map[int64]reflect.Type
-	choiceCanBeExtended   bool
-	sequenceCanBeExtended bool
+	bytes               []byte
+	bitsOffset          uint
+	choiceMap           map[string]map[int]reflect.Type
+	unique              int64
+	canonicalChoiceMap  map[string]map[int64]reflect.Type
+	choiceCanBeExtended bool
+	//sequenceCanBeExtended bool
 }
 
 func perRawBitLog(numBits uint64, byteLen int, bitsOffset uint, value interface{}) string {
@@ -866,7 +866,7 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(canonicalChoiceMap map[int64
 	// ToDo - find workaround in logging
 	//log.SetLevel(log.Info)
 	// ToDo - sequenceCanBeExtended may cause potential problems
-	threadedBytes := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false, false}
+	threadedBytes := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false}
 	if err := threadedBytes.makeField(v, params); err != nil {
 		return err
 	}
@@ -884,7 +884,7 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(canonicalChoiceMap map[int64
 func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters) error {
 
 	// ToDo - sequenceCanBeExtended may cause potential problems
-	pdOpenType := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false, false}
+	pdOpenType := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false}
 	log.Debugf("Encoding OpenType %s to temp RawData", v.Type().String())
 	if err := pdOpenType.makeField(v, params); err != nil {
 		return err
@@ -1002,12 +1002,12 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		var optionalPresents uint64
 		var choiceType string
 		pd.choiceCanBeExtended = false
-		pd.sequenceCanBeExtended = false
+		sequenceCanBeExtended := false
 		extensionHeader := false
 		// It is only possible to decode extension which is defined in the encoding schema
 		// struct extensive
 		if params.valueExtensible && !params.choiceExt {
-			pd.sequenceCanBeExtended = true
+			sequenceCanBeExtended = true
 			log.Debugf("SEQUENCE can be extended")
 			//log.Debugf("Encoding Value Extensive Bit : true")
 			//if err := pd.putBitsValue(0, 1); err != nil {
@@ -1074,7 +1074,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			if err := pd.putBitsValue(1, 1); err != nil {
 				return err
 			}
-		} else if pd.sequenceCanBeExtended {
+		} else if sequenceCanBeExtended {
 			log.Debugf("SEQUENCE extension is not present. Encoding Value Extensive Bit: false")
 			if err := pd.putBitsValue(0, 1); err != nil {
 				return err
@@ -1089,6 +1089,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 
 		fieldIdx = -1
 		for i := 0; i < structType.NumField(); i++ {
+			log.Debugf("Iteration %v", i)
 			if structType.Field(i).PkgPath != "" {
 				log.Debugf("struct %s ignoring unexported field : %s", structType.Name(), structType.Field(i).Name)
 				continue
@@ -1108,6 +1109,9 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 					log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(fieldIdx).Name, structType)
 				}
 			}
+			log.Debugf("SEQUENCE Extension presence is %v, current field name is %v", fromValueExtPresent, structType.Field(i).Name)
+			log.Debugf("fromValueExt is %v", structParams[fieldIdx].fromValueExt)
+			log.Debugf("ExtensionHeader encoded is %v", extensionHeader)
 			if structParams[fieldIdx].oneofName != "" {
 				if params.canonicalOrder {
 					tempParams := structParams[fieldIdx]
@@ -1178,7 +1182,8 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				}
 			} else if structParams[fieldIdx].fromValueExt && fromValueExtPresent { // making sure that the items in the extension are actually present
 				// encoding items from the value extension
-				if !extensionHeader && pd.sequenceCanBeExtended {
+				log.Debugf("Current SEQUENCE can be extended is %v", sequenceCanBeExtended)
+				if !extensionHeader && sequenceCanBeExtended {
 					log.Debugf("Encoding SEQUENCE Extension header")
 					// encoding the header of the value extension
 					// obtaining total number of items
@@ -1223,8 +1228,9 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				}
 				// proceeding with encoding the items in extension in a regular way
 				if !val.Field(i).IsNil() {
+					log.Debugf("Encoding %v - an item from the extension", structType.Field(i).Name)
 					// create threaded bytes, encode the item and encode its length
-					threadedBytes := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false, false}
+					threadedBytes := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false}
 					if err := threadedBytes.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
 						return err
 					}
@@ -1280,7 +1286,7 @@ func Marshal(val interface{}, choiceMap map[string]map[int]reflect.Type, canonic
 func MarshalWithParams(val interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) ([]byte, error) {
 	// ToDo - sequenceCanBeExtended may cause potential problems
 	log.SetLevel(logging.DebugLevel)
-	pd := &perRawBitData{[]byte(""), 0, choiceMap, -1, canonicalChoiceMap, false, false}
+	pd := &perRawBitData{[]byte(""), 0, choiceMap, -1, canonicalChoiceMap, false}
 	err := pd.makeField(reflect.ValueOf(val), parseFieldParameters(params))
 	if err != nil {
 		return nil, err
