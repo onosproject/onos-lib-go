@@ -1239,7 +1239,9 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 						return err
 					}
 				}
-			} else if !structParams[fieldIdx].fromValueExt { // we should make sure that the value is not Nil, if we want to encode it..
+			} else if !structParams[fieldIdx].fromValueExt {
+				// if the value is not the CHOICE, or an item in Extension, or an OPTIONAL item,
+				// then it should be mandatory present in the message - encoding it
 				if err := pd.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
 					return err
 				}
