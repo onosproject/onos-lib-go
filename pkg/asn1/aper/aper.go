@@ -772,7 +772,7 @@ func (pd *perBitData) parseNormallySmallNonNegativeWholeNumber() error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("Parsing %v bytes", len(pd.bytes[pd.byteOffset:]))
+	log.Debugf("Parsing %v bits", len(pd.bytes[pd.byteOffset:]))
 
 	ext, err := pd.getBitsValue(1)
 	if err != nil {
@@ -780,12 +780,14 @@ func (pd *perBitData) parseNormallySmallNonNegativeWholeNumber() error {
 	}
 
 	if ext == 0 {
+		log.Debugf("Extension for Normally Small Non Negative Whole Number is present")
 		numBytes, err := pd.getBitsValue(7)
 		if err != nil {
 			return err
 		}
 		log.Debugf("Decoding %v bytes", numBytes)
 	} else if ext == 1 {
+		log.Debugf("Extension for Normally Small Non Negative Whole Number is NOT present")
 		numBytes, err := pd.getBitsValue(15)
 		if err != nil {
 			return err
@@ -846,7 +848,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		log.Debugf("Decoded Size Extensive Bit: %t", sizeExtensible)
 	}
 
-	valueExtensible := false
+	valueExtensible := false // this is to indicate that the items in the Extension are present
 	if params.valueExtensible && v.Kind() != reflect.Slice && !params.choiceExt {
 		if params.valueExtensible && v.Kind() != reflect.Slice && !params.choiceExt {
 			if bitsValue, err1 := pd.getBitsValue(1); err1 != nil {
@@ -972,6 +974,16 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			}
 			fieldIdx++
 
+			if structParams[fieldIdx].optional && optionalCount > 0 {
+				optionalCount--
+				if optionalPresents&(1<<optionalCount) == 0 {
+					log.Debugf("Field \"%s\" in %s is OPTIONAL and not present", structType.Field(i).Name, structType)
+					continue // skipping this iteration
+				} else {
+					log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(i).Name, structType)
+				}
+			}
+
 			// if no UNIQUE flag, then regular processing..
 			if structParams[fieldIdx].unique {
 				log.Debugf("UNIQUE flag was found for %v, %v", structType.Field(i).Name, structType.Field(i).Type)
@@ -995,14 +1007,16 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					log.Debugf("Expected number of items to be decoded in the extension is %d", extensionLength)
 					totalNumberOfItemsInExtension = structType.NumField() - i
 					if totalNumberOfItemsInExtension < 0 {
-						log.Debugf("Something went wrong - total amount of instances in the extension is %d (negative)\n", totalNumberOfItemsInExtension)
-						return nil
+						err = fmt.Errorf("something went wrong - total amount of instances in the extension is %d (negative)", totalNumberOfItemsInExtension)
+						log.Errorf("%s", err)
+						return err
 					}
 					log.Debugf("Number of items in the extension per defined schema is %d", totalNumberOfItemsInExtension)
 					if uint64(totalNumberOfItemsInExtension) != extensionLength {
-						log.Debugf("Encoded number of items in the extension (%d) does NOT correspond to the number of items defined in the extension (%d)!",
+						err = fmt.Errorf("encoded number of items in the extension (%d) does NOT correspond to the number of items defined in the extension (%d)",
 							extensionLength, totalNumberOfItemsInExtension)
-						return nil
+						log.Errorf("%s", err)
+						return err
 					}
 					if extensionLength > 0 {
 						itemsInExtensionPresentsTmp, err := pd.getBitsValue(uint(extensionLength))
@@ -1037,15 +1051,6 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			} else if structParams[fieldIdx].fromValueExt && !valueExtensible { // extensible bit is not present
 				log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and not present", structType.Field(i).Name, structType)
 				break // we are already in extension, which is not present - no need to iterate over items in extension
-			}
-			if structParams[fieldIdx].optional && optionalCount > 0 {
-				optionalCount--
-				if optionalPresents&(1<<optionalCount) == 0 {
-					log.Debugf("Field \"%s\" in %s is OPTIONAL and not present", structType.Field(i).Name, structType)
-					continue // skipping this iteration
-				} else {
-					log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(i).Name, structType)
-				}
 			}
 
 			// In case there could be a sequence extension, and it's not present, checking if we have any bytes to decode
@@ -1254,7 +1259,7 @@ func Unmarshal(b []byte, value interface{}, choiceMap map[string]map[int]reflect
 // UnmarshalWithParams allows field parameters to be specified for the
 // top-level element. The form of the params is the same as the field tags.
 func UnmarshalWithParams(b []byte, value interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) error {
-	//log.SetLevel(logging.DebugLevel)
+	log.SetLevel(logging.DebugLevel)
 	v := reflect.ValueOf(value).Elem()
 	pd := &perBitData{b, 0, 0, choiceMap, -1, false, false, canonicalChoiceMap, false}
 	err := parseField(v, pd, parseFieldParameters(params))
