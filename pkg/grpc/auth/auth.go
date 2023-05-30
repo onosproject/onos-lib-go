@@ -64,7 +64,7 @@ func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 		return nil, fmt.Errorf("error converting claims to a map")
 	}
 	for k, v := range authClaims {
-		err = handleClaim(&niceMd, []string{k}, v)
+		err = HandleClaim(&niceMd, []string{k}, v)
 		if err != nil {
 			return nil, err
 		}
@@ -75,7 +75,8 @@ func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 	return niceMd.ToIncoming(ctx), nil
 }
 
-func handleClaim(niceMd *metautils.NiceMD, key []string, value interface{}) error {
+// HandleClaim function converts claims extracted from JWT to the string and appends them to the context
+func HandleClaim(niceMd *metautils.NiceMD, key []string, value interface{}) error {
 	k := strings.Join(key, "/")
 	switch vt := value.(type) {
 	case string:
@@ -94,7 +95,7 @@ func handleClaim(niceMd *metautils.NiceMD, key []string, value interface{}) erro
 		}
 	case map[string]interface{}:
 		for k, v := range vt {
-			err := handleClaim(niceMd, append(key, k), v)
+			err := HandleClaim(niceMd, append(key, k), v)
 			if err != nil {
 				return err
 			}

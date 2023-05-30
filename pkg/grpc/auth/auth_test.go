@@ -6,8 +6,10 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/onosproject/onos-lib-go/pkg/auth"
 	"google.golang.org/grpc/metadata"
 	"gotest.tools/assert"
@@ -42,17 +44,9 @@ type TestCustomClaims struct {
 	ResourceAccess    ResourceAccess `json:"resource-access"`
 }
 
-func (c TestCustomClaims) Validate() error {
-	if c.Name == "" || c.Email == "" {
-		return fmt.Errorf("name or email cannot be empty")
-	}
-	return nil
-}
-
-func Test_AuthenticationInterceptor(t *testing.T) {
+func createCustomClaims() TestCustomClaims {
 	now := time.Now()
-
-	claims := TestCustomClaims{
+	return TestCustomClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "http://dex:32000",
 			Subject:   "Test_AuthenticationInterceptor",
@@ -85,7 +79,17 @@ func Test_AuthenticationInterceptor(t *testing.T) {
 			},
 		},
 	}
+}
 
+func (c TestCustomClaims) Validate() error {
+	if c.Name == "" || c.Email == "" {
+		return fmt.Errorf("name or email cannot be empty")
+	}
+	return nil
+}
+
+func Test_AuthenticationInterceptor(t *testing.T) {
+	claims := createCustomClaims()
 	assert.NilError(t, claims.Validate())
 
 	signingKey := "testkey"
@@ -180,4 +184,41 @@ func Test_AuthenticationInterceptor_NoAuth_Allowed(t *testing.T) {
 	md, ok := metadata.FromIncomingContext(intercepted)
 	assert.Assert(t, ok)
 	assert.DeepEqual(t, []string(nil), md.Get("iat"))
+}
+
+func Test_HandleClaims(t *testing.T) {
+	// setting context
+	ctx := context.Background()
+	niceMd := metautils.ExtractIncoming(ctx)
+
+	// creating claims
+	claims := createCustomClaims()
+	assert.NilError(t, claims.Validate())
+
+	// marshalling claims to JSON
+	jsonBytes, err := json.Marshal(claims)
+	assert.NilError(t, err)
+
+	// unmarshalling claims to claimsMap, which is type-agnostic
+	var claimsMap map[string]interface{}
+	err = json.Unmarshal(jsonBytes, &claimsMap)
+	assert.NilError(t, err)
+
+	// mimic piece of code from Interceptor
+	for k, v := range claimsMap {
+		err = HandleClaim(&niceMd, []string{k}, v)
+		assert.NilError(t, err)
+	}
+
+	// extracting claims added to the context and verifying that all are present
+	md, ok := metadata.FromIncomingContext(niceMd.ToIncoming(ctx))
+	assert.Assert(t, ok)
+	assert.Assert(t, md != nil, "expected a value for Metadata")
+	assert.DeepEqual(t, []string{"testname"}, md.Get("Name"))
+	assert.DeepEqual(t, []string{"test1@opennetworking.org"}, md.Get("Email"))
+	assert.DeepEqual(t, []string{"testGroup1", "testGroup2"}, md.Get("Groups"))
+	assert.DeepEqual(t, []string{"testRole1", "testRole2"}, md.Get("Roles"))
+	assert.DeepEqual(t, []string{"a user Name"}, md.Get("preferred_username"))
+	assert.DeepEqual(t, []string{"testRole1", "testRole2"}, md.Get("realm-access/roles"))
+	assert.DeepEqual(t, []string{"testRole1", "testRole2"}, md.Get("resource-access/account/roles"))
 }
