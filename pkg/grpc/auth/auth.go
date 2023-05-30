@@ -75,6 +75,7 @@ func AuthenticationInterceptor(ctx context.Context) (context.Context, error) {
 	return niceMd.ToIncoming(ctx), nil
 }
 
+// HandleClaim function converts claims extracted from JWT to the string and appends them to the context
 func HandleClaim(niceMd *metautils.NiceMD, key []string, value interface{}) error {
 	k := strings.Join(key, "/")
 	switch vt := value.(type) {
