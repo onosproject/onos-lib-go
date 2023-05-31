@@ -51,7 +51,7 @@ const (
 func init() {
 	publicKeys = make(map[string][]byte)
 	if err := refreshJwksKeys(); err != nil {
-		log.Warnf("unable to refresh JWKS keys %s", err)
+		log.Debugf("unable to refresh JWKS keys on init %s", err)
 	}
 }
 
