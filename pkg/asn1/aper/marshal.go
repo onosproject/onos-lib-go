@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
-	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"math"
 	"reflect"
 )
@@ -1285,7 +1284,7 @@ func Marshal(val interface{}, choiceMap map[string]map[int]reflect.Type, canonic
 // top-level element. The form of the params is the same as the field tags.
 func MarshalWithParams(val interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) ([]byte, error) {
 	// ToDo - sequenceCanBeExtended may cause potential problems
-	log.SetLevel(logging.DebugLevel)
+	//log.SetLevel(logging.DebugLevel)
 	pd := &perRawBitData{[]byte(""), 0, choiceMap, -1, canonicalChoiceMap, false}
 	err := pd.makeField(reflect.ValueOf(val), parseFieldParameters(params))
 	if err != nil {
