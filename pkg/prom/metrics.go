@@ -238,7 +238,7 @@ func (b Builder) NewMetricHistogram(
 	name,
 	description string,
 	buckets []float64,
-	dimensions []string) (prometheus.Histogram, error) {
+	_ []string) (prometheus.Histogram, error) {
 
 	metric := prometheus.NewHistogram(
 		prometheus.HistogramOpts{
@@ -262,7 +262,7 @@ func (b Builder) NewMetricSummary(
 	name,
 	description string,
 	objectives map[float64]float64,
-	dimensions []string) (prometheus.Summary, error) {
+	_ []string) (prometheus.Summary, error) {
 
 	metric := prometheus.NewSummary(
 		prometheus.SummaryOpts{

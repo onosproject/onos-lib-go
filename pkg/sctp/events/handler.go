@@ -71,7 +71,7 @@ func IsMsgEORSet(flags int) bool {
 }
 
 // GetNotfication extracts notfication from a given message
-func GetNotfication(buf []byte, flags int) (*types.Notification, error) {
+func GetNotfication(buf []byte, _ int) (*types.Notification, error) {
 	notif, err := connection.SCTPParseNotification(buf)
 	if err != nil {
 		return nil, err

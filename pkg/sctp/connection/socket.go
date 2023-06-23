@@ -164,6 +164,7 @@ func read(fd int, b []byte) (dataCount int, oob *types.OOBMessage, flags int, er
 	return
 }
 
+// nolint: all
 func close(fd int) error {
 	if fd > 0 {
 		fdq := int32(fd)
