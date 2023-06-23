@@ -189,17 +189,17 @@ func (c *SCTPConn) PeelOff(id int32) (*SCTPConn, error) {
 }
 
 // SetDeadline sets deadline for SCTP connection
-func (c *SCTPConn) SetDeadline(t time.Time) error {
+func (c *SCTPConn) SetDeadline(_ time.Time) error {
 	return syscall.EOPNOTSUPP
 }
 
 // SetReadDeadline sets read deadline
-func (c *SCTPConn) SetReadDeadline(t time.Time) error {
+func (c *SCTPConn) SetReadDeadline(_ time.Time) error {
 	return syscall.EOPNOTSUPP
 }
 
 // SetWriteDeadline sets write deadline
-func (c *SCTPConn) SetWriteDeadline(t time.Time) error {
+func (c *SCTPConn) SetWriteDeadline(_ time.Time) error {
 	return syscall.EOPNOTSUPP
 }
 

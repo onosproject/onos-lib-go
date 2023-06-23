@@ -111,6 +111,7 @@ func (s *Server) Serve(started func(string), grpcOpts ...grpc.ServerOption) erro
 
 	if s.cfg.Insecure && s.cfg.CertPath == nil && s.cfg.KeyPath == nil {
 		// nothing
+		log.Debug("Running in insecure mode")
 	} else if *s.cfg.CertPath == "" && *s.cfg.KeyPath == "" {
 		// Load default Certificates
 		clientCerts, err := tls.X509KeyPair([]byte(certs.DefaultLocalhostCrt), []byte(certs.DefaultLocalhostKey))
@@ -138,7 +139,7 @@ func (s *Server) Serve(started func(string), grpcOpts ...grpc.ServerOption) erro
 	}
 
 	if s.cfg.CaPath == nil {
-		// nothing
+		log.Debug("Running with no CA certificates")
 	} else if *s.cfg.CaPath == "" {
 		log.Info("Loading default CA onfca")
 		tlsCfg.ClientCAs, err = certs.GetCertPoolDefault()

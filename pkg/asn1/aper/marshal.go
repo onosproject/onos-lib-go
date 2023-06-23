@@ -873,11 +873,7 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(canonicalChoiceMap map[int64
 	//log.SetLevel(log.Debug)
 
 	// encoding the number of upcoming bytes
-	if err := pd.appendNormallySmallNonNegativeWholeNumber(uint64(len(threadedBytes.bytes))); err != nil {
-		return err
-	}
-
-	return nil
+	return pd.appendNormallySmallNonNegativeWholeNumber(uint64(len(threadedBytes.bytes)))
 }
 
 func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters) error {
@@ -1104,9 +1100,8 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				if optionalPresents&(1<<optionalCount) == 0 {
 					log.Debugf("Field \"%s\" in %s is OPTIONAL and not present", structType.Field(fieldIdx).Name, structType)
 					continue
-				} else {
-					log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(fieldIdx).Name, structType)
 				}
+				log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(fieldIdx).Name, structType)
 			}
 			log.Debugf("SEQUENCE Extension presence is %v, current field name is %v", fromValueExtPresent, structType.Field(i).Name)
 			log.Debugf("fromValueExt is %v", structParams[fieldIdx].fromValueExt)

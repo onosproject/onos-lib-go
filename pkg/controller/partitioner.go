@@ -28,7 +28,7 @@ type UnaryPartitioner struct {
 }
 
 // Partition returns a static partition key
-func (p *UnaryPartitioner) Partition(id ID) (PartitionKey, error) {
+func (p *UnaryPartitioner) Partition(_ ID) (PartitionKey, error) {
 	return staticKey, nil
 }
 

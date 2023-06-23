@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	configDir  = ".onos"
 	addressKey = "service-address"
 
 	tlsCertPathKey = "tls.certPath"
@@ -32,6 +31,8 @@ const (
 	Authorization = "authorization"
 )
 
+var configDir = ".onos"
+
 var configName string
 
 var configOptions = []string{
@@ -40,6 +41,43 @@ var configOptions = []string{
 	tlsKeyPathKey,
 	noTLSKey,
 	authHeaderKey,
+}
+
+// SetConfigDir sets the name of the config directory as a relative path under the home directory where the config
+// file will be created/expected.
+func SetConfigDir(relativePath string) {
+	configDir = relativePath
+}
+
+// CreateConfig creates a CLI config file including its parent directory if necessary. It is idempotent.
+func CreateConfig(verbose bool) error {
+	if err := viper.ReadInConfig(); err == nil {
+		return nil
+	}
+
+	home, err := homedir.Dir()
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(home+"/"+configDir, 0777); err != nil {
+		return err
+	}
+
+	filePath := home + "/" + configDir + "/" + configName + ".yaml"
+	f, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	_ = f.Close()
+
+	if err = viper.WriteConfig(); err != nil {
+		return err
+	}
+	if verbose {
+		_, _ = fmt.Fprintf(GetOutput(), "Created %s\n", filePath)
+	}
+	return nil
 }
 
 // AddConfigFlags :
@@ -133,31 +171,7 @@ func getConfigInitCommand() *cobra.Command {
 }
 
 func runConfigInitCommand(_ *cobra.Command, _ []string) error {
-	if err := viper.ReadInConfig(); err == nil {
-		return nil
-	}
-
-	home, err := homedir.Dir()
-	if err != nil {
-		return err
-	}
-
-	if err := os.MkdirAll(home+"/"+configDir, 0777); err != nil {
-		return err
-	}
-
-	filePath := home + "/" + configDir + "/" + configName + ".yaml"
-	f, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	_ = f.Close()
-
-	if err := viper.WriteConfig(); err != nil {
-		return err
-	}
-	_, _ = fmt.Fprintf(GetOutput(), "Created %s\n", filePath)
-	return nil
+	return CreateConfig(true)
 }
 
 func getAddress(cmd *cobra.Command) string {

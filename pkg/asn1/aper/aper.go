@@ -979,9 +979,8 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				if optionalPresents&(1<<optionalCount) == 0 {
 					log.Debugf("Field \"%s\" in %s is OPTIONAL and not present", structType.Field(i).Name, structType)
 					continue // skipping this iteration
-				} else {
-					log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(i).Name, structType)
 				}
+				log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(i).Name, structType)
 			}
 
 			// if no UNIQUE flag, then regular processing..
@@ -1039,13 +1038,12 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					if itemsInExtensionPresents&(1<<totalNumberOfItemsInExtension) == 0 {
 						log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and NOT present", structType.Field(i).Name, structType)
 						continue // skipping this iteration
-					} else {
-						log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and present", structType.Field(i).Name, structType)
-						// parsing length of the bytes
-						err := pd.parseNormallySmallNonNegativeWholeNumber()
-						if err != nil {
-							return err
-						}
+					}
+					log.Debugf("Field \"%s\" in %s is from SEQUENCE extension and present", structType.Field(i).Name, structType)
+					// parsing length of the bytes
+					err := pd.parseNormallySmallNonNegativeWholeNumber()
+					if err != nil {
+						return err
 					}
 				}
 			} else if structParams[fieldIdx].fromValueExt && !valueExtensible { // extensible bit is not present

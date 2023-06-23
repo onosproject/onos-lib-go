@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestService_Register(t *testing.T) {
+func TestService_Register(_ *testing.T) {
 	service := Service{}
 	server := grpc.NewServer()
 	service.Register(server)

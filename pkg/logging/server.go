@@ -41,7 +41,7 @@ func splitLoggerName(name string) []string {
 }
 
 // GetLevel implements GetLevel rpc function to get a logger level
-func (s *Server) GetLevel(ctx context.Context, req *logging.GetLevelRequest) (*logging.GetLevelResponse, error) {
+func (s *Server) GetLevel(_ context.Context, req *logging.GetLevelRequest) (*logging.GetLevelResponse, error) {
 
 	name := req.GetLoggerName()
 	if name == "" {
@@ -78,7 +78,7 @@ func (s *Server) GetLevel(ctx context.Context, req *logging.GetLevelRequest) (*l
 }
 
 // SetLevel implements SetLevel rpc function to set a logger level
-func (s *Server) SetLevel(ctx context.Context, req *logging.SetLevelRequest) (*logging.SetLevelResponse, error) {
+func (s *Server) SetLevel(_ context.Context, req *logging.SetLevelRequest) (*logging.SetLevelResponse, error) {
 	name := req.GetLoggerName()
 	level := req.GetLevel()
 	if name == "" {

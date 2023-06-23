@@ -141,8 +141,5 @@ func ServeMetrics(path, address string) error {
 		return err
 	}
 
-	if err := e.Run(); err != nil {
-		return err
-	}
-	return nil
+	return e.Run()
 }

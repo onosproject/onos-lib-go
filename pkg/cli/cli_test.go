@@ -26,14 +26,13 @@ func Test_GetConnection(t *testing.T) {
 	assert.Assert(t, conn != nil)
 }
 
-func Test_AddConfigFlags(t *testing.T) {
+func Test_AddConfigFlags(_ *testing.T) {
 	AddConfigFlags(&cobra.Command{
 		Short: "test command",
-	},
-		"localhost:5150")
+	}, "localhost:5150")
 }
 
-func Test_GetConfigCommand(t *testing.T) {
+func Test_GetConfigCommand(_ *testing.T) {
 	GetConfigCommand()
 }
 
