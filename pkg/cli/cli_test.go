@@ -6,6 +6,7 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"gotest.tools/assert"
 	"testing"
 )
@@ -19,6 +20,7 @@ func Test_InitConfig(t *testing.T) {
 }
 
 func Test_GetConnection(t *testing.T) {
+	viper.Set(addressKey, "http://localhost")
 	conn, err := GetConnection(&cobra.Command{
 		Short: "test command",
 	})
