@@ -6,6 +6,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"hash/fnv"
 	"time"
 
@@ -135,6 +136,25 @@ func (c *Controller[I]) Reconcile(id I) error {
 	request := Request[I]{
 		ID:        id,
 		partition: hash % len(c.partitions),
+		ctx:       context.Background(),
+	}
+	go c.enqueue(request)
+	return nil
+}
+
+// ReconcileWithContext reconciles the given object ID using the provided context
+func (c *Controller[I]) ReconcileWithContext(ctx context.Context, id I) error {
+	if ctx == nil {
+		return errors.New("ctx is nil")
+	}
+	hash, err := computeHash(id)
+	if err != nil {
+		return err
+	}
+	request := Request[I]{
+		ID:        id,
+		partition: hash % len(c.partitions),
+		ctx:       ctx,
 	}
 	go c.enqueue(request)
 	return nil
@@ -155,7 +175,7 @@ func (c *Controller[I]) processRequests(ch chan Request[I]) {
 
 // processRequest reconciles the given request
 func (c *Controller[I]) processRequest(request Request[I]) {
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	ctx, cancel := context.WithTimeout(request.ctx, c.timeout)
 	defer cancel()
 	directive := c.reconciler(ctx, request)
 	if directive != nil {

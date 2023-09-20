@@ -115,3 +115,22 @@ func TestRetryWith(t *testing.T) {
 	assert.NoError(t, controller.Reconcile("bar"))
 	<-done
 }
+
+type key string
+
+func TestReconcileWithContext(t *testing.T) {
+	ctx := context.WithValue(context.Background(), key("foo"), "bar")
+	var found atomic.Bool
+	done := make(chan struct{})
+	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
+		if ctx.Value(key("foo")) == "bar" {
+			found.Store(true)
+		}
+		close(done)
+		return request.Ack()
+	}, WithParallelism(10))
+	defer controller.Stop()
+	assert.NoError(t, controller.ReconcileWithContext(ctx, "bar"))
+	<-done
+	assert.True(t, found.Load())
+}

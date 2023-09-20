@@ -30,6 +30,7 @@ type Request[I ID] struct {
 	ID        I
 	partition int
 	attempt   int
+	ctx       context.Context
 }
 
 // Ack acknowledges the request was reconciled successfully, removing it from the reconciliation queue.
