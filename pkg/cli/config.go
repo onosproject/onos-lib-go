@@ -207,7 +207,6 @@ func InitConfig(configNameInit string) {
 	viper.SetConfigName(configNameInit)
 	viper.AddConfigPath(home + "/" + configDir)
 	viper.AddConfigPath("/etc/onos")
-	viper.AddConfigPath(".")
 
 	_ = viper.ReadInConfig()
 }
