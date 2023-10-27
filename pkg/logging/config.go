@@ -289,7 +289,6 @@ func load(config *Config) error {
 	viper.AddConfigPath("./" + configDir + "/config")
 	viper.AddConfigPath(home + "/" + configDir + "/config")
 	viper.AddConfigPath("/etc/onos/config")
-	viper.AddConfigPath(".")
 
 	viper.SetConfigType("yaml")
 
