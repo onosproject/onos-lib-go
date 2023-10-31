@@ -614,6 +614,10 @@ func (pd *perBitData) parseInteger(extensed bool, lowerBoundPtr *int64, upperBou
 	}
 	log.Debugf("Decoding INTEGER Length with %d bytes", rawLength)
 
+	if rawLength == 0 {
+		err := fmt.Errorf("rawLength cannot be 0")
+		return int64(0), err
+	}
 	if rawValue, err := pd.getBitsValue(rawLength * 8); err != nil {
 		return int64(0), err
 	} else if valueRange < 0 {
