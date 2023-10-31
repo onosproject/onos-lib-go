@@ -44,6 +44,10 @@ func GetBitString(srcBytes []byte, bitsOffset uint, numBits uint) (dstBytes []by
 		err = fmt.Errorf("Get bits overflow, requireBits: %d, leftBits: %d", numBits, bitsLeft)
 		return
 	}
+	if numBits == 0 {
+		err = fmt.Errorf("Get bits called with zero numBits")
+		return
+	}
 	byteLen := (bitsOffset + numBits + 7) >> 3
 	numBitsByteLen := (numBits + 7) >> 3
 	dstBytes = make([]byte, numBitsByteLen)
