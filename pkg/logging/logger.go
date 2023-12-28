@@ -16,6 +16,10 @@ var root *zapLogger
 
 const nameSep = "/"
 
+
+// Replacement for the normal init 
+// Can be called if a configuration folder other than .onos is to be used. 
+// Else just call GetLogger as usual. 
 func CustomInit(dir string) {
 	config := Config{}
 	if err := customLoad(&config, dir); err != nil {
