@@ -275,13 +275,12 @@ type KafkaSinkConfig struct {
 	Brokers []string `yaml:"brokers"`
 }
 
-
 func customLoad(config *Config, dir string) error {
 	home, err := homedir.Dir()
 	if err != nil {
 		return err
 	}
-		
+
 	// Set the file name of the configurations file
 	viper.SetConfigName("logging")
 
@@ -302,7 +301,6 @@ func customLoad(config *Config, dir string) error {
 		return err
 	}
 	return nil
-
 
 }
 
