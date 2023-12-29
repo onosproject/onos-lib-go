@@ -55,6 +55,35 @@ func TestRequeue(t *testing.T) {
 	assert.NoError(t, controller.Reconcile("bar"))
 	<-done
 }
+func TestRqueueAfter(t *testing.T) {
+	var requeued atomic.Bool
+	done := make(chan struct{})
+	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
+		if requeued.CompareAndSwap(false, true) {
+			return request.Requeue().After(time.Second)
+		}
+		close(done)
+		return request.Ack()
+	}, WithParallelism(10))
+	defer controller.Stop()
+	assert.NoError(t, controller.Reconcile("bar"))
+	<-done
+}
+
+func TestRqueueAt(t *testing.T) {
+	var requeued atomic.Bool
+	done := make(chan struct{})
+	controller := NewController[testID](func(ctx context.Context, request Request[testID]) Directive[testID] {
+		if requeued.CompareAndSwap(false, true) {
+			return request.Requeue().At(time.Now().Add(time.Second))
+		}
+		close(done)
+		return request.Ack()
+	}, WithParallelism(10))
+	defer controller.Stop()
+	assert.NoError(t, controller.Reconcile("bar"))
+	<-done
+}
 
 func TestRetry(t *testing.T) {
 	var retried atomic.Bool
