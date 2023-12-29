@@ -6,13 +6,13 @@ package auth
 
 import (
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
+	"gotest.tools/assert"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
-
-	"gotest.tools/assert"
 )
 
 const dexWellKnownOpenIDConfig = `{
@@ -111,14 +111,29 @@ func TestJwtAuthenticator_parseToken(t *testing.T) {
 	assert.NilError(t, err, "unexpected error parsing token")
 	assert.Assert(t, claims != nil)
 
-	assert.Assert(t, claims.VerifyIssuedAt(1594578447, true), "error verifying issuedat time")
-	assert.Assert(t, claims.VerifyExpiresAt(1909938447, true), "error verifying expiry time")
-	assert.Assert(t, claims.VerifyIssuer("http://dex:32000", true), "error verifying issuer")
-	assert.Assert(t, claims.VerifyAudience("onos-gui", true), "error verifying audience")
-	name, ok := claims["name"]
+	issuedAt, err := claims.GetIssuedAt()
+	assert.NilError(t, err)
+	assert.Equal(t, int64(1594578447), issuedAt.Unix(), "error verifying issuedat time")
+	expiresAt, err := claims.GetExpirationTime()
+	assert.NilError(t, err)
+	assert.Equal(t, int64(1909938447), expiresAt.Unix(), "error verifying expiry time")
+
+	issuer, err := claims.GetIssuer()
+	assert.NilError(t, err)
+	assert.Equal(t, `http://dex:32000`, issuer, "error verifying issuer")
+
+	audience, err := claims.GetAudience()
+	assert.NilError(t, err)
+	audienceJSON, err := audience.MarshalJSON()
+	assert.NilError(t, err)
+	assert.Equal(t, `["onos-gui"]`, string(audienceJSON), "error verifying audience")
+
+	claimsMap, isMap := claims.(jwt.MapClaims)
+	assert.Assert(t, isMap)
+	name, ok := claimsMap["name"]
 	assert.Assert(t, ok, "error extracting name")
 	assert.Equal(t, "sean", name, "error unexpected name", name)
-	email, ok := claims["email"]
+	email, ok := claimsMap["email"]
 	assert.Assert(t, ok, "error extracting email")
 	assert.Equal(t, "sean@opennetworking.org", email, "error unexpected email", email)
 
@@ -132,14 +147,30 @@ func TestJwtAuthenticator_HSAlgorithm(t *testing.T) {
 
 	claims, err := authenticator.ParseAndValidate(sampleTokenHS256Signature)
 	assert.NilError(t, err, "unexpected error parsing token")
-	assert.Assert(t, claims.VerifyIssuedAt(1594578447, true), "error verifying issuedat time")
-	assert.Assert(t, claims.VerifyExpiresAt(1909938447, true), "error verifying expiry time")
-	assert.Assert(t, claims.VerifyIssuer("http://dex:32000", true), "error verifying issuer")
-	assert.Assert(t, claims.VerifyAudience("onos-gui", true), "error verifying audience")
-	name, ok := claims["name"]
+
+	issuedAt, err := claims.GetIssuedAt()
+	assert.NilError(t, err)
+	assert.Equal(t, int64(1594578447), issuedAt.Unix(), "error verifying issuedat time")
+	expiresAt, err := claims.GetExpirationTime()
+	assert.NilError(t, err)
+	assert.Equal(t, int64(1909938447), expiresAt.Unix(), "error verifying expiry time")
+
+	issuer, err := claims.GetIssuer()
+	assert.NilError(t, err)
+	assert.Equal(t, `http://dex:32000`, issuer, "error verifying issuer")
+
+	audience, err := claims.GetAudience()
+	assert.NilError(t, err)
+	audienceJSON, err := audience.MarshalJSON()
+	assert.NilError(t, err)
+	assert.Equal(t, `["onos-gui"]`, string(audienceJSON), "error verifying audience")
+
+	claimsMap, isMap := claims.(jwt.MapClaims)
+	assert.Assert(t, isMap)
+	name, ok := claimsMap["name"]
 	assert.Assert(t, ok, "error extracting name")
 	assert.Equal(t, "sean", name, "error unexpected name", name)
-	email, ok := claims["email"]
+	email, ok := claimsMap["email"]
 	assert.Assert(t, ok, "error extracting email")
 	assert.Equal(t, "sean@opennetworking.org", email, "error unexpected email", email)
 

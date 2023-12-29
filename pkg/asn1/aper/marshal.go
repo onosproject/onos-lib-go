@@ -13,13 +13,13 @@ import (
 )
 
 type perRawBitData struct {
-	bytes                 []byte
-	bitsOffset            uint
-	choiceMap             map[string]map[int]reflect.Type
-	unique                int64
-	canonicalChoiceMap    map[string]map[int64]reflect.Type
-	choiceCanBeExtended   bool
-	sequenceCanBeExtended bool
+	bytes               []byte
+	bitsOffset          uint
+	choiceMap           map[string]map[int]reflect.Type
+	unique              int64
+	canonicalChoiceMap  map[string]map[int64]reflect.Type
+	choiceCanBeExtended bool
+	//sequenceCanBeExtended bool
 }
 
 func perRawBitLog(numBits uint64, byteLen int, bitsOffset uint, value interface{}) string {
@@ -382,7 +382,7 @@ func howManyBytesNeeded(value int64) (byteAmount int) {
 
 // it looks like encoding of REAL doesn't take into account constraints at all, so we don't bother about parsing constraints (only to check if value is within bounds)
 // general rules are - mantissa should be an odd number or a 0
-func (pd *perRawBitData) appendReal(value float64, lb *int64, ub *int64) (err error) {
+func (pd *perRawBitData) appendReal(value float64, lb *int64, ub *int64, valueExt bool) (err error) {
 
 	log.Debugf("Encoding REAL number %v", value)
 
@@ -395,7 +395,7 @@ func (pd *perRawBitData) appendReal(value float64, lb *int64, ub *int64) (err er
 	}
 	if ub != nil {
 		upperBound := *ub
-		if value > float64(upperBound) {
+		if value > float64(upperBound) && !valueExt {
 			return errors.NewInvalid("Error encoding REAL - value (%v) is higher than upperbound (%v)", value, float64(upperBound))
 		}
 	}
@@ -809,11 +809,11 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, fromChoi
 // provided in chapter 20.4 of Olivier DuBuisson book "ASN.1. Communication between Heterogeneous systems".
 // Instead, this function was aligned to correspond to the needs of E2AP APER encoding handled by asn1c tool,
 // which is provided by Nokia (https://github.com/nokia/asn1c). In particular, it adds 1 in the header only
-// when the encoded number exceeds 127 (in decimal). If number is less than 128, then the rest the number
+// when the encoded number exceeds 127 (in decimal). If the encoded number is less than 128, then the rest the number
 // is encoded in 7 bits. In original definition it should treat the boundary 64 (and if the number is less than 64,
 // then it encodes the number in 6 bits). Also, no octet alignment when number is between 64 and 256 is needed.
 // Nokia's distribution is treating it in theirs way. Since theirs asn1c tool is officially recommended by O-RAN,
-// we need to be aligned with them.
+// this library needs to be aligned with them.
 func (pd *perRawBitData) appendNormallySmallNonNegativeWholeNumber(value uint64) error {
 
 	if value > 32767 {
@@ -865,7 +865,7 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(canonicalChoiceMap map[int64
 	// ToDo - find workaround in logging
 	//log.SetLevel(log.Info)
 	// ToDo - sequenceCanBeExtended may cause potential problems
-	threadedBytes := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false, false}
+	threadedBytes := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false}
 	if err := threadedBytes.makeField(v, params); err != nil {
 		return err
 	}
@@ -873,17 +873,13 @@ func (pd *perRawBitData) appendCanonicalChoiceIndex(canonicalChoiceMap map[int64
 	//log.SetLevel(log.Debug)
 
 	// encoding the number of upcoming bytes
-	if err := pd.appendNormallySmallNonNegativeWholeNumber(uint64(len(threadedBytes.bytes))); err != nil {
-		return err
-	}
-
-	return nil
+	return pd.appendNormallySmallNonNegativeWholeNumber(uint64(len(threadedBytes.bytes)))
 }
 
 func (pd *perRawBitData) appendOpenType(v reflect.Value, params fieldParameters) error {
 
 	// ToDo - sequenceCanBeExtended may cause potential problems
-	pdOpenType := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false, false}
+	pdOpenType := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false}
 	log.Debugf("Encoding OpenType %s to temp RawData", v.Type().String())
 	if err := pdOpenType.makeField(v, params); err != nil {
 		return err
@@ -987,7 +983,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		return nil
 
 	case reflect.Float64:
-		if err := pd.appendReal(v.Float(), params.valueLowerBound, params.valueUpperBound); err != nil {
+		if err := pd.appendReal(v.Float(), params.valueLowerBound, params.valueUpperBound, params.valueExtensible); err != nil {
 			return err
 		}
 		return nil
@@ -997,16 +993,16 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		structType := fieldType
 		var structParams []fieldParameters
 		var optionalCount uint
-		fromValueExtPresent := false
+		fromValueExtPresent := false // this is to indicate if any items in SEQUENCE Extension are actually present
 		var optionalPresents uint64
 		var choiceType string
 		pd.choiceCanBeExtended = false
-		pd.sequenceCanBeExtended = false
-		// ToDo - currently this is an incorrect treatment of possible extensions with structs.
+		sequenceCanBeExtended := false
+		extensionHeader := false
 		// It is only possible to decode extension which is defined in the encoding schema
-		// struct extensive TODO: support extensed type
+		// struct extensive
 		if params.valueExtensible && !params.choiceExt {
-			pd.sequenceCanBeExtended = true
+			sequenceCanBeExtended = true
 			log.Debugf("SEQUENCE can be extended")
 			//log.Debugf("Encoding Value Extensive Bit : true")
 			//if err := pd.putBitsValue(0, 1); err != nil {
@@ -1037,16 +1033,17 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				}
 				log.Debugf("Unique of type %v was found - it is %v", reflect.ValueOf(v.Field(i)), pd.unique)
 			}
-			if tempParams.fromValueExt && v.Field(i).Type().Kind() == reflect.Ptr && !v.Field(i).IsNil() {
+			// reflect.Slice is to handle the case, when structure is a byte array (i.e., []byte)
+			if tempParams.fromValueExt && (v.Field(i).Type().Kind() == reflect.Ptr || v.Field(i).Type().Kind() == reflect.Slice) && !v.Field(i).IsNil() {
 				log.Debugf("%v is from SEQUENCE extension and present", structType.Field(i).Name)
 				fromValueExtPresent = true
-			} else if tempParams.fromValueExt && v.Field(i).Type().Kind() == reflect.Ptr && v.Field(i).IsNil() {
+			} else if tempParams.fromValueExt && (v.Field(i).Type().Kind() == reflect.Ptr || v.Field(i).Type().Kind() == reflect.Slice) && v.Field(i).IsNil() {
 				log.Debugf("%v is from SEQUENCE extension and not present", structType.Field(i).Name)
 			}
 			choiceType = structType.Field(i).Tag.Get("protobuf_oneof")
 			if choiceType == "" {
 				// for optional flag
-				if tempParams.optional {
+				if tempParams.optional && !tempParams.fromValueExt { // OPTIONAL items from SEQUENCE extension are not counted in the main header
 					optionalCount++
 					optionalPresents <<= 1
 					if !v.Field(i).IsNil() {
@@ -1072,7 +1069,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			if err := pd.putBitsValue(1, 1); err != nil {
 				return err
 			}
-		} else if pd.sequenceCanBeExtended {
+		} else if sequenceCanBeExtended {
 			log.Debugf("SEQUENCE extension is not present. Encoding Value Extensive Bit: false")
 			if err := pd.putBitsValue(0, 1); err != nil {
 				return err
@@ -1087,6 +1084,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 
 		fieldIdx = -1
 		for i := 0; i < structType.NumField(); i++ {
+			log.Debugf("Iteration %v", i)
 			if structType.Field(i).PkgPath != "" {
 				log.Debugf("struct %s ignoring unexported field : %s", structType.Name(), structType.Field(i).Name)
 				continue
@@ -1102,32 +1100,12 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				if optionalPresents&(1<<optionalCount) == 0 {
 					log.Debugf("Field \"%s\" in %s is OPTIONAL and not present", structType.Field(fieldIdx).Name, structType)
 					continue
-				} else {
-					log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(fieldIdx).Name, structType)
 				}
+				log.Debugf("Field \"%s\" in %s is OPTIONAL and present", structType.Field(fieldIdx).Name, structType)
 			}
-			// for open type reference
-			//if structParams[fieldIdx].openType {
-			//	fieldName := structParams[fieldIdx].referenceFieldName
-			//	var index int
-			//	for index = 0; index < fieldIdx; index++ {
-			//		if structType.Field(index).Name == fieldName {
-			//			break
-			//		}
-			//	}
-			//	if index == fieldIdx {
-			//		return fmt.Errorf("open type is not reference to the other field in the struct")
-			//	}
-			//	structParams[fieldIdx].referenceFieldValue = new(int64)
-			//	value, err := getReferenceFieldValue(val.Field(index))
-			//	if err != nil {
-			//		return err
-			//	}
-			//	*structParams[fieldIdx].referenceFieldValue = value
-			//}
-			//if params.unique {
-			//	choiceID = v.Field(i)
-			//}
+			log.Debugf("SEQUENCE Extension presence is %v, current field name is %v", fromValueExtPresent, structType.Field(i).Name)
+			log.Debugf("fromValueExt is %v", structParams[fieldIdx].fromValueExt)
+			log.Debugf("ExtensionHeader encoded is %v", extensionHeader)
 			if structParams[fieldIdx].oneofName != "" {
 				if params.canonicalOrder {
 					tempParams := structParams[fieldIdx]
@@ -1172,7 +1150,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 							ieNotInExt = len(choices)
 						}
 
-						log.Debugf("ValueExt is %v", structParams[fieldIdx].valueExtensible)
+						log.Debugf("ValueExt (i.e., if current CHOICE item is extensible) is %v", structParams[fieldIdx].valueExtensible)
 						log.Debugf("FromChoiceExt is %v", structParams[fieldIdx].fromChoiceExt)
 						log.Debugf("Amount of values which are not in extension is %v", ieNotInExt)
 						log.Debugf("Choice map length is %v", len(choices))
@@ -1183,7 +1161,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 					} else {
 						// ToDo - test if choice can be extended or not and put an Extensed bit
 						if pd.choiceCanBeExtended {
-							log.Debugf("CHOICE can be potentially extensed, putting 0 bit to indicate that")
+							log.Debugf("CHOICE can be potentially extended, putting 0 bit to indicate that")
 							if err := pd.putBitsValue(0, 1); err != nil {
 								return err
 							}
@@ -1196,12 +1174,81 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				if err := pd.makeField(reflect.ValueOf(v.Field(i).Interface()), tempParams); err != nil {
 					return err
 				}
-			} else {
-				if structParams[fieldIdx].fromValueExt && val.Field(i).IsNil() {
-					return nil
-				} else if err := pd.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
+			} else if structParams[fieldIdx].fromValueExt && fromValueExtPresent { // making sure that the items in the extension are actually present
+				// encoding items from the value extension
+				log.Debugf("Current SEQUENCE can be extended is %v", sequenceCanBeExtended)
+				if !extensionHeader && sequenceCanBeExtended {
+					log.Debugf("Encoding SEQUENCE Extension header")
+					// encoding the header of the value extension
+					// obtaining total number of items
+					totalItemsInExtension := structType.NumField() - i
+					if totalItemsInExtension < 0 {
+						log.Debugf("Something went wrong - total amount of instances in the extension is %d (negative)\n", totalItemsInExtension)
+						return nil
+					}
+					// encoding this number
+					log.Debugf("Total amount of items in the extension is %d - encoding it as a small non-negative whole number", totalItemsInExtension)
+					if totalItemsInExtension <= 127 {
+						// encoding number of items over 0 (i.e., totalItemsInExtension - 1)
+						if err := pd.putBitsValue(uint64(totalItemsInExtension-1), 7); err != nil {
+							return err
+						}
+					} else {
+						// fallback to the old way of decoding...
+						if err := pd.appendNormallySmallNonNegativeWholeNumber(uint64(totalItemsInExtension)); err != nil {
+							return err
+						}
+					}
+
+					// encoding indication that actual item is present in the extension
+					for ext := 0; ext < totalItemsInExtension; ext++ {
+						if structParams[fieldIdx+ext].fromValueExt && (v.Field(i+ext).Type().Kind() == reflect.Ptr || v.Field(i+ext).Type().Kind() == reflect.Slice) && !val.Field(i+ext).IsNil() {
+							log.Debugf("%v is from SEQUENCE extension and present", structType.Field(i+ext).Name)
+							if err := pd.putBitsValue(1, 1); err != nil {
+								return err
+							}
+						} else if structParams[fieldIdx+ext].fromValueExt && (v.Field(i+ext).Type().Kind() == reflect.Ptr || v.Field(i+ext).Type().Kind() == reflect.Slice) && val.Field(i+ext).IsNil() {
+							log.Debugf("%v is from SEQUENCE extension and NOT present", structType.Field(i+ext).Name)
+							if err := pd.putBitsValue(0, 1); err != nil {
+								return err
+							}
+						}
+					}
+
+					// aligning bytes
+					pd.appendAlignBits()
+					// indicating that extension header is encoded
+					extensionHeader = true
+				}
+				// proceeding with encoding the items in extension in a regular way
+				if !val.Field(i).IsNil() {
+					log.Debugf("Encoding %v - an item from the extension", structType.Field(i).Name)
+					// create threaded bytes, encode the item and encode its length
+					threadedBytes := &perRawBitData{[]byte(""), 0, pd.choiceMap, -1, pd.canonicalChoiceMap, false}
+					if err := threadedBytes.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
+						return err
+					}
+
+					// encoding the number of upcoming bytes
+					if err := pd.appendNormallySmallNonNegativeWholeNumber(uint64(len(threadedBytes.bytes))); err != nil {
+						return err
+					}
+
+					// if item is present in extension, encoding it, otherwise, iterating over the next items in the extension
+					if err := pd.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
+						return err
+					}
+				}
+			} else if !structParams[fieldIdx].fromValueExt {
+				// if the value is not the CHOICE, or an item in Extension, or an OPTIONAL item,
+				// then it should be mandatory present in the message - encoding it
+				if err := pd.makeField(val.Field(i), structParams[fieldIdx]); err != nil {
 					return err
 				}
+			}
+			// if we are hitting the last item, set by default the extension header to false
+			if fieldIdx == structType.NumField()-1 {
+				extensionHeader = false
 			}
 		}
 		return nil
@@ -1233,7 +1280,7 @@ func Marshal(val interface{}, choiceMap map[string]map[int]reflect.Type, canonic
 func MarshalWithParams(val interface{}, params string, choiceMap map[string]map[int]reflect.Type, canonicalChoiceMap map[string]map[int64]reflect.Type) ([]byte, error) {
 	// ToDo - sequenceCanBeExtended may cause potential problems
 	//log.SetLevel(logging.DebugLevel)
-	pd := &perRawBitData{[]byte(""), 0, choiceMap, -1, canonicalChoiceMap, false, false}
+	pd := &perRawBitData{[]byte(""), 0, choiceMap, -1, canonicalChoiceMap, false}
 	err := pd.makeField(reflect.ValueOf(val), parseFieldParameters(params))
 	if err != nil {
 		return nil, err

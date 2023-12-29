@@ -11,8 +11,7 @@ import (
 	"testing"
 )
 
-func Test_SequenceExtended(t *testing.T) {
-
+func createList() *TestList2 {
 	list := &TestList2{
 		Value: make([]*ItemExtensible, 0),
 	}
@@ -21,6 +20,11 @@ func Test_SequenceExtended(t *testing.T) {
 		Item2: []byte{0xaa, 0xbb, 0xcc},
 	}
 	list.Value = append(list.Value, item)
+	return list
+}
+
+func Test_SequenceExtended1(t *testing.T) {
+	list := createList()
 
 	msg1 := &SequenceExtended{
 		Se1: &SampleConstrainedInteger{
@@ -49,6 +53,10 @@ func Test_SequenceExtended(t *testing.T) {
 	assert.Assert(t, result1 != nil)
 	t.Logf("Decoded message is\n%v", result1)
 	assert.Equal(t, msg1.String(), result1.String())
+}
+
+func Test_SequenceExtended2(t *testing.T) {
+	list := createList()
 
 	msg2 := &SequenceExtended{
 		Se1: &SampleConstrainedInteger{
@@ -86,6 +94,10 @@ func Test_SequenceExtended(t *testing.T) {
 	assert.Assert(t, result2 != nil)
 	t.Logf("Decoded message is\n%v", result2)
 	assert.Equal(t, msg2.String(), result2.String())
+}
+
+func Test_SequenceExtended3(t *testing.T) {
+	list := createList()
 
 	var se5 = "onfForever"
 	msg3 := &SequenceExtended{

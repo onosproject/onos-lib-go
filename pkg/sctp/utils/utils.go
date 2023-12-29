@@ -139,7 +139,7 @@ func (p *ipStackCapabilities) probe() {
 }
 
 // IPToSockaddr ...
-func IPToSockaddr(family int, ip net.IP, port int, zone string) (syscall.Sockaddr, error) {
+func IPToSockaddr(family int, ip net.IP, port int, _ string) (syscall.Sockaddr, error) {
 	switch family {
 	case syscall.AF_INET:
 		if len(ip) == 0 {
