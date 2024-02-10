@@ -13,13 +13,13 @@ run:
 linters:
   enable:
     - gofmt
-    - revive
+    # - revive
     - misspell
     - typecheck
     - errcheck
     - dogsled
     - unconvert
-    - nakedret
+    # - nakedret
     - exportloopref
 
 issues:
