@@ -94,9 +94,9 @@ func TestJwtAuthenticator_parseToken(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.String() {
 		case "/" + OpenidConfiguration:
-			_, _ = fmt.Fprintln(w, strings.ReplaceAll(dexWellKnownOpenIDConfig, "dex:32000", r.Host))
+			fmt.Fprintln(w, strings.ReplaceAll(dexWellKnownOpenIDConfig, "dex:32000", r.Host))
 		case "/keys":
-			_, _ = fmt.Fprintln(w, dexkeys)
+			fmt.Fprintln(w, dexkeys)
 		default:
 			t.Fatalf("Unexpected URL %s", r.URL.String())
 		}
