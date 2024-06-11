@@ -6,3 +6,5 @@ SPDX-License-Identifier: Apache-2.0
 # onos-lib-go
 
 Library of utilities and conveniences for development of µONOS components.
+
+테스트입니다. 토큰을 입력해야할까요?
