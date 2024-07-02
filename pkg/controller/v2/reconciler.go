@@ -101,6 +101,50 @@ func (r *Requeue[I]) Do(controller *Controller[I]) {
 	go controller.enqueue(r.request)
 }
 
+// After retries the request after the given delay
+func (r *Requeue[I]) After(delay time.Duration) *RequeueAfter[I] {
+	return &RequeueAfter[I]{
+		Requeue: r,
+		delay:   delay,
+	}
+}
+
+// At retries the request at the given time
+func (r *Requeue[I]) At(t time.Time) *RequeueAt[I] {
+	return &RequeueAt[I]{
+		Requeue: r,
+		t:       t,
+	}
+}
+
+// RequeueAfter requeues a reconciliation request after the given delay
+type RequeueAfter[I ID] struct {
+	*Requeue[I]
+	delay time.Duration
+}
+
+// Do executes the controller directive
+func (r *RequeueAfter[I]) Do(controller *Controller[I]) {
+	controller.Log.Debugw("Requeueing request", "Request.ID", r.request.ID, "delay", r.delay)
+	time.AfterFunc(r.delay, func() {
+		controller.enqueue(r.request)
+	})
+}
+
+// RequeueAt requeue a reconciliation request at a specific time
+type RequeueAt[I ID] struct {
+	*Requeue[I]
+	t time.Time
+}
+
+// Do executes the controller directive
+func (r *RequeueAt[I]) Do(controller *Controller[I]) {
+	controller.Log.Debugw("Requeueing request", "Request.ID", r.request.ID, "Time", r.t)
+	time.AfterFunc(time.Until(r.t), func() {
+		controller.enqueue(r.request)
+	})
+}
+
 // Fail fails a reconciliation request
 type Fail[I ID] struct {
 	request Request[I]
