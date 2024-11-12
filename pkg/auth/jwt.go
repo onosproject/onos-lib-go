@@ -10,19 +10,17 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 
 	ecoidc "github.com/ericchiang/oidc"
+	"github.com/go-jose/go-jose/v3"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
-	"gopkg.in/square/go-jose.v2"
-
-	"google.golang.org/grpc/status"
-
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var log = logging.GetLogger("jwt")
