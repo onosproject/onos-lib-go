@@ -7,10 +7,11 @@ package aper
 import (
 	"encoding/hex"
 	"fmt"
+	"reflect"
+
 	"github.com/onosproject/onos-lib-go/api/asn1/v1/asn1"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
-	"reflect"
 )
 
 var log = logging.GetLogger("asn1", "aper")
@@ -39,6 +40,10 @@ func perBitLog(numBits uint64, byteOffset uint64, bitsOffset uint, value interfa
 
 // GetBitString is to get BitString with desire size from source byte array with bit offset
 func GetBitString(srcBytes []byte, bitsOffset uint, numBits uint) (dstBytes []byte, err error) {
+	if numBits == 0 {
+		return []byte{}, nil
+	}
+
 	bitsLeft := uint(len(srcBytes))*8 - bitsOffset
 	if numBits > bitsLeft {
 		err = fmt.Errorf("Get bits overflow, requireBits: %d, leftBits: %d", numBits, bitsLeft)
