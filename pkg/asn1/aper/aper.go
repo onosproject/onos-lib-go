@@ -583,6 +583,10 @@ func (pd *perBitData) parseInteger(extensed bool, lowerBoundPtr *int64, upperBou
 		rawLength = uint(pd.bytes[pd.byteOffset])
 		pd.byteOffset++
 		log.Debugf("%s", perBitLog(8, pd.byteOffset, pd.bitsOffset, uint64(rawLength)))
+		if rawLength == 0 {
+			err := fmt.Errorf("rawLength cannot be 0")
+			return int64(0), err
+		}
 	} else if valueRange <= 65536 {
 		rawValue, err := pd.parseConstraintValue(valueRange)
 		if err != nil {
